@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lumen-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lumen
+  template:
+    metadata:
+      labels:
+        app: lumen
+    spec:
+      containers:
+      - name: lumen
+        image: gcr.io/personal-147902/lumen:latest
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 80
