@@ -4,7 +4,7 @@ defmodule DaySeven do
     |> Enum.map(fn {color, count} ->
       count * find(rules, color) + count
     end)
-    |> Enum.sum
+    |> Enum.sum()
   end
 end
 
@@ -12,8 +12,7 @@ end
 
 input
 |> String.split("\n")
-|> Enum.with_index()
-|> Enum.map(fn {rules, index} ->
+|> Enum.map(fn rules ->
   [color, contents] = String.split(rules, " bags contain ")
 
   contents =
@@ -43,9 +42,5 @@ input
   {color, contents}
 end)
 |> Map.new()
-|> IO.inspect(label: "parsed rules")
 |> DaySeven.find("shiny gold")
-# |> MapSet.new()
 |> IO.inspect()
-# |> Enum.count()
-# |> IO.puts()

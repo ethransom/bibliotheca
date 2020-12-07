@@ -11,8 +11,7 @@ end
 
 input
 |> String.split("\n")
-|> Enum.with_index()
-|> Enum.map(fn {rules, index} ->
+|> Enum.map(fn rules ->
   [color, contents] = String.split(rules, " bags contain ")
 
   contents =
@@ -40,9 +39,7 @@ input
 
   {color, contents}
 end)
-|> IO.inspect(label: "parsed rules")
 |> DaySeven.find("shiny gold")
-|> MapSet.new()
-|> IO.inspect()
+|> Enum.uniq()
 |> Enum.count()
 |> IO.puts()
