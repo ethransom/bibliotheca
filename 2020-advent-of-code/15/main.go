@@ -5,21 +5,23 @@ import (
 )
 
 func solve(nums []int, length int) int {
+	placeholders := make(map[int]int)
+	for i, n := range nums {
+		placeholders[n] = i
+	}
+
 	for i := len(nums); i < length; i++ {
 		target := nums[i-1]
 		diff := 0
-		for j := i - 2; j >= 0; j-- {
-			if nums[j] == target {
-				diff = i - 1 - j
-				break
-			}
+		if last, ok := placeholders[target]; ok {
+			diff = i - 1 - last
 		}
 
 		nums = append(nums, diff)
+		placeholders[target] = i - 1
 	}
 
 	return nums[len(nums)-1]
-
 }
 
 func main() {
@@ -34,9 +36,10 @@ func main() {
 		{15, 5, 1, 4, 7, 0},
 	}
 	for _, input := range inputs {
-		soln := solve(input, 30000000)
+		fmt.Printf("Given %v:\n", input)
 
-		fmt.Printf("%v: %d\n", input, soln)
+		fmt.Printf("\t      2020th spoken is %d\n", solve(input, 2020))
+		fmt.Printf("\t30_000_000th spoken is %d\n", solve(input, 30_000_000))
 
 	}
 }
