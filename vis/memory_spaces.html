@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
+<script src="d3/d3.min.js"></script>
+<title>Memory Spaces Demo</title>
+<style>
+    canvas {
+        border: 1px solid grey;
+    }
+</style>
+</head>
+<body>
+
+<h1>Demo of Memory Spaces</h1>
+
+<p>Visualizing binary data</p>
+
+<button onclick="renderRand()">RNJesus</button>
+<button onclick="renderAltBytes()">Alt Bytes</button>
+<button onclick="renderAltWords()">Alt Words</button>
+<button onclick="renderAltBits()">Alt Bits</button>
+<input type="file" onchange="readFile(this)">
+
+<h2>RGBA</h2>
+<canvas id="rgba"></canvas>
+
+<h2>Naive Linear</h2>
+<canvas id="naiveLinear"></canvas>
+
+<h2>HLSA (TODO)</h2>
+<canvas id="hlsa"></canvas>
+
+<script>
+
+const SIZE = 4096;
+
+function getRandomInt(max) {
+    return Math.floor(Math.random() * Math.floor(max));
+}
+
+const FACTOR = 5;
+
+class canvas {
+
+    constructor(id) {
+        this.canvas = document.getElementById(id)
+        this.ctx = this.canvas.getContext("2d");
+    }
+
+    pixel(i, color) {
+        let x = i % this.width;
+        let y = Math.floor(i / this.width);
+        this.ctx.fillStyle = color;
+        this.ctx.fillRect(x * FACTOR, y * FACTOR, 1 * FACTOR, 1 * FACTOR);
+    }
+
+    clear() {
+        this.ctx.fillStyle = "black";
+        this.ctx.fillRect(0, 0, this.width * FACTOR, this.height * FACTOR);
+    }
+
+    setWidth(w) {
+        this.width = w;
+        this.canvas.width = w * FACTOR;
+    }
+
+    setHeight(h) {
+        this.height = h;
+        this.canvas.height = h * FACTOR;
+    }
+}
+
+function toRGBA(r, g, b, a) {
+    return `rgba(${r},${g},${b},${a})`;
+}
+
+function naiveLinear(val) {
+    return `rgb(0,0,${val})`;
+}
+
+let rgbaCanvas = new canvas("rgba");
+let naiveLinearCanvas = new canvas("naiveLinear");
+
+const WIDTH = Math.sqrt(4096);
+
+function render(getter, size) {
+    let page = [];
+    for (let i = 0; i < size; i++) {
+        page.push(getter(i));
+    }
+    let byteBuffer = Uint8Array.from(page);
+
+    rgbaCanvas.setWidth(Math.sqrt(4096 / 4));
+    rgbaCanvas.setHeight(Math.sqrt(size / 4));
+    rgbaCanvas.clear()
+    for (let i = 0; i < size; i += 4) {
+        let color = toRGBA(
+            byteBuffer[i], 
+            byteBuffer[i+1],
+            byteBuffer[i+2],
+            byteBuffer[i+3]
+        );
+        rgbaCanvas.pixel(i / 4, color)
+    }
+
+    naiveLinearCanvas.setWidth(WIDTH);
+    naiveLinearCanvas.setHeight(Math.sqrt(size));
+    byteBuffer.map((word, i) => {
+        naiveLinearCanvas.pixel(i, naiveLinear(word))
+    });
+}
+
+function renderRand() {
+    render(i => getRandomInt(Math.pow(2, 8)), 4096);
+}
+
+function renderAltBytes() {
+    render(i => i % 2 === 0 ? 255 : 0, 4096);
+}
+
+function renderAltWords() {
+    render(i => Math.floor(i / 4) % 2 === 0 ? 255 : 0, 4096);
+}
+
+function renderAltBits() {
+    render(i => 0b01010101, 4096);
+}
+
+// https://javascript.info/file
+function readFile(input) {
+  let file = input.files[0];
+
+  let reader = new FileReader();
+
+  reader.readAsArrayBuffer(file);
+
+  reader.onload = function() {
+    let buffer = new Uint8Array(reader.result);
+    console.log(`parsed file of size ${buffer.length}`)
+    render(i => buffer[i], buffer.length);
+  };
+
+  reader.onerror = function() {
+    alert(reader.error);
+  };
+
+}
+
+renderRand();
+    
+</script>
+    
+</body>
+</html>
