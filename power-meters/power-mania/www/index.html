@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <title>Power Usage</title>
+
+    <style>
+        .axis {
+            font: 10px sans-serif;
+        }
+
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="graph"></div>
+
+    <p><strong>Current Draw:</strong> <span id="draw"></span></p>
+    <table>
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Watts</th>
+            </tr>
+        </thead>
+        <tbody id="data-table">
+
+        </tbody>
+    </table>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.0.0/d3.min.js"></script>
+
+    <script>
+
+        var margin = { top: 20, right: 20, bottom: 120, left: 80 },
+            width = 800 - margin.left - margin.right,
+            height = 400 - margin.top - margin.bottom;
+
+        var svg = d3.select("#graph").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")");
+
+
+        function onReceiveData(data) {
+            data = data
+                .filter(d => d.avg_watts_in_interval != null)
+                .map(function (d) {
+                    return {
+                        date: new Date(d.start_time),
+                        date_unix: d.start_time_unix,
+                        value: Math.round(d.avg_watts_in_interval),
+                    };
+                });
+
+            let table = data
+                .map(row => {
+                    return `<tr><td>${row.date.toLocaleDateString('en-US')} ${row.date.toLocaleTimeString()}</td><td>${row.value}</td><tr>`;
+                })
+                .join("");
+
+            document.getElementById('data-table').innerHTML = table;
+
+            document.getElementById('draw').innerText = `${data[0].value} W, as of ${data[0].date.toLocaleTimeString()}`
+
+            var x = d3.scaleTime().range([0, width]).domain(d3.extent(data.map(d => d.date)));
+
+            var y = d3.scaleLinear().range([height, 0]).domain([0, d3.max(data, d => d.value)]);
+
+            var xAxis = d3.axisBottom()
+                .scale(x);
+
+            var yAxis = d3.axisLeft()
+                .scale(y)
+                .ticks(10);
+
+            svg.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + height + ")")
+                .call(xAxis)
+                .selectAll("text")
+                .style("text-anchor", "end")
+                .attr("dx", "-.8em")
+                .attr("dy", "-.55em")
+                .attr("transform", "rotate(-90)");
+
+            svg.append("g")
+                .attr("class", "y axis")
+                .call(yAxis)
+                .append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 6)
+                .attr("dy", ".71em")
+                .style("text-anchor", "end")
+                .attr("fill", "black")
+                .text("Watts (W)");
+
+            let area = d3.area()
+                .curve(d3.curveLinear)
+                // .defined(d => !isNaN(d))
+                .x(d => x(d.date))
+                .y0(y(0))
+                .y1(d => y(d.value));
+
+            // let line = area.lineY1();
+            let line = d3.line().x(d => x(d.date)).y(d => y(d.value));
+
+            svg.append("path")
+                .datum(data)
+                .attr("fill", "khaki")
+                .attr("d", d => area(d));
+
+            svg.append("path")
+                .datum(data)
+                .attr("fill", "none")
+                .attr("stroke", "#606060")
+                .attr("stroke-width", 1)
+                .attr("d", d => line(d));
+
+            // svg.selectAll("bar")
+            //     .data(data)
+            //     .enter().append("rect")
+            //     .style("fill", "steelblue")
+            //     .attr("x", function (d) { return x(d.date); })
+            //     .attr("width", x.rangeBand())
+            //     .attr("y", function (d) { return y(d.value); })
+            //     .attr("height", function (d) { return height - y(d.value); });
+
+        }
+
+        fetch('http://143.110.231.29/query')
+            .then(response => response.json())
+            .then(data => onReceiveData(data))
+            // .catch(err => alert(err));
+    </script>
+</body>
+
+</html>
