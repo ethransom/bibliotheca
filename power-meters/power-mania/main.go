@@ -94,6 +94,7 @@ with intervals as (
 		EXTRACT(epoch from min(time)) as start_time_unix,
 		consumption * 10 as watt_hours
 	from readings 
+	where time >= now() - interval '1 week'
 	group by consumption
 )
 select 

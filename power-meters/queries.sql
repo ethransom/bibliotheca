@@ -207,3 +207,25 @@ select * from readings order by time asc limit 10;
 
 -- diff
 select max(consumption), min(consumption) from readings;
+
+-- ok, now with an interval:
+with intervals as (
+	select 
+		count(*) as retransmit_count,
+		min(time) as start_time,
+		max(time) as end_time,
+		consumption * 10 as watt_hours
+	from readings 
+	where time >= now() - interval '1 week'
+	group by consumption
+)
+select 
+	*,
+	watt_hours - lag(watt_hours) over (order by start_time asc) as new_watt_hours,
+	EXTRACT(epoch FROM (start_time - lag(start_time) over (order by start_time asc))) / 3600 as hours_since_last_update,
+	(watt_hours - lag(watt_hours) over (order by start_time asc))
+	/ 
+	(EXTRACT(epoch FROM (start_time - lag(start_time) over (order by start_time asc))) / 3600) as avg_watts_in_interval
+from intervals
+order by start_time desc;
+-- AND it's much faster, even with no index. Interesting.
