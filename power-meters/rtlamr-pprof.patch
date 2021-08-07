@@ -1,0 +1,59 @@
+diff --git a/main.go b/main.go
+index a6ec5fc..6e598bd 100644
+--- a/main.go
++++ b/main.go
+@@ -26,6 +26,8 @@ import (
+ 	"log"
+ 	"os"
+ 	"os/signal"
++	"runtime"
++	"runtime/pprof"
+ 	"sync"
+ 	"syscall"
+ 	"time"
+@@ -296,6 +298,9 @@ var (
+ 	commitHash = "unknown" // git rev-parse HEAD
+ )
+ 
++var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
++var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
++
+ func main() {
+ 	rcvr.RegisterFlags()
+ 	RegisterFlags()
+@@ -312,6 +317,18 @@ func main() {
+ 
+ 	HandleFlags()
+ 
++	if *cpuprofile != "" {
++		f, err := os.Create(*cpuprofile)
++		if err != nil {
++			log.Fatal("could not create CPU profile: ", err)
++		}
++		defer f.Close()
++		if err := pprof.StartCPUProfile(f); err != nil {
++			log.Fatal("could not start CPU profile: ", err)
++		}
++		defer pprof.StopCPUProfile()
++	}
++
+ 	rcvr.NewReceiver()
+ 
+ 	defer func() {
+@@ -346,4 +363,16 @@ func main() {
+ 	}
+ 
+ 	rcvr.Close()
++
++	if *memprofile != "" {
++		f, err := os.Create(*memprofile)
++		if err != nil {
++			log.Fatal("could not create memory profile: ", err)
++		}
++		defer f.Close()
++		runtime.GC()
++		if err := pprof.WriteHeapProfile(f); err != nil {
++			log.Fatal("could not write memory profile: ", err)
++		}
++	}
+ }
