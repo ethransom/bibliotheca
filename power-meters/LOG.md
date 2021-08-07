@@ -82,4 +82,76 @@ HA. Omg. So allegedly we're going much faster now? Very interesting.
 
 Also interesting that CPU is still maxed out on the Pi. It's probably just going as fast as it can, it can just go much faster now.
 
-(Also as a note, rtl_tcp prints the settings being requested by rtlamr, so we could probably get a raw dump as per the instructions on this link: http://www.aaronscher.com/wireless_com_SDR/RTL_SDR_AM_spectrum_demod.html. Then, we can point rtl_amr at this dump and use the completion time of that as a gauge of efficiency. (Also also it would be hilarious to benchmark the M1 MacBook Air against the Pi on this same task, hehe.))
+Also as a note, rtl_tcp prints the settings being requested by rtlamr, so we could probably get a raw dump as per the instructions on this link: http://www.aaronscher.com/wireless_com_SDR/RTL_SDR_AM_spectrum_demod.html. Then, we can point rtl_amr at this dump and use the completion time of that as a gauge of efficiency. Also it would be hilarious to benchmark the M1 MacBook Air against the Pi on this same task, hehe. Let's do that next!
+
+Trace from rtl_tcp upon startup:
+
+```
+client accepted! localhost 47822
+Allocating 15 zero-copy buffers
+set freq 912600155
+set sample rate 2359296
+set gain mode 0
+```
+
+So, the capture command could be:
+
+```
+rtl_sdr -f 912600155 -s 2359296 -n $(expr 2359296 * 20)
+```
+
+For 20 seconds of data.
+
+---
+
+Ok, after a hilarious amount of shenanigans we have the dump, have copied it to the Air (tailscale encryption is rough on the poor Pi) and we have some data coming in.
+
+For the M1:
+
+```
+  0.92 real         0.96 user         0.37 sys
+      13664256  maximum resident set size
+             0  average shared memory size
+             0  average unshared data size
+             0  average unshared stack size
+           906  page reclaims
+             0  page faults
+             0  swaps
+             0  block input operations
+             0  block output operations
+             3  messages sent
+         38465  messages received
+            68  signals received
+             7  voluntary context switches
+        118592  involuntary context switches
+   14611620494  instructions retired
+    3836224095  cycles elapsed
+      11273512  peak memory footprint
+```
+
+For the RPi with correct arch:
+
+```
+real    1m57.562s
+user    1m11.103s
+sys     0m12.077s
+```
+
+This means that the M1 is (`(60 + 57)/0.92`) 127 times faster than the Pi. Lmfaoooo.
+
+As for the Pi, the one with incorrect arch wouldn't finish on the 300MB input, so a trimmed down 10MB input looks like this:
+
+```
+Incorrect Arch:
+  real    0m27.523s
+  user    0m17.421s
+  sys     0m0.490s
+Correct Arch:
+  real    0m9.255s
+  user    0m2.268s
+  sys     0m0.409s
+```
+
+For those following along at home, this means a (`1 - 9.2/27.5`) 66.5% speedup just from using the correct arch!!!!!
+
+
