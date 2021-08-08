@@ -154,4 +154,22 @@ Correct Arch:
 
 For those following along at home, this means a (`1 - 9.2/27.5`) 66.5% speedup just from using the correct arch!!!!!
 
+---
 
+Ok so can we still optimize more?
+
+~40% of runtime is going to just the `protocol.Decoder.Filter` function, which is fairly understandable and only 10 lines.
+
+```
+go tool objdump -S -s protocol.Decoder.Filter rtlamr-armv6
+```
+
+We can see that this is probably where all the floating point gains came from. Disassembly of both compiled binaries shows that the v6 one is easily half the size of the v5 one, and doesn't include the `runtime.f*` calls.
+
+Somewhere in the asm is probably the VFPv2 instructions. Apparently they can be used in a vectorized version for multiple registers at a time, but this was "deprecated in favor of NEON".
+
+Also apparently this cpu also supports some sort of `dsp` feature, standing for Digital Signal Processing. Might berelevant.
+
+This page was very useful in decoding the output of `cat /proc/cpuinfo` that this info came from: https://unix.stackexchange.com/a/43563
+
+(Fun write up on the CPU that this RPi uses? https://sandsoftwaresound.net/raspberry-pi/arm11-microarchitecture/ )
