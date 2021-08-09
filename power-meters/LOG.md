@@ -142,11 +142,11 @@ This means that the M1 is (`(60 + 57)/0.92`) 127 times faster than the Pi. Lmfao
 As for the Pi, the one with incorrect arch wouldn't finish on the 300MB input, so a trimmed down 10MB input looks like this:
 
 ```
-Incorrect Arch:
+armv5: (incorrect for the hw)
   real    0m27.523s
   user    0m17.421s
   sys     0m0.490s
-Correct Arch:
+armv6:
   real    0m9.255s
   user    0m2.268s
   sys     0m0.409s
@@ -173,3 +173,126 @@ Also apparently this cpu also supports some sort of `dsp` feature, standing for 
 This page was very useful in decoding the output of `cat /proc/cpuinfo` that this info came from: https://unix.stackexchange.com/a/43563
 
 (Fun write up on the CPU that this RPi uses? https://sandsoftwaresound.net/raspberry-pi/arm11-microarchitecture/ )
+
+## Sun Aug  8 19:52:33 MDT 2021
+
+After great sacrifice I got the CHIP reflashed which seemed to fix the issues. This is about 2 years younger than the R Pi, I believe dating to 2016.
+
+```
+root@chip:~# cat /proc/cpuinfo
+processor       : 0
+model name      : ARMv7 Processor rev 2 (v7l)
+BogoMIPS        : 429.72
+Features        : half thumb fastmult vfp edsp thumbee neon vfpv3 tls vfpd32
+CPU implementer : 0x41
+CPU architecture: 7
+CPU variant     : 0x3
+CPU part        : 0xc08
+CPU revision    : 2
+
+Hardware        : Allwinner sun4i/sun5i Families
+Revision        : 0000
+Serial          : 162542d50041b01b
+```
+
+Specs online claim it runs at 1 GHz.
+
+Running the same armv6 binary as the pi (again, the 10mb dataset)
+
+```
+armv6 on CHIP:
+  real    0m6.374s
+  user    0m1.015s
+  sys     0m0.150s
+```
+
+Looks like a further (`1 - 6.3/9.2`) 31.5% speedup!! I'll note that this is nearly exactly proportional to the differences in clock speed. 🤔😆
+
+Let's compile an armv7 binary and see how that does.
+
+```
+armv7 on CHIP:
+  real    0m6.452s
+  user    0m1.050s
+  sys     0m0.145s
+```
+
+Nah, negligible improvement. I could take a look at the asm but I'd expect it's the same.
+
+Simply for shits & giggles here is the full 300meg dataset:
+
+```
+real    1m53.261s
+user    0m33.295s
+sys     0m39.055s
+```
+
+Interestingly this is only (`1 - (60+53)/(60+57)`) 3.4% faster!! Wonder if there is thermal throttling or something happening. That is just brutal.
+
+WAIT:
+
+Ran it again and got vastly different results:
+```
+real    0m47.819s
+user    0m32.490s
+sys     0m3.965s
+```
+
+Maybe we were accidentally testing CPU _and_ disk perf last time. Now it's in RAM hopefully. 
+
+Rerunning the 10 MB one as well:
+
+```
+
+real    0m6.428s
+user    0m1.115s
+sys     0m0.100s
+```
+
+Nope, about the same. Interesting. Maybe we're at some sort of IO bottleneck on the smaller dataset??
+
+But the first one is now 59% faster. Weird weird weird. I'll rerun really quickly on the Pi.
+
+
+### OFFICIAL Benchmarks
+```
+PI small
+real    0m9.057s
+user    0m2.283s
+sys     0m0.426s
+
+CHIP small
+real    0m6.432s
+user    0m1.115s
+sys     0m0.095s
+
+M1 small
+0.06s user 
+0.03s system 
+150% cpu 
+0.061 total
+
+Pi bigg
+real    1m52.385s
+user    1m12.106s
+sys     0m11.456s
+
+CHIP bigg
+real    0m45.645s
+user    0m32.660s
+sys     0m3.280s
+
+M1 bigg
+0.97s user
+0.37s system
+144% cpu 
+0.928 total
+```
+
+### Times and speeups over Pi
+
+|       | Pi (armv6)  | CHIP (armv7)   | M1 (armv8)    |
+| small | - (9.05s)   | 29.0% (6.43s)  | 99.3% (0.06s) |
+| large | - (112.39s) | 59.4% (45.65s) | 98.4% (0.93s) |
+
+(All devices using their proper GOARM version.)
