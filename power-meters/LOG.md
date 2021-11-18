@@ -297,3 +297,41 @@ M1 bigg
 | large | - (112.39s) | 59.4% (45.65s) | 98.4% (0.93s) |
 
 (All devices using their proper GOARM version.)
+
+# Mon Aug 16 20:53:01 MDT 2021
+
+```
+McKay's Pi 4:
+small file:
+armv5:
+real    0m10.640s
+user    0m5.631s
+sys     0m0.141s
+
+armv6:
+real    0m5.664s
+user    0m0.537s
+sys     0m0.155s
+
+armv7:
+real    0m5.632s
+user    0m0.542s
+sys     0m0.157s
+
+large file:
+armv5:
+real    3m2.844s
+user    2m58.601s
+sys     0m3.628s
+
+armv6:
+real    0m24.202s
+user    0m18.119s
+sys     0m4.499s
+
+armv7:
+real    0m23.005s
+user    0m17.133s
+sys     0m3.934s
+```
+
