@@ -26,31 +26,27 @@ use std::str::from_utf8;
 
 //     (request_buffer, request_len)
 // }
-const RTLTCP_MAGIC: &[u8; 4] = b"RTL0";
+const RTLTCP_MAGIC_NUM: &[u8; 4] = b"RTL0";
 
 fn open_stream(addr: &str) -> Result<TcpStream, String> {
-    match TcpStream::connect(addr) {
-        Ok(mut stream) => {
-            println!("Successfully connected to server in port 1234");
+    let mut stream = match TcpStream::connect(addr) {
+        Ok(stream) => stream,
+        Err(e) => return Err(format!("Failed to connect: {}", e)),
+    };
+    println!("Successfully connected to server {}", addr);
 
-            let mut data = [0 as u8; 4];
-            match stream.read_exact(&mut data) {
-                Ok(_) => {
-                    if &data == RTLTCP_MAGIC {
-                        println!("Magic number ok");
-                        Ok(stream)
-                    } else {
-                        let text = from_utf8(&data).unwrap();
-                        Err(format!("Unexpected magic number: {}", text))
-                    }
-                }
-                Err(e) => Err(format!("Failed to receive data: {}", e)),
-            }
-        }
-        Err(e) => Err(format!("Failed to connect: {}", e)),
+    let mut data = [0 as u8; 4];
+    if let Err(e) = stream.read_exact(&mut data) {
+        return Err(format!("Failed to receive data: {}", e));
     }
+    if &data != RTLTCP_MAGIC_NUM {
+        let text = from_utf8(&data).unwrap();
+        return Err(format!("Unexpected magic number: {}", text));
+    }
+
+    Ok(stream)
 }
 
 fn main() {
-    open_stream("localhost:1235").unwrap_or_else(|e| panic!("connection error: {}", e));
+    open_stream("localhost:1234").unwrap_or_else(|e| panic!("connection error: {}", e));
 }
