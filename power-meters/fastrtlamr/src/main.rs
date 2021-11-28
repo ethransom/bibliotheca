@@ -28,10 +28,8 @@ use std::str::from_utf8;
 // }
 const RTLTCP_MAGIC: &[u8; 4] = b"RTL0";
 
-fn main() {
-    println!("Hello, world!");
-
-    match TcpStream::connect("localhost:1234") {
+fn open_stream(addr: &str) -> Result<TcpStream, String> {
+    match TcpStream::connect(addr) {
         Ok(mut stream) => {
             println!("Successfully connected to server in port 1234");
 
@@ -40,19 +38,19 @@ fn main() {
                 Ok(_) => {
                     if &data == RTLTCP_MAGIC {
                         println!("Magic number ok");
+                        Ok(stream)
                     } else {
                         let text = from_utf8(&data).unwrap();
-                        println!("Unexpected magic number: {}", text);
+                        Err(format!("Unexpected magic number: {}", text))
                     }
                 }
-                Err(e) => {
-                    println!("Failed to receive data: {}", e);
-                }
+                Err(e) => Err(format!("Failed to receive data: {}", e)),
             }
         }
-        Err(e) => {
-            println!("Failed to connect: {}", e);
-        }
+        Err(e) => Err(format!("Failed to connect: {}", e)),
     }
-    println!("Terminated.");
+}
+
+fn main() {
+    open_stream("localhost:1235").unwrap_or_else(|e| panic!("connection error: {}", e));
 }
