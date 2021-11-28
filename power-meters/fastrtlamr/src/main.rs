@@ -48,5 +48,10 @@ fn open_stream(addr: &str) -> Result<TcpStream, String> {
 }
 
 fn main() {
-    open_stream("localhost:1234").unwrap_or_else(|e| panic!("connection error: {}", e));
+    let args: Vec<String> = std::env::args().collect();
+
+    let default_addr = String::from("localhost:1234");
+    let addr = args.get(1).unwrap_or(&default_addr);
+
+    open_stream(addr).unwrap_or_else(|e| panic!("connection error: {}", e));
 }
