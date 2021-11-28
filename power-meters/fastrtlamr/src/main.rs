@@ -26,7 +26,7 @@ use std::str::from_utf8;
 
 //     (request_buffer, request_len)
 // }
-const RTLTCP_PREAMBLE: &[u8; 4] = b"RTL0";
+const RTLTCP_MAGIC: &[u8; 4] = b"RTL0";
 
 fn main() {
     println!("Hello, world!");
@@ -35,14 +35,14 @@ fn main() {
         Ok(mut stream) => {
             println!("Successfully connected to server in port 1234");
 
-            let mut data = [0 as u8; 4]; // using 6 byte buffer
+            let mut data = [0 as u8; 4];
             match stream.read_exact(&mut data) {
                 Ok(_) => {
-                    if &data == RTLTCP_PREAMBLE {
-                        println!("Reply is ok!");
+                    if &data == RTLTCP_MAGIC {
+                        println!("Magic number ok");
                     } else {
                         let text = from_utf8(&data).unwrap();
-                        println!("Unexpected reply: {}", text);
+                        println!("Unexpected magic number: {}", text);
                     }
                 }
                 Err(e) => {
