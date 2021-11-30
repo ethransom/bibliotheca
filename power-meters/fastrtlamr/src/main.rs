@@ -9,7 +9,13 @@ fn main() {
     let default_addr = String::from("localhost:1234");
     let addr = args.get(1).unwrap_or(&default_addr);
 
-    open_stream(addr).unwrap_or_else(|e| panic!("connection error: {}", e));
+    let mut stream = open_stream(addr).unwrap_or_else(|e| panic!("connection error: {}", e));
+
+    let lut = generate_lut();
+    println!("generated LUT: {:?}", lut);
+
+    let result = decode_block(&mut stream, &lut);
+    println!("first decode: {}", result);
 }
 
 const RTLTCP_MAGIC_NUM: &[u8; 4] = b"RTL0";
@@ -50,4 +56,53 @@ fn tuner_display_name(tuner: u32) -> &'static str {
         6 => "R828D",
         _ => "UNKNOWN",
     }
+}
+
+fn generate_lut() -> Vec<f64> {
+    (0..=0x100)
+        .map(|i| ((127.5 - i as f64) / 127.5).powi(2))
+        .collect::<Vec<f64>>()
+}
+
+// Config:
+// {
+//     Protocol:
+//     Preamble:
+//     DataRate:32768
+//     BlockSize:4096
+//     BlockSize2:8192
+//     ChipLength:72
+//     SymbolLength:144
+//     SampleRate:2359296
+//     PreambleSymbols:21
+//     PacketSymbols:96
+//     PreambleLength:3024
+//     PacketLength:13824
+//     BufferLength:17920
+//     CenterFreq:912600155
+// }
+
+fn decode_block(stream: &mut TcpStream, lut: &Vec<f64>) -> bool {
+    let mut input = [0 as u8; 4096];
+    stream.read_exact(&mut input).unwrap();
+
+    let signal: Vec<f64> = (0..2048)
+        .map(|i| lut[usize::from(input[i])] + lut[usize::from(input[i + 1])])
+        .collect();
+
+    let mut csum: Vec<f64> = Vec::with_capacity(signal.len());
+    let mut sum = 0.0;
+    for v in signal {
+        sum += v;
+        csum.push(sum)
+    }
+
+    // let lower = csum[72..];
+    // let upper = csum[144..];
+    // for idx, l := lower[..len(output)] {
+    // 	f := (l - d.csum[idx]) - (upper[idx] - l)
+    // 	output[idx] = 1 - byte(math.Float64bits(f)>>63)
+    // }
+
+    true
 }
