@@ -45,8 +45,44 @@ fn solve(nums: &Vec<u64>) -> (u64, u64) {
 extern crate test;
 
 #[bench]
+fn bench_parse(b: &mut test::Bencher) {
+    b.iter(|| {
+        parse(INPUT);
+    });
+}
+
+#[bench]
+fn bench_bytes_parse(b: &mut test::Bencher) {
+    b.iter(|| {
+        INPUT
+            .split(|b| *b == '\n' as u8)
+            .map(|line| {
+                std::str::from_utf8(line)
+                    .expect("not utf8")
+                    .parse::<u64>()
+                    .expect("not a number")
+            })
+            .collect::<Vec<u64>>()
+    });
+}
+
+#[bench]
+fn bench_unsafe_bytes_parse(b: &mut test::Bencher) {
+    b.iter(|| {
+        INPUT
+            .split(|b| *b == '\n' as u8)
+            .map(|line| {
+                unsafe { std::str::from_utf8_unchecked(line) }
+                    .parse::<u64>()
+                    .expect("not a number")
+            })
+            .collect::<Vec<u64>>()
+    });
+}
+
+#[bench]
 fn bench_solve(b: &mut test::Bencher) {
-    let input = parse(EXAMPLE);
+    let input = parse(INPUT);
 
     b.iter(|| {
         solve(&input);
