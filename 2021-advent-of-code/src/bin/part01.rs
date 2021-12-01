@@ -1,8 +1,13 @@
+#![feature(test)]
+
+const EXAMPLE: &[u8] = include_bytes!("example01.txt");
+const INPUT: &[u8] = include_bytes!("input01.txt");
+
 fn main() {
-    let example = parse(include_bytes!("example01.txt"));
-    println!("example: {:?}", solve(example));
-    let input = parse(include_bytes!("input01.txt"));
-    println!("input: {:?}", solve(input));
+    let example = parse(EXAMPLE);
+    println!("example: {:?}", solve(&example));
+    let input = parse(INPUT);
+    println!("input: {:?}", solve(&input));
 }
 
 fn parse(dat: &[u8]) -> Vec<u64> {
@@ -13,7 +18,7 @@ fn parse(dat: &[u8]) -> Vec<u64> {
         .collect()
 }
 
-fn solve(nums: Vec<u64>) -> (u64, u64) {
+fn solve(nums: &Vec<u64>) -> (u64, u64) {
     let mut simple_increases = 0;
     for i in 1..nums.len() {
         if nums[i] > nums[i - 1] {
@@ -35,4 +40,15 @@ fn solve(nums: Vec<u64>) -> (u64, u64) {
     }
 
     (simple_increases, windowed_increases)
+}
+
+extern crate test;
+
+#[bench]
+fn bench_solve(b: &mut test::Bencher) {
+    let input = parse(EXAMPLE);
+
+    b.iter(|| {
+        solve(&input);
+    });
 }
