@@ -119,6 +119,46 @@ fn bench_parse_04_bytes_unsafe(b: &mut test::Bencher) {
 }
 
 #[bench]
+fn bench_parse_05_bytes_u16(b: &mut test::Bencher) {
+    b.iter(|| {
+        INPUT
+            .split(|b| *b == '\n' as u8)
+            .map(|line| {
+                unsafe { std::str::from_utf8_unchecked(line) }
+                    .parse::<u16>()
+                    .expect("not a number")
+            })
+            .collect::<Vec<u16>>()
+    });
+}
+
+#[bench]
+fn bench_parse_06_bytes_custom(b: &mut test::Bencher) {
+    b.iter(|| {
+        INPUT
+            .split(|b| *b == '\n' as u8)
+            .map(|line| {
+                line.iter()
+                    .fold(0 as u64, |n, b| n * 10 + (b - ('0' as u8)) as u64)
+            })
+            .collect::<Vec<u64>>()
+    });
+}
+
+#[bench]
+fn bench_parse_07_bytes_custom_u16(b: &mut test::Bencher) {
+    b.iter(|| {
+        INPUT
+            .split(|b| *b == '\n' as u8)
+            .map(|line| {
+                line.iter()
+                    .fold(0 as u16, |n, b| n * 10 + (b - ('0' as u8)) as u16)
+            })
+            .collect::<Vec<u16>>()
+    });
+}
+
+#[bench]
 fn bench_solve(b: &mut test::Bencher) {
     let input = parse(INPUT);
 
