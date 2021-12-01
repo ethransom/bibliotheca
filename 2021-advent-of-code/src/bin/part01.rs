@@ -63,14 +63,24 @@ pub fn solve_windowed(nums: &Vec<u64>) -> (usize, usize) {
 extern crate test;
 
 #[bench]
-fn bench_parse(b: &mut test::Bencher) {
+fn bench_parse_00(b: &mut test::Bencher) {
     b.iter(|| {
         parse(INPUT);
     });
 }
 
 #[bench]
-fn bench_parse_bytes(b: &mut test::Bencher) {
+fn bench_parse_01_unsafe_str(b: &mut test::Bencher) {
+    let str = unsafe { std::str::from_utf8_unchecked(INPUT) };
+    b.iter(|| {
+        str.lines()
+            .map(|line| line.parse::<u64>().unwrap())
+            .collect::<Vec<u64>>()
+    });
+}
+
+#[bench]
+fn bench_parse_02_bytes(b: &mut test::Bencher) {
     b.iter(|| {
         INPUT
             .split(|b| *b == '\n' as u8)
@@ -85,7 +95,17 @@ fn bench_parse_bytes(b: &mut test::Bencher) {
 }
 
 #[bench]
-fn bench_parse_bytes_unsafe(b: &mut test::Bencher) {
+fn bench_parse_03_bytes_flat_map(b: &mut test::Bencher) {
+    b.iter(|| {
+        INPUT
+            .split(|b| *b == '\n' as u8)
+            .flat_map(|line| unsafe { std::str::from_utf8_unchecked(line) }.parse::<u32>())
+            .collect::<Vec<u32>>()
+    });
+}
+
+#[bench]
+fn bench_parse_04_bytes_unsafe(b: &mut test::Bencher) {
     b.iter(|| {
         INPUT
             .split(|b| *b == '\n' as u8)
