@@ -70,7 +70,7 @@ fn bench_parse(b: &mut test::Bencher) {
 }
 
 #[bench]
-fn bench_bytes_parse(b: &mut test::Bencher) {
+fn bench_parse_bytes(b: &mut test::Bencher) {
     b.iter(|| {
         INPUT
             .split(|b| *b == '\n' as u8)
@@ -85,7 +85,7 @@ fn bench_bytes_parse(b: &mut test::Bencher) {
 }
 
 #[bench]
-fn bench_unsafe_bytes_parse(b: &mut test::Bencher) {
+fn bench_parse_bytes_unsafe(b: &mut test::Bencher) {
     b.iter(|| {
         INPUT
             .split(|b| *b == '\n' as u8)
