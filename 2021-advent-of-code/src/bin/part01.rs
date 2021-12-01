@@ -1,5 +1,5 @@
 fn main() {
-    let dat = std::str::from_utf8(include_bytes!("input.txt")).expect("bad input file!");
+    let dat = std::str::from_utf8(include_bytes!("input01.txt")).expect("bad input file!");
 
     let nums: Vec<u64> = dat
         .lines()
