@@ -1,19 +1,25 @@
 fn main() {
-    let dat = std::str::from_utf8(include_bytes!("input01.txt")).expect("bad input file!");
+    let example = parse(include_bytes!("example01.txt"));
+    println!("example: {:?}", solve(example));
+    let input = parse(include_bytes!("input01.txt"));
+    println!("input: {:?}", solve(input));
+}
 
-    let nums: Vec<u64> = dat
+fn parse(dat: &[u8]) -> Vec<u64> {
+    std::str::from_utf8(dat)
+        .expect("bad input file!")
         .lines()
         .map(|line| line.parse::<u64>().unwrap())
-        .collect();
+        .collect()
+}
 
-    let mut count = 0;
+fn solve(nums: Vec<u64>) -> (u64, u64) {
+    let mut simple_increases = 0;
     for i in 1..nums.len() {
         if nums[i] > nums[i - 1] {
-            count += 1;
+            simple_increases += 1;
         }
     }
-
-    println!("{}", count);
 
     let mut sums: Vec<u64> = Vec::new();
 
@@ -21,12 +27,12 @@ fn main() {
         sums.push(nums[i] + nums[i + 1] + nums[i + 2]);
     }
 
-    let mut count = 0;
+    let mut windowed_increases = 0;
     for i in 1..sums.len() {
         if sums[i] > sums[i - 1] {
-            count += 1;
+            windowed_increases += 1;
         }
     }
 
-    println!("{}", count);
+    (simple_increases, windowed_increases)
 }
