@@ -159,7 +159,7 @@ fn bench_parse_07_bytes_custom_u16(b: &mut test::Bencher) {
 }
 
 #[bench]
-fn bench_solve(b: &mut test::Bencher) {
+fn bench_solve_00(b: &mut test::Bencher) {
     let input = parse(INPUT);
 
     b.iter(|| {
@@ -168,10 +168,28 @@ fn bench_solve(b: &mut test::Bencher) {
 }
 
 #[bench]
-fn bench_solve_windowed(b: &mut test::Bencher) {
+fn bench_solve_01_windowed(b: &mut test::Bencher) {
     let input = parse(INPUT);
 
     b.iter(|| {
         solve_windowed(&input);
+    });
+}
+
+#[bench]
+fn bench_solve_02_windowed_sum(b: &mut test::Bencher) {
+    let input = parse(INPUT);
+
+    b.iter(|| {
+        let simple_increases = input.windows(2).filter(|w| w[1] > w[0]).count();
+
+        let windowed_increases = input
+            .windows(3)
+            .map(|w| w.iter().sum())
+            .collect::<Vec<u64>>()
+            .windows(2)
+            .filter(|w| w[1] > w[0])
+            .count();
+        (simple_increases, windowed_increases)
     });
 }
