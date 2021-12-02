@@ -159,6 +159,20 @@ fn bench_parse_07_bytes_custom_u16(b: &mut test::Bencher) {
 }
 
 #[bench]
+fn bench_parse_08_bytes_size_hint(b: &mut test::Bencher) {
+    b.iter(|| {
+        let mut vec: Vec<u64> = Vec::with_capacity(2000);
+        INPUT.split(|b| *b == '\n' as u8).for_each(|line| {
+            let n = line
+                .iter()
+                .fold(0 as u64, |n, b| n * 10 + (b - ('0' as u8)) as u64);
+
+            vec.push(n);
+        })
+    });
+}
+
+#[bench]
 fn bench_solve_00(b: &mut test::Bencher) {
     let input = parse(INPUT);
 
