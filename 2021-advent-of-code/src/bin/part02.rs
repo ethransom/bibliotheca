@@ -9,8 +9,15 @@ enum Move {
 }
 
 fn main() {
+    println!("Example:");
+    solve(EXAMPLE);
+    println!("Input:");
+    solve(INPUT);
+}
+
+fn solve(input: &[u8]) {
     let mut commands: Vec<(Move, u64)> = Vec::new();
-    std::str::from_utf8(INPUT)
+    std::str::from_utf8(input)
         .expect("bad input file!")
         .lines()
         .for_each(|line| {
@@ -34,6 +41,17 @@ fn main() {
             (Move::Up, a) => (x, y - a),
             (Move::Down, a) => (x, y + a),
         });
+
+    println!("{:?}", depth * distance);
+
+    let (depth, distance, _aim) = commands.iter().fold(
+        (0u64, 0u64, 0u64),
+        |(depth, dist, aim), command| match command {
+            (Move::Forward, x) => (depth + x, dist + aim * x, aim),
+            (Move::Up, x) => (depth, dist, aim - x),
+            (Move::Down, x) => (depth, dist, aim + x),
+        },
+    );
 
     println!("{:?}", depth * distance);
 }
