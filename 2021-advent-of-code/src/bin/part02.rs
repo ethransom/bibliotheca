@@ -20,6 +20,14 @@ enum Move {
 }
 
 fn solve(input: &[u8]) -> (u64, u64) {
+    let commands = parse(input);
+
+    // println!("{:?}", commands);
+
+    (part1(&commands), part2(&commands))
+}
+
+fn parse(input: &[u8]) -> Vec<(Move, u64)> {
     let mut commands: Vec<(Move, u64)> = Vec::new();
     std::str::from_utf8(input)
         .expect("bad input file!")
@@ -35,10 +43,7 @@ fn solve(input: &[u8]) -> (u64, u64) {
             let amt = parts[1].parse::<u64>().expect("couldn't parse");
             commands.push((dir, amt));
         });
-
-    // println!("{:?}", commands);
-
-    (part1(&commands), part2(&commands))
+    commands
 }
 
 fn part1(commands: &Vec<(Move, u64)>) -> u64 {
@@ -78,4 +83,9 @@ fn bench_current(b: &mut test::Bencher) {
     b.iter(|| {
         assert_eq!(solve(INPUT), (1990000, 1975421260));
     });
+}
+
+#[bench]
+fn bench_parse_00_original(b: &mut test::Bencher) {
+    b.iter(|| parse(INPUT));
 }
