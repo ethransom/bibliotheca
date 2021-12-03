@@ -4,14 +4,18 @@ const EXAMPLE: &[u8] = include_bytes!("example03.txt");
 const INPUT: &[u8] = include_bytes!("input03.txt");
 
 fn main() {
-    let example: Vec<&[u8]> = EXAMPLE.split(|b| *b == '\n' as u8).collect();
-    let input: Vec<&[u8]> = INPUT.split(|b| *b == '\n' as u8).collect();
-    println!("EXAMPLE:");
-    println!("\t1: {}", part1(&example));
-    println!("\t2: {}", part2(&example));
-    println!("INPUT:");
-    println!("\t1: {}", part1(&input));
-    println!("\t2: {}", part2(&input));
+    println!("Example:");
+    let (one, two) = solve(EXAMPLE);
+    println!("\tpart1: {}\n\tpart2: {}", one, two);
+    println!("Input:");
+    let (one, two) = solve(INPUT);
+    println!("\tpart1: {}\n\tpart2: {}", one, two);
+}
+
+fn solve(input: &[u8]) -> (u32, u32) {
+    let lines: Vec<&[u8]> = input.split(|b| *b == '\n' as u8).collect();
+
+    (part1(&lines), part2(&lines))
 }
 
 fn part1(lines: &[&[u8]]) -> u32 {
@@ -80,9 +84,7 @@ fn prune(input: &Vec<&[u8]>, keep: Keep) -> u32 {
 
 #[test]
 fn it_handles_the_example_input() {
-    let example: Vec<&[u8]> = EXAMPLE.split(|b| *b == '\n' as u8).collect();
-    assert_eq!(part1(&example), 198);
-    assert_eq!(part2(&example), 230);
+    assert_eq!(solve(EXAMPLE), (198, 230));
 }
 
 extern crate test;
@@ -90,8 +92,6 @@ extern crate test;
 #[bench]
 fn bench_current(b: &mut test::Bencher) {
     b.iter(|| {
-        let input: Vec<&[u8]> = INPUT.split(|b| *b == '\n' as u8).collect();
-        assert_eq!(part1(&input), 3923414);
-        assert_eq!(part2(&input), 5852595);
+        assert_eq!(solve(INPUT), (3923414, 5852595));
     });
 }
