@@ -218,47 +218,7 @@ fn bench_solve_02_windowed_sum(b: &mut test::Bencher) {
 }
 
 #[bench]
-fn bench_solve_03_windowed_sum_slice(b: &mut test::Bencher) {
-    let input = parse(INPUT);
-    let nums: &[u64] = &input;
-
-    b.iter(|| {
-        let simple_increases = nums.windows(2).filter(|w| w[1] > w[0]).count();
-
-        let windowed_increases = nums
-            .windows(3)
-            .map(|w| w.iter().sum())
-            .collect::<Vec<u64>>()
-            .windows(2)
-            .filter(|w| w[1] > w[0])
-            .count();
-
-        (simple_increases, windowed_increases)
-    });
-}
-
-#[bench]
-fn bench_solve_04_windowed_slice(b: &mut test::Bencher) {
-    let input = parse(INPUT);
-    let nums: &[u64] = &input;
-
-    b.iter(|| {
-        let simple_increases = nums.windows(2).filter(|w| w[1] > w[0]).count();
-
-        let windowed_increases = nums
-            .windows(3)
-            .map(|w| w[0] + w[1] + w[2])
-            .collect::<Vec<u64>>()
-            .windows(2)
-            .filter(|w| w[1] > w[0])
-            .count();
-
-        (simple_increases, windowed_increases)
-    });
-}
-
-#[bench]
-fn bench_solve_05_incredibly_fast(b: &mut test::Bencher) {
+fn bench_solve_03_incredibly_fast(b: &mut test::Bencher) {
     let nums = parse(INPUT);
 
     b.iter(|| {
