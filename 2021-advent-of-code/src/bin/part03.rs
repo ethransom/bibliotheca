@@ -1,3 +1,5 @@
+#![feature(test)]
+
 const EXAMPLE: &[u8] = include_bytes!("example03.txt");
 const INPUT: &[u8] = include_bytes!("input03.txt");
 
@@ -74,4 +76,22 @@ fn prune(input: &Vec<&[u8]>, keep: Keep) -> u32 {
         2,
     )
     .expect("not a binary number")
+}
+
+#[test]
+fn it_handles_the_example_input() {
+    let example: Vec<&[u8]> = EXAMPLE.split(|b| *b == '\n' as u8).collect();
+    assert_eq!(part1(&example), 198);
+    assert_eq!(part2(&example), 230);
+}
+
+extern crate test;
+
+#[bench]
+fn bench_current(b: &mut test::Bencher) {
+    b.iter(|| {
+        let input: Vec<&[u8]> = INPUT.split(|b| *b == '\n' as u8).collect();
+        assert_eq!(part1(&input), 3923414);
+        assert_eq!(part2(&input), 5852595);
+    });
 }
