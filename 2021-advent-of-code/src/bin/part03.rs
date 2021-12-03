@@ -13,9 +13,13 @@ fn main() {
 }
 
 fn solve(input: &[u8]) -> (u32, u32) {
-    let lines: Vec<&[u8]> = input.split(|b| *b == '\n' as u8).collect();
+    let lines = parse(input);
 
     (part1(&lines), part2(&lines))
+}
+
+fn parse(input: &[u8]) -> Vec<&[u8]> {
+    input.split(|b| *b == '\n' as u8).collect()
 }
 
 fn part1(lines: &[&[u8]]) -> u32 {
@@ -94,4 +98,15 @@ fn bench_current(b: &mut test::Bencher) {
     b.iter(|| {
         assert_eq!(solve(INPUT), (3923414, 5852595));
     });
+}
+
+#[bench]
+fn bench_parse_00_original(b: &mut test::Bencher) {
+    b.iter(|| parse(INPUT));
+}
+
+#[bench]
+fn bench_solve_00_original(b: &mut test::Bencher) {
+    let lines = parse(INPUT);
+    b.iter(|| (part1(&lines), part2(&lines)));
 }
