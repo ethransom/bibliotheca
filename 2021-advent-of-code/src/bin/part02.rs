@@ -89,3 +89,9 @@ fn bench_current(b: &mut test::Bencher) {
 fn bench_parse_00_original(b: &mut test::Bencher) {
     b.iter(|| parse(INPUT));
 }
+
+#[bench]
+fn bench_solve_00_original(b: &mut test::Bencher) {
+    let commands = parse(INPUT);
+    b.iter(|| (part1(&commands), part2(&commands)));
+}
