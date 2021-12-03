@@ -1,4 +1,5 @@
 #![feature(test)]
+#![feature(array_windows)]
 
 const EXAMPLE: &[u8] = include_bytes!("example01.txt");
 const INPUT: &[u8] = include_bytes!("input01.txt");
@@ -221,7 +222,25 @@ fn bench_solve_02_windowed_sum(b: &mut test::Bencher) {
 }
 
 #[bench]
-fn bench_solve_03_incredibly_fast(b: &mut test::Bencher) {
+fn bench_solve_03_array_windows(b: &mut test::Bencher) {
+    let input = parse(INPUT);
+
+    b.iter(|| {
+        let simple_increases = input.array_windows::<2>().filter(|[l, r]| r > l).count();
+
+        let windowed_increases = input
+            .array_windows::<3>()
+            .map(|[a, b, c]| a + b + c)
+            .collect::<Vec<u64>>()
+            .array_windows::<2>()
+            .filter(|[l, r]| r > l)
+            .count();
+        (simple_increases, windowed_increases)
+    });
+}
+
+#[bench]
+fn bench_solve_04_incredibly_fast(b: &mut test::Bencher) {
     let nums = parse(INPUT);
 
     b.iter(|| {
