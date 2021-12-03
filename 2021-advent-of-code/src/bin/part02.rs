@@ -29,20 +29,23 @@ fn solve(input: &[u8]) -> (u64, u64) {
 
 fn parse(input: &[u8]) -> Vec<(Move, u64)> {
     let mut commands: Vec<(Move, u64)> = Vec::new();
-    std::str::from_utf8(input)
-        .expect("bad input file!")
-        .lines()
-        .for_each(|line| {
-            let parts: Vec<&str> = line.split(' ').take(2).collect();
-            let dir = match parts[0] {
-                "forward" => Move::Forward,
-                "up" => Move::Up,
-                "down" => Move::Down,
-                _ => panic!("unknown command"),
-            };
-            let amt = parts[1].parse::<u64>().expect("couldn't parse");
-            commands.push((dir, amt));
-        });
+    input.split(|b| *b == '\n' as u8).for_each(|line| {
+        let split = line
+            .iter()
+            .position(|&r| r == ' ' as u8)
+            .expect("expected space as delimiter");
+        let dir = match &line[0..split] {
+            b"forward" => Move::Forward,
+            b"up" => Move::Up,
+            b"down" => Move::Down,
+            _ => panic!("unknown command"),
+        };
+        let amt = std::str::from_utf8(&line[split + 1..])
+            .expect("bad input file!")
+            .parse::<u64>()
+            .expect("couldn't parse");
+        commands.push((dir, amt));
+    });
     commands
 }
 
@@ -87,7 +90,49 @@ fn bench_current(b: &mut test::Bencher) {
 
 #[bench]
 fn bench_parse_00_original(b: &mut test::Bencher) {
-    b.iter(|| parse(INPUT));
+    b.iter(|| {
+        let mut commands: Vec<(Move, u64)> = Vec::new();
+        std::str::from_utf8(INPUT)
+            .expect("bad input file!")
+            .lines()
+            .for_each(|line| {
+                let parts: Vec<&str> = line.split(' ').take(2).collect();
+                let dir = match parts[0] {
+                    "forward" => Move::Forward,
+                    "up" => Move::Up,
+                    "down" => Move::Down,
+                    _ => panic!("unknown command"),
+                };
+                let amt = parts[1].parse::<u64>().expect("couldn't parse");
+                commands.push((dir, amt));
+            });
+        commands
+    });
+}
+
+#[bench]
+fn bench_parse_01_bytes(b: &mut test::Bencher) {
+    b.iter(|| {
+        let mut commands: Vec<(Move, u64)> = Vec::new();
+        INPUT.split(|b| *b == '\n' as u8).for_each(|line| {
+            let split = line
+                .iter()
+                .position(|&r| r == ' ' as u8)
+                .expect("expected space as delimiter");
+            let dir = match &line[0..split] {
+                b"forward" => Move::Forward,
+                b"up" => Move::Up,
+                b"down" => Move::Down,
+                _ => panic!("unknown command"),
+            };
+            let amt = std::str::from_utf8(&line[split + 1..])
+                .expect("bad input file!")
+                .parse::<u64>()
+                .expect("couldn't parse");
+            commands.push((dir, amt));
+        });
+        commands
+    });
 }
 
 #[bench]
