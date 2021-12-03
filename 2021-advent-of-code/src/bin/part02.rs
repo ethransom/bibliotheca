@@ -21,8 +21,8 @@ fn solve(input: &[u8]) {
         .expect("bad input file!")
         .lines()
         .for_each(|line| {
-            let parts: Vec<&str> = line.split(" ").take(2).collect();
-            let dir = match &parts[0][..] {
+            let parts: Vec<&str> = line.split(' ').take(2).collect();
+            let dir = match parts[0] {
                 "forward" => Move::Forward,
                 "up" => Move::Up,
                 "down" => Move::Down,
