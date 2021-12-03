@@ -7,11 +7,9 @@ fn main() {
     let example = parse(EXAMPLE);
     println!("example:");
     println!("\t{:?}", solve(&example));
-    println!("\t{:?}", solve_windowed(&example));
     let input = parse(INPUT);
     println!("input:");
     println!("\t{:?}", solve(&input));
-    println!("\t{:?}", solve_windowed(&input));
 }
 
 fn parse(dat: &[u8]) -> Vec<u64> {
@@ -22,64 +20,8 @@ fn parse(dat: &[u8]) -> Vec<u64> {
         .collect()
 }
 
-pub fn solve(nums: &[u64]) -> (u64, u64) {
-    let mut simple_increases = 0;
-    for i in 1..nums.len() {
-        if nums[i] > nums[i - 1] {
-            simple_increases += 1;
-        }
-    }
-
-    let mut sums: Vec<u64> = Vec::new();
-
-    for i in 0..nums.len() - 2 {
-        sums.push(nums[i] + nums[i + 1] + nums[i + 2]);
-    }
-
-    let mut windowed_increases = 0;
-    for i in 1..sums.len() {
-        if sums[i] > sums[i - 1] {
-            windowed_increases += 1;
-        }
-    }
-
-    (simple_increases, windowed_increases)
-}
-
-pub fn solve_windowed(nums: &Vec<u64>) -> (usize, usize) {
-    let simple_increases = nums.windows(2).filter(|w| w[1] > w[0]).count();
-
-    let windowed_increases = nums
-        .windows(3)
-        .map(|w| w[0] + w[1] + w[2])
-        .collect::<Vec<u64>>()
-        .windows(2)
-        .filter(|w| w[1] > w[0])
-        .count();
-
-    (simple_increases, windowed_increases)
-}
-
-// ????????????????????????????????????????????????????????????????????????????
-// ??                                                                        ??
-// ??  Why in the world is this significantly faster than passing a vector?  ??
-// ??                                                                        ??
-// ????????????????????????????????????????????????????????????????????????????
-pub fn solve_windowed_slice(nums: &[u64]) -> (usize, usize) {
-    let simple_increases = nums.windows(2).filter(|w| w[1] > w[0]).count();
-
-    let windowed_increases = nums
-        .windows(3)
-        .map(|w| w[0] + w[1] + w[2])
-        .collect::<Vec<u64>>()
-        .windows(2)
-        .filter(|w| w[1] > w[0])
-        .count();
-
-    (simple_increases, windowed_increases)
-}
-
-pub fn solve_windowed_sum_slice(nums: &[u64]) -> (usize, usize) {
+#[inline(always)]
+fn solve(nums: &[u64]) -> (usize, usize) {
     let simple_increases = nums.windows(2).filter(|w| w[1] > w[0]).count();
 
     let windowed_increases = nums
@@ -206,20 +148,54 @@ fn bench_parse_08_bytes_size_hint(b: &mut test::Bencher) {
 }
 
 #[bench]
-fn bench_solve_00(b: &mut test::Bencher) {
-    let input = parse(INPUT);
+fn bench_solve_current(b: &mut test::Bencher) {
+    let nums = parse(INPUT);
+
+    b.iter(|| solve(&nums));
+}
+
+#[bench]
+fn bench_solve_00_original(b: &mut test::Bencher) {
+    let nums = parse(INPUT);
 
     b.iter(|| {
-        solve(&input);
+        let mut simple_increases = 0;
+        for i in 1..nums.len() {
+            if nums[i] > nums[i - 1] {
+                simple_increases += 1;
+            }
+        }
+        let mut sums: Vec<u64> = Vec::new();
+        for i in 0..nums.len() - 2 {
+            sums.push(nums[i] + nums[i + 1] + nums[i + 2]);
+        }
+        let mut windowed_increases = 0;
+        for i in 1..sums.len() {
+            if sums[i] > sums[i - 1] {
+                windowed_increases += 1;
+            }
+        }
+
+        (simple_increases, windowed_increases)
     });
 }
 
 #[bench]
 fn bench_solve_01_windowed(b: &mut test::Bencher) {
-    let input = parse(INPUT);
+    let nums = parse(INPUT);
 
     b.iter(|| {
-        solve_windowed(&input);
+        let simple_increases = nums.windows(2).filter(|w| w[1] > w[0]).count();
+
+        let windowed_increases = nums
+            .windows(3)
+            .map(|w| w[0] + w[1] + w[2])
+            .collect::<Vec<u64>>()
+            .windows(2)
+            .filter(|w| w[1] > w[0])
+            .count();
+
+        (simple_increases, windowed_increases)
     });
 }
 
@@ -244,17 +220,62 @@ fn bench_solve_02_windowed_sum(b: &mut test::Bencher) {
 #[bench]
 fn bench_solve_03_windowed_sum_slice(b: &mut test::Bencher) {
     let input = parse(INPUT);
+    let nums: &[u64] = &input;
 
     b.iter(|| {
-        solve_windowed_sum_slice(&input);
+        let simple_increases = nums.windows(2).filter(|w| w[1] > w[0]).count();
+
+        let windowed_increases = nums
+            .windows(3)
+            .map(|w| w.iter().sum())
+            .collect::<Vec<u64>>()
+            .windows(2)
+            .filter(|w| w[1] > w[0])
+            .count();
+
+        (simple_increases, windowed_increases)
     });
 }
 
 #[bench]
 fn bench_solve_04_windowed_slice(b: &mut test::Bencher) {
     let input = parse(INPUT);
+    let nums: &[u64] = &input;
 
     b.iter(|| {
-        solve_windowed_slice(&input);
+        let simple_increases = nums.windows(2).filter(|w| w[1] > w[0]).count();
+
+        let windowed_increases = nums
+            .windows(3)
+            .map(|w| w[0] + w[1] + w[2])
+            .collect::<Vec<u64>>()
+            .windows(2)
+            .filter(|w| w[1] > w[0])
+            .count();
+
+        (simple_increases, windowed_increases)
+    });
+}
+
+#[bench]
+fn bench_solve_05_incredibly_fast(b: &mut test::Bencher) {
+    let nums = parse(INPUT);
+
+    b.iter(|| {
+        let mut simple_increases = 0;
+        for i in 1..nums.len() {
+            if nums[i] > nums[i - 1] {
+                simple_increases += 1;
+            }
+        }
+        let windowed_increases = nums
+            .windows(3)
+            .map(|w| w[0] + w[1] + w[2])
+            .collect::<Vec<u64>>()
+            .windows(2)
+            .filter(|w| w[1] > w[0])
+            .count();
+
+        (simple_increases, windowed_increases)
     });
 }
