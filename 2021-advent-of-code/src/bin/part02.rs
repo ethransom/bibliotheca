@@ -1,5 +1,16 @@
+#![feature(test)]
+
 const EXAMPLE: &[u8] = include_bytes!("example02.txt");
 const INPUT: &[u8] = include_bytes!("input02.txt");
+
+fn main() {
+    println!("Example:");
+    let (one, two) = solve(EXAMPLE);
+    println!("\tpart1: {}\n\tpart2: {}", one, two);
+    println!("Input:");
+    let (one, two) = solve(INPUT);
+    println!("\tpart1: {}\n\tpart2: {}", one, two);
+}
 
 #[derive(Debug)]
 enum Move {
@@ -8,14 +19,7 @@ enum Move {
     Down,
 }
 
-fn main() {
-    println!("Example:");
-    solve(EXAMPLE);
-    println!("Input:");
-    solve(INPUT);
-}
-
-fn solve(input: &[u8]) {
+fn solve(input: &[u8]) -> (u64, u64) {
     let mut commands: Vec<(Move, u64)> = Vec::new();
     std::str::from_utf8(input)
         .expect("bad input file!")
@@ -34,6 +38,10 @@ fn solve(input: &[u8]) {
 
     // println!("{:?}", commands);
 
+    (part1(&commands), part2(&commands))
+}
+
+fn part1(commands: &Vec<(Move, u64)>) -> u64 {
     let (depth, distance) = commands
         .iter()
         .fold((0u64, 0u64), |(x, y), command| match command {
@@ -42,8 +50,10 @@ fn solve(input: &[u8]) {
             (Move::Down, a) => (x, y + a),
         });
 
-    println!("{:?}", depth * distance);
+    depth * distance
+}
 
+fn part2(commands: &Vec<(Move, u64)>) -> u64 {
     let (depth, distance, _aim) = commands.iter().fold(
         (0u64, 0u64, 0u64),
         |(depth, dist, aim), command| match command {
@@ -53,5 +63,19 @@ fn solve(input: &[u8]) {
         },
     );
 
-    println!("{:?}", depth * distance);
+    depth * distance
+}
+
+#[test]
+fn it_handles_the_example_input() {
+    assert_eq!(solve(EXAMPLE), (150, 900));
+}
+
+extern crate test;
+
+#[bench]
+fn bench_current(b: &mut test::Bencher) {
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (1990000, 1975421260));
+    });
 }
