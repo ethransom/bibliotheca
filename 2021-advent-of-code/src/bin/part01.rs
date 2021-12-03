@@ -84,7 +84,7 @@ pub fn solve_windowed_sum_slice(nums: &[u64]) -> (usize, usize) {
 
     let windowed_increases = nums
         .windows(3)
-        .map(|w| w[0] + w[1] + w[2])
+        .map(|w| w.iter().sum())
         .collect::<Vec<u64>>()
         .windows(2)
         .filter(|w| w[1] > w[0])
