@@ -4,24 +4,24 @@ const EXAMPLE: &[u8] = include_bytes!("example01.txt");
 const INPUT: &[u8] = include_bytes!("input01.txt");
 
 fn main() {
-    let example = parse(EXAMPLE);
     println!("example:");
-    println!("\t{:?}", solve(&example));
-    let input = parse(INPUT);
+    println!("\t{:?}", solve(EXAMPLE));
     println!("input:");
-    println!("\t{:?}", solve(&input));
+    println!("\t{:?}", solve(INPUT));
 }
 
 fn parse(dat: &[u8]) -> Vec<u64> {
-    std::str::from_utf8(dat)
-        .expect("bad input file!")
-        .lines()
-        .map(|line| line.parse::<u64>().unwrap())
-        .collect()
+    dat.split(|b| *b == '\n' as u8)
+        .map(|line| {
+            line.iter()
+                .fold(0 as u64, |n, b| n * 10 + (b - ('0' as u8)) as u64)
+        })
+        .collect::<Vec<u64>>()
 }
 
 #[inline(always)]
-fn solve(nums: &[u64]) -> (usize, usize) {
+fn solve(input: &[u8]) -> (usize, usize) {
+    let nums = parse(input);
     let simple_increases = nums.windows(2).filter(|w| w[1] > w[0]).count();
 
     let windowed_increases = nums
@@ -35,7 +35,17 @@ fn solve(nums: &[u64]) -> (usize, usize) {
     (simple_increases, windowed_increases)
 }
 
+#[test]
+fn it_handles_the_example_input() {
+    assert_eq!(solve(EXAMPLE), (7, 5));
+}
+
 extern crate test;
+
+#[bench]
+fn bench_current(b: &mut test::Bencher) {
+    b.iter(|| assert_eq!(solve(INPUT), (1387, 1362)));
+}
 
 #[bench]
 fn bench_parse_00(b: &mut test::Bencher) {
@@ -145,13 +155,6 @@ fn bench_parse_08_bytes_size_hint(b: &mut test::Bencher) {
             vec.push(n);
         })
     });
-}
-
-#[bench]
-fn bench_solve_current(b: &mut test::Bencher) {
-    let nums = parse(INPUT);
-
-    b.iter(|| solve(&nums));
 }
 
 #[bench]
