@@ -22,7 +22,7 @@ fn parse(dat: &[u8]) -> Vec<u64> {
         .collect()
 }
 
-pub fn solve(nums: &Vec<u64>) -> (u64, u64) {
+pub fn solve(nums: &[u64]) -> (u64, u64) {
     let mut simple_increases = 0;
     for i in 1..nums.len() {
         if nums[i] > nums[i - 1] {
@@ -47,6 +47,39 @@ pub fn solve(nums: &Vec<u64>) -> (u64, u64) {
 }
 
 pub fn solve_windowed(nums: &Vec<u64>) -> (usize, usize) {
+    let simple_increases = nums.windows(2).filter(|w| w[1] > w[0]).count();
+
+    let windowed_increases = nums
+        .windows(3)
+        .map(|w| w[0] + w[1] + w[2])
+        .collect::<Vec<u64>>()
+        .windows(2)
+        .filter(|w| w[1] > w[0])
+        .count();
+
+    (simple_increases, windowed_increases)
+}
+
+// ????????????????????????????????????????????????????????????????????????????
+// ??                                                                        ??
+// ??  Why in the world is this significantly faster than passing a vector?  ??
+// ??                                                                        ??
+// ????????????????????????????????????????????????????????????????????????????
+pub fn solve_windowed_slice(nums: &[u64]) -> (usize, usize) {
+    let simple_increases = nums.windows(2).filter(|w| w[1] > w[0]).count();
+
+    let windowed_increases = nums
+        .windows(3)
+        .map(|w| w[0] + w[1] + w[2])
+        .collect::<Vec<u64>>()
+        .windows(2)
+        .filter(|w| w[1] > w[0])
+        .count();
+
+    (simple_increases, windowed_increases)
+}
+
+pub fn solve_windowed_sum_slice(nums: &[u64]) -> (usize, usize) {
     let simple_increases = nums.windows(2).filter(|w| w[1] > w[0]).count();
 
     let windowed_increases = nums
@@ -205,5 +238,23 @@ fn bench_solve_02_windowed_sum(b: &mut test::Bencher) {
             .filter(|w| w[1] > w[0])
             .count();
         (simple_increases, windowed_increases)
+    });
+}
+
+#[bench]
+fn bench_solve_03_windowed_sum_slice(b: &mut test::Bencher) {
+    let input = parse(INPUT);
+
+    b.iter(|| {
+        solve_windowed_sum_slice(&input);
+    });
+}
+
+#[bench]
+fn bench_solve_04_windowed_slice(b: &mut test::Bencher) {
+    let input = parse(INPUT);
+
+    b.iter(|| {
+        solve_windowed_slice(&input);
     });
 }
