@@ -76,18 +76,14 @@ fn prune(width: usize, input: &Vec<u32>, keep: Keep) -> u32 {
         let mask = 1 << (width - 1 - i);
 
         let ones = kept.iter().filter(|num| (*num & mask) > 0).count();
-        let majority = if ones * 2 >= kept.len() { 1 } else { 0 };
+        let are_ones_majority: bool = ones * 2 >= kept.len();
+        let should_keep_ones: bool = match keep {
+            Keep::Majority => are_ones_majority,
+            Keep::Minority => !are_ones_majority,
+        };
         let num = kept
             .iter_mut()
-            .partition_in_place(|num| match (majority, &keep) {
-                (1, Keep::Majority) => (*num & mask) > 0,
-                (1, Keep::Minority) => (*num & mask) == 0,
-                (0, Keep::Majority) => (*num & mask) == 0,
-                (0, Keep::Minority) => (*num & mask) > 0,
-                _ => unimplemented!(
-                    "just gotta get this working then we can eliminate this match :("
-                ),
-            });
+            .partition_in_place(|num| ((*num & mask) > 0) == should_keep_ones);
         kept = &mut kept[0..num];
         if kept.len() == 1 {
             return kept[0];
@@ -102,7 +98,7 @@ fn it_handles_the_example_input() {
 }
 
 #[bench]
-fn bench_current(b: &mut test::Bencher) {
+fn bench_02_current(b: &mut test::Bencher) {
     b.iter(|| {
         assert_eq!(solve(INPUT), (3923414, 5852595));
     });
@@ -127,15 +123,17 @@ fn bench_parse_02_custom_ints(b: &mut test::Bencher) {
 }
 
 #[bench]
-fn bench_solve_00_original(b: &mut test::Bencher) {
+fn bench_00_original(b: &mut test::Bencher) {
     b.iter(|| {
         let lines = parse_original(INPUT);
         (part1_original(&lines), part2_original(&lines))
     });
 }
 
+// TODO: Consider deleting this? Do we really need a comprehensive, snapshot benchmark?
+//       Isn't this covered by all the snapshot unit benchmarks?
 #[bench]
-fn bench_solve_01_integers(b: &mut test::Bencher) {
+fn bench_01_integers(b: &mut test::Bencher) {
     fn part2(width: usize, input: &Vec<u32>) -> u32 {
         let oxygen = prune(width, input, Keep::Majority);
         let co2 = prune(width, input, Keep::Minority);
@@ -263,7 +261,76 @@ fn bench_part1_00_original(b: &mut test::Bencher) {
 }
 
 #[bench]
-fn bench_part2_02_next(b: &mut test::Bencher) {
+fn bench_part2_03_partition_very_fast_pred(b: &mut test::Bencher) {
+    fn part2(width: usize, input: &Vec<u32>) -> u32 {
+        let oxygen = prune(width, input, Keep::Majority);
+
+        let co2 = prune(width, input, Keep::Minority);
+
+        oxygen * co2
+    }
+
+    fn prune(width: usize, input: &Vec<u32>, keep: Keep) -> u32 {
+        let mut values = input.clone();
+        let mut kept = &mut values[..];
+        for i in 0..width {
+            let mask = 1 << (width - 1 - i);
+            let ones = kept.iter().filter(|num| (*num & mask) > 0).count();
+            let are_ones_majority: bool = ones * 2 >= kept.len();
+            let should_keep_ones: bool = match keep {
+                Keep::Majority => are_ones_majority,
+                Keep::Minority => !are_ones_majority,
+            };
+            let num = kept
+                .iter_mut()
+                .partition_in_place(|num| ((*num & mask) > 0) == should_keep_ones);
+            kept = &mut kept[0..num];
+            if kept.len() == 1 {
+                return kept[0];
+            }
+        }
+        panic!("WHOOPS");
+    }
+    let (width, nums) = parse(INPUT);
+    b.iter(|| assert_eq!(part2(width, &nums), 5852595));
+}
+
+#[bench]
+fn bench_part2_03_partition_fast_pred(b: &mut test::Bencher) {
+    fn part2(width: usize, input: &Vec<u32>) -> u32 {
+        let oxygen = prune(width, input, Keep::Majority);
+
+        let co2 = prune(width, input, Keep::Minority);
+
+        oxygen * co2
+    }
+
+    fn prune(width: usize, input: &Vec<u32>, keep: Keep) -> u32 {
+        let mut values = input.clone();
+
+        let mut kept = &mut values[..];
+        for i in 0..width {
+            let mask = 1 << (width - 1 - i);
+
+            let ones = kept.iter().filter(|num| (*num & mask) > 0).count();
+            let majority = if ones * 2 >= kept.len() { 1 } else { 0 };
+            let num = kept.iter_mut().partition_in_place(|num| match keep {
+                Keep::Majority => majority == ((*num & mask) > 0) as u32,
+                Keep::Minority => majority != ((*num & mask) > 0) as u32,
+            });
+            kept = &mut kept[0..num];
+            if kept.len() == 1 {
+                return kept[0];
+            }
+        }
+        panic!("WHOOPS");
+    }
+    let (width, nums) = parse(INPUT);
+    b.iter(|| assert_eq!(part2(width, &nums), 5852595));
+}
+
+#[bench]
+fn bench_part2_02_partition_in_place(b: &mut test::Bencher) {
     fn part2(width: usize, input: &Vec<u32>) -> u32 {
         let oxygen = prune(width, input, Keep::Majority);
 
