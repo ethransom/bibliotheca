@@ -136,6 +136,33 @@ fn bench_parse_01_bytes(b: &mut test::Bencher) {
 }
 
 #[bench]
+fn bench_parse_02_bytes_map(b: &mut test::Bencher) {
+    // largely a failed experiment, seems slightly slower
+    b.iter(|| {
+        INPUT
+            .split(|b| *b == '\n' as u8)
+            .map(|line| {
+                let split = line
+                    .iter()
+                    .position(|&r| r == ' ' as u8)
+                    .expect("expected space as delimiter");
+                let dir = match &line[0..split] {
+                    b"forward" => Move::Forward,
+                    b"up" => Move::Up,
+                    b"down" => Move::Down,
+                    _ => panic!("unknown command"),
+                };
+                let amt = std::str::from_utf8(&line[split + 1..])
+                    .expect("bad input file!")
+                    .parse::<u64>()
+                    .expect("couldn't parse");
+                (dir, amt)
+            })
+            .collect::<Vec<(Move, u64)>>()
+    });
+}
+
+#[bench]
 fn bench_solve_00_original(b: &mut test::Bencher) {
     let commands = parse(INPUT);
     b.iter(|| (part1(&commands), part2(&commands)));
