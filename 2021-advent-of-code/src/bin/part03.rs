@@ -106,6 +106,32 @@ fn bench_parse_00_original(b: &mut test::Bencher) {
 }
 
 #[bench]
+fn bench_parse_01_str_ints(b: &mut test::Bencher) {
+    b.iter(|| {
+        INPUT
+            .split(|b| *b == '\n' as u8)
+            .map(|line| {
+                u32::from_str_radix(std::str::from_utf8(line).expect("not a string"), 2)
+                    .expect("not a binary number")
+            })
+            .collect::<Vec<u32>>()
+    });
+}
+
+#[bench]
+fn bench_parse_02_custom_ints(b: &mut test::Bencher) {
+    b.iter(|| {
+        INPUT
+            .split(|b| *b == '\n' as u8)
+            .map(|line| {
+                line.iter()
+                    .fold(0u32, |acc, b| acc << 1 + (*b == '1' as u8) as u32)
+            })
+            .collect::<Vec<u32>>()
+    });
+}
+
+#[bench]
 fn bench_solve_00_original(b: &mut test::Bencher) {
     let lines = parse(INPUT);
     b.iter(|| (part1(&lines), part2(&lines)));
