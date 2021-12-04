@@ -22,17 +22,18 @@ fn solve(input: &[u8]) -> (u32, u32) {
 }
 
 fn parse(input: &[u8]) -> (usize, Vec<u32>) {
-    let lines = input
-        .split(|b| *b == '\n' as u8)
-        .map(|line| {
-            line.iter().fold(0u32, |acc, b| {
-                let bit = (*b == '1' as u8) as u32;
-                (acc << 1) + bit
-            })
-        })
-        .collect::<Vec<u32>>();
-    dbg!(input.len(), lines.len());
-    ((input.len() + 1) / lines.len() - 1, lines)
+    let mut nums: Vec<u32> = Vec::with_capacity(1001);
+    let mut n = 0u32;
+    for byte in input {
+        if *byte == '\n' as u8 {
+            nums.push(n);
+            n = 0;
+            continue;
+        }
+        let bit = (*byte == '1' as u8) as u32;
+        n = (n << 1) + bit;
+    }
+    ((input.len() + 1) / nums.len() - 1, nums)
 }
 
 fn part1(width: usize, nums: &[u32]) -> u32 {
@@ -119,6 +120,56 @@ fn bench_parse_01_str_ints(b: &mut test::Bencher) {
 
 #[bench]
 fn bench_parse_02_custom_ints(b: &mut test::Bencher) {
+    fn parse(input: &[u8]) -> (usize, Vec<u32>) {
+        let lines = input
+            .split(|b| *b == '\n' as u8)
+            .map(|line| {
+                line.iter().fold(0u32, |acc, b| {
+                    let bit = (*b == '1' as u8) as u32;
+                    (acc << 1) + bit
+                })
+            })
+            .collect::<Vec<u32>>();
+        ((input.len() + 1) / lines.len() - 1, lines)
+    }
+    b.iter(|| parse(INPUT));
+}
+
+#[bench]
+fn bench_parse_03_fucking_handrolled(b: &mut test::Bencher) {
+    fn parse(input: &[u8]) -> (usize, Vec<u32>) {
+        let mut nums: Vec<u32> = Vec::new();
+        let mut n = 0u32;
+        for byte in input {
+            if *byte == '\n' as u8 {
+                nums.push(n);
+                n = 0;
+                continue;
+            }
+            let bit = (*byte == '1' as u8) as u32;
+            n = (n << 1) + bit;
+        }
+        ((input.len() + 1) / nums.len() - 1, nums)
+    }
+    b.iter(|| parse(INPUT));
+}
+
+#[bench]
+fn bench_parse_03_fucking_handrolled_capacity_hint(b: &mut test::Bencher) {
+    fn parse(input: &[u8]) -> (usize, Vec<u32>) {
+        let mut nums: Vec<u32> = Vec::with_capacity(1001);
+        let mut n = 0u32;
+        for byte in input {
+            if *byte == '\n' as u8 {
+                nums.push(n);
+                n = 0;
+                continue;
+            }
+            let bit = (*byte == '1' as u8) as u32;
+            n = (n << 1) + bit;
+        }
+        ((input.len() + 1) / nums.len() - 1, nums)
+    }
     b.iter(|| parse(INPUT));
 }
 
