@@ -55,6 +55,11 @@ fn part1(width: usize, nums: &[u32]) -> u32 {
     gamma * epsilon
 }
 
+enum Keep {
+    Majority,
+    Minority,
+}
+
 fn part2(width: usize, input: &Vec<u32>) -> u32 {
     let oxygen = prune(width, input, Keep::Majority);
 
@@ -63,37 +68,32 @@ fn part2(width: usize, input: &Vec<u32>) -> u32 {
     oxygen * co2
 }
 
-enum Keep {
-    Majority,
-    Minority,
-}
-
 fn prune(width: usize, input: &Vec<u32>, keep: Keep) -> u32 {
-    let mut kept_values = input.clone();
+    let mut values = input.clone();
+
+    let mut kept = &mut values[..];
     for i in 0..width {
         let mask = 1 << (width - 1 - i);
 
-        let ones = kept_values.iter().filter(|num| (*num & mask) > 0).count();
-        let majority = if ones * 2 >= kept_values.len() { 1 } else { 0 };
-        kept_values = kept_values
-            .into_iter()
-            .filter(|num| match (majority, &keep) {
-                (1, Keep::Majority) => (num & mask) > 0,
-                (1, Keep::Minority) => (num & mask) == 0,
-                (0, Keep::Majority) => (num & mask) == 0,
-                (0, Keep::Minority) => (num & mask) > 0,
+        let ones = kept.iter().filter(|num| (*num & mask) > 0).count();
+        let majority = if ones * 2 >= kept.len() { 1 } else { 0 };
+        let num = kept
+            .iter_mut()
+            .partition_in_place(|num| match (majority, &keep) {
+                (1, Keep::Majority) => (*num & mask) > 0,
+                (1, Keep::Minority) => (*num & mask) == 0,
+                (0, Keep::Majority) => (*num & mask) == 0,
+                (0, Keep::Minority) => (*num & mask) > 0,
                 _ => unimplemented!(
                     "just gotta get this working then we can eliminate this match :("
                 ),
-            })
-            .collect();
-
-        if kept_values.len() == 1 {
-            break;
+            });
+        kept = &mut kept[0..num];
+        if kept.len() == 1 {
+            return kept[0];
         }
     }
-    assert!(kept_values.len() == 1);
-    kept_values[0]
+    panic!("WHOOPS");
 }
 
 #[test]
@@ -136,6 +136,36 @@ fn bench_solve_00_original(b: &mut test::Bencher) {
 
 #[bench]
 fn bench_solve_01_integers(b: &mut test::Bencher) {
+    fn part2(width: usize, input: &Vec<u32>) -> u32 {
+        let oxygen = prune(width, input, Keep::Majority);
+        let co2 = prune(width, input, Keep::Minority);
+        oxygen * co2
+    }
+    fn prune(width: usize, input: &Vec<u32>, keep: Keep) -> u32 {
+        let mut kept_values = input.clone();
+        for i in 0..width {
+            let mask = 1 << (width - 1 - i);
+            let ones = kept_values.iter().filter(|num| (*num & mask) > 0).count();
+            let majority = if ones * 2 >= kept_values.len() { 1 } else { 0 };
+            kept_values = kept_values
+                .into_iter()
+                .filter(|num| match (majority, &keep) {
+                    (1, Keep::Majority) => (num & mask) > 0,
+                    (1, Keep::Minority) => (num & mask) == 0,
+                    (0, Keep::Majority) => (num & mask) == 0,
+                    (0, Keep::Minority) => (num & mask) > 0,
+                    _ => unimplemented!(
+                        "just gotta get this working then we can eliminate this match :("
+                    ),
+                })
+                .collect();
+            if kept_values.len() == 1 {
+                break;
+            }
+        }
+        assert!(kept_values.len() == 1);
+        kept_values[0]
+    }
     b.iter(|| {
         let (width, nums) = parse(INPUT);
         assert_eq!(
@@ -270,17 +300,47 @@ fn bench_part2_02_next(b: &mut test::Bencher) {
         panic!("WHOOPS");
     }
     let (width, nums) = parse(INPUT);
-    b.iter(|| part2(width, &nums));
+    b.iter(|| assert_eq!(part2(width, &nums), 5852595));
 }
 
 #[bench]
-fn bench_part2_01_current(b: &mut test::Bencher) {
+fn bench_part2_01_integers(b: &mut test::Bencher) {
     let (width, nums) = parse(INPUT);
+    fn part2(width: usize, input: &Vec<u32>) -> u32 {
+        let oxygen = prune(width, input, Keep::Majority);
+        let co2 = prune(width, input, Keep::Minority);
+        oxygen * co2
+    }
+    fn prune(width: usize, input: &Vec<u32>, keep: Keep) -> u32 {
+        let mut kept_values = input.clone();
+        for i in 0..width {
+            let mask = 1 << (width - 1 - i);
+            let ones = kept_values.iter().filter(|num| (*num & mask) > 0).count();
+            let majority = if ones * 2 >= kept_values.len() { 1 } else { 0 };
+            kept_values = kept_values
+                .into_iter()
+                .filter(|num| match (majority, &keep) {
+                    (1, Keep::Majority) => (num & mask) > 0,
+                    (1, Keep::Minority) => (num & mask) == 0,
+                    (0, Keep::Majority) => (num & mask) == 0,
+                    (0, Keep::Minority) => (num & mask) > 0,
+                    _ => unimplemented!(
+                        "just gotta get this working then we can eliminate this match :("
+                    ),
+                })
+                .collect();
+            if kept_values.len() == 1 {
+                break;
+            }
+        }
+        assert!(kept_values.len() == 1);
+        kept_values[0]
+    }
     b.iter(|| assert_eq!(part2(width, &nums), 5852595));
 }
 
 #[bench]
 fn bench_part2_00_original(b: &mut test::Bencher) {
     let lines = parse_original(INPUT);
-    b.iter(|| part2_original(&lines));
+    b.iter(|| assert_eq!(part2_original(&lines), 5852595));
 }
