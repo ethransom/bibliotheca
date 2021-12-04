@@ -1,3 +1,7 @@
+#![feature(test)]
+
+extern crate test;
+
 const EXAMPLE: &[u8] = include_bytes!("example04.txt");
 const INPUT: &[u8] = include_bytes!("input04.txt");
 
@@ -173,4 +177,12 @@ fn test_part_1() {
 #[test]
 fn test_part_2() {
     assert_eq!(solve2(EXAMPLE), 1924);
+}
+
+#[bench]
+fn bench_solve_current(b: &mut test::Bencher) {
+    b.iter(|| {
+        assert_eq!(solve1(INPUT), 39984);
+        assert_eq!(solve2(INPUT), 8468);
+    });
 }
