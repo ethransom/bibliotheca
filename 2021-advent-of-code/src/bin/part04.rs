@@ -6,8 +6,10 @@ const EXAMPLE: &[u8] = include_bytes!("example04.txt");
 const INPUT: &[u8] = include_bytes!("input04.txt");
 
 fn main() {
+    dbg!(solve1(EXAMPLE));
+    dbg!(solve(EXAMPLE));
     dbg!(solve1(INPUT));
-    dbg!(solve2(INPUT));
+    dbg!(solve(INPUT));
 }
 
 type Board = [[u8; 5]; 5];
@@ -58,7 +60,7 @@ fn solve1(input: &[u8]) -> usize {
     unreachable!("no solutions!");
 }
 
-fn solve2(input: &[u8]) -> usize {
+fn solve(input: &[u8]) -> (usize, usize) {
     let (numbers, boards) = parse(input);
 
     let mut wins_on: Vec<Option<usize>> = vec![None; boards.len()];
@@ -93,7 +95,7 @@ fn solve2(input: &[u8]) -> usize {
     let score = score(&boards[board_no], &numbers[0..turn]);
     let last_draw = numbers[turn - 1];
 
-    return score * last_draw as usize;
+    (score * last_draw as usize, solve1(input))
 }
 
 fn has_won(board: &Board, drawn: &[u8]) -> bool {
@@ -133,19 +135,13 @@ fn score(board: &Board, drawn: &[u8]) -> usize {
 }
 
 #[test]
-fn test_part_1() {
-    assert_eq!(solve1(EXAMPLE), 4512);
-}
-
-#[test]
-fn test_part_2() {
-    assert_eq!(solve2(EXAMPLE), 1924);
+fn test_example() {
+    assert_eq!(solve(EXAMPLE), (1924, 4512));
 }
 
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve1(INPUT), 39984);
-        assert_eq!(solve2(INPUT), 8468);
+        assert_eq!(solve(INPUT), (8468, 39984));
     });
 }
