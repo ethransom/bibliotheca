@@ -131,3 +131,101 @@ fn bench_solve_current(b: &mut test::Bencher) {
         assert_eq!(solve(INPUT), (8468, 39984));
     });
 }
+
+#[bench]
+fn bench_parse_00_current(b: &mut test::Bencher) {
+    b.iter(|| parse(INPUT));
+}
+
+#[bench]
+fn bench_compute_wins_00_original(b: &mut test::Bencher) {
+    let (numbers, boards) = parse(INPUT);
+    b.iter(|| {
+        let mut wins_on: Vec<Option<usize>> = vec![None; boards.len()];
+        for turn in 1..numbers.len() {
+            let drawn = &numbers[0..turn];
+
+            for (board_num, board) in boards.iter().enumerate() {
+                if matches!(wins_on[board_num], None) && has_won(board, drawn) {
+                    wins_on[board_num] = Some(turn);
+                }
+            }
+        }
+        wins_on
+    });
+}
+
+#[bench]
+// Hilariously, this is NOT faster.
+// Maybe we're paying too much to sort, maybe real bottleneck is scanning the cells.
+fn bench_compute_wins_01_binary(b: &mut test::Bencher) {
+    fn has_won(board: &Board, drawn: &[u8]) -> bool {
+        'nextrow: for row in board {
+            for cell in row {
+                if let Err(_idx) = drawn.binary_search_by(|&r| r.cmp(cell)) {
+                    continue 'nextrow;
+                }
+            }
+
+            return true;
+        }
+
+        'nextcol: for col in 0..5 {
+            for row in board {
+                if let Err(_idx) = drawn.binary_search_by(|&r| r.cmp(&row[col])) {
+                    continue 'nextcol;
+                }
+            }
+
+            return true;
+        }
+
+        false
+    }
+    let (numbers, boards) = parse(INPUT);
+    b.iter(|| {
+        // `numbers` would be needed for scoring later on
+        let mut lookup = numbers.clone();
+        let mut wins_on: Vec<Option<usize>> = vec![None; boards.len()];
+        for turn in 1..numbers.len() {
+            let drawn = &mut lookup[0..turn];
+            drawn.sort(); // hopefully this is incremental
+
+            for (board_num, board) in boards.iter().enumerate() {
+                if matches!(wins_on[board_num], None) && has_won(board, drawn) {
+                    wins_on[board_num] = Some(turn);
+                }
+            }
+        }
+
+        // do we really need this check? puzzle input seems to always satisfy this...
+        let wins_on: Vec<usize> = wins_on
+            .into_iter()
+            .map(|win| {
+                if let Some(win) = win {
+                    win
+                } else {
+                    panic!("not all boards won!")
+                }
+            })
+            .collect();
+
+        let (board_no, turn) = wins_on
+            .iter()
+            .enumerate()
+            .max_by(|(_, turn_a), (_, turn_b)| turn_a.cmp(turn_b))
+            .expect("no wins");
+
+        let first_score = score(&boards[board_no], &numbers[0..*turn]) * numbers[turn - 1] as usize;
+
+        let (board_no, turn) = wins_on
+            .iter()
+            .enumerate()
+            .min_by(|(_, turn_a), (_, turn_b)| turn_a.cmp(turn_b))
+            .expect("no wins");
+
+        let last_score = score(&boards[board_no], &numbers[0..*turn]) * numbers[turn - 1] as usize;
+
+        assert_eq!((first_score, last_score), (8468, 39984))
+    });
+}
