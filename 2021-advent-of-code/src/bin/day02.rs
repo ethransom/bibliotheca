@@ -188,3 +188,25 @@ fn bench_parse_02_bytes_map(b: &mut test::Bencher) {
             .collect::<Vec<(Move, u64)>>()
     });
 }
+
+#[bench]
+fn bench_parse_03_original_with_splice_once(b: &mut test::Bencher) {
+    b.iter(|| {
+        let mut commands: Vec<(Move, u64)> = Vec::new();
+        std::str::from_utf8(INPUT)
+            .expect("bad input file!")
+            .lines()
+            .for_each(|line| {
+                let (left, right) = line.split_once(' ').expect("expected ' '");
+                let dir = match left {
+                    "forward" => Move::Forward,
+                    "up" => Move::Up,
+                    "down" => Move::Down,
+                    _ => panic!("unknown command"),
+                };
+                let amt = right.parse::<u64>().expect("couldn't parse");
+                commands.push((dir, amt));
+            });
+        commands
+    });
+}
