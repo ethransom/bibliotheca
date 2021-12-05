@@ -2,8 +2,8 @@
 
 // TODO:
 //  - [x] Can we use try_into for zero-copy assertion of two elements after these splits?
-//  - [ ] `perf` reports that most time is going to kernel malloc stuff, fix parsing?
-//  - [ ] Finish multi-dimensional array version
+//  - [x] `perf` reports that most time is going to kernel malloc stuff, fix parsing?
+//  - [x] Finish multi-dimensional array version
 
 extern crate test;
 
@@ -282,6 +282,97 @@ fn bench_solve_00_original(b: &mut test::Bencher) {
 
 #[bench]
 fn bench_solve_01_current(b: &mut test::Bencher) {
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (7380, 21373));
+    });
+}
+
+#[bench]
+fn bench_solve_02_multidimensional_array(b: &mut test::Bencher) {
+    #[inline]
+    fn render_lines<'a>(map: &mut Vec<usize>, width: usize, pairs: impl Iterator<Item = &'a Line>) {
+        for &pair in pairs {
+            let ((mut x, mut y), (x_end, y_end)) = pair;
+
+            loop {
+                use std::cmp::Ordering;
+
+                map[width * y as usize + x as usize] += 1;
+
+                if x == x_end && y == y_end {
+                    break;
+                }
+
+                match x.cmp(&x_end) {
+                    Ordering::Less => x += 1,
+                    Ordering::Equal => (),
+                    Ordering::Greater => x -= 1,
+                }
+                match y.cmp(&y_end) {
+                    Ordering::Less => y += 1,
+                    Ordering::Equal => (),
+                    Ordering::Greater => y -= 1,
+                }
+            }
+        }
+    }
+
+    fn count_dangerous(map: &Vec<usize>) -> usize {
+        let mut part1 = 0;
+        for cell in map.iter() {
+            if *cell >= 2 {
+                part1 += 1;
+            }
+        }
+        part1
+    }
+
+    fn solve(input: &[u8]) -> (usize, usize) {
+        let pairs = parse(input);
+
+        let points = pairs.iter().map(|(from, to)| [from, to]).flatten();
+
+        // dbg!(points);
+
+        let (_, height) = points
+            .clone()
+            .max_by(|(_, y1), (_, y2)| y1.cmp(y2))
+            .unwrap();
+        let (width, _) = points
+            .clone()
+            .max_by(|(x1, _), (x2, _)| x1.cmp(x2))
+            .unwrap();
+
+        let height = height + 1;
+        let width = width + 1;
+
+        let mut map = vec![0 as usize; width as usize * height as usize];
+
+        render_lines(
+            &mut map,
+            width,
+            pairs
+                .iter()
+                .filter(|((x, y), (x_end, y_end))| x == x_end || y == y_end),
+        );
+
+        let part1 = count_dangerous(&map);
+
+        render_lines(
+            &mut map,
+            width,
+            pairs
+                .iter()
+                .filter(|((x, y), (x_end, y_end))| !(x == x_end || y == y_end)),
+        );
+
+        let part2 = count_dangerous(&map);
+
+        (part1, part2)
+    }
+
+    assert_eq!(solve(EXAMPLE), (5, 12));
+
     b.iter(|| {
         assert_eq!(solve(INPUT), (7380, 21373));
     });
