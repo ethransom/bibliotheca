@@ -6,9 +6,7 @@ const EXAMPLE: &[u8] = include_bytes!("example04.txt");
 const INPUT: &[u8] = include_bytes!("input04.txt");
 
 fn main() {
-    dbg!(solve1(EXAMPLE));
     dbg!(solve(EXAMPLE));
-    dbg!(solve1(INPUT));
     dbg!(solve(INPUT));
 }
 
@@ -41,25 +39,6 @@ fn parse(input: &[u8]) -> (Vec<u8>, Vec<Board>) {
     (numbers, boards)
 }
 
-fn solve1(input: &[u8]) -> usize {
-    let (numbers, boards) = parse(input);
-    for turn in 1..numbers.len() {
-        let drawn = &numbers[0..turn];
-
-        for board in boards.iter() {
-            if has_won(board, drawn) {
-                let score = score(board, drawn);
-
-                let winning_draw = *drawn.last().unwrap();
-
-                return score * winning_draw as usize;
-            }
-        }
-    }
-
-    unreachable!("no solutions!");
-}
-
 fn solve(input: &[u8]) -> (usize, usize) {
     let (numbers, boards) = parse(input);
 
@@ -87,15 +66,22 @@ fn solve(input: &[u8]) -> (usize, usize) {
         .collect();
 
     let (board_no, turn) = wins_on
-        .into_iter()
+        .iter()
         .enumerate()
         .max_by(|(_, turn_a), (_, turn_b)| turn_a.cmp(turn_b))
         .expect("no wins");
 
-    let score = score(&boards[board_no], &numbers[0..turn]);
-    let last_draw = numbers[turn - 1];
+    let first_score = score(&boards[board_no], &numbers[0..*turn]) * numbers[turn - 1] as usize;
 
-    (score * last_draw as usize, solve1(input))
+    let (board_no, turn) = wins_on
+        .iter()
+        .enumerate()
+        .min_by(|(_, turn_a), (_, turn_b)| turn_a.cmp(turn_b))
+        .expect("no wins");
+
+    let last_score = score(&boards[board_no], &numbers[0..*turn]) * numbers[turn - 1] as usize;
+
+    (first_score, last_score)
 }
 
 fn has_won(board: &Board, drawn: &[u8]) -> bool {
