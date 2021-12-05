@@ -12,12 +12,11 @@ fn main() {
 
 type Board = [[u8; 5]; 5];
 
-fn solve1(input: &[u8]) -> usize {
+fn parse(input: &[u8]) -> (Vec<u8>, Vec<Board>) {
     let blocks = std::str::from_utf8(input)
         .expect("input was not utf8")
         .split("\n\n")
         .collect::<Vec<&str>>();
-
     let numbers: Vec<u8> = blocks[0]
         .split(",")
         .map(|n| n.parse::<u8>().expect("not a number"))
@@ -27,19 +26,21 @@ fn solve1(input: &[u8]) -> usize {
         .into_iter()
         .map(|block| {
             let mut rows: Board = [[0; 5]; 5];
-
             for (row, line) in block.lines().enumerate() {
                 for (cell, s) in line.split_whitespace().enumerate() {
                     let n = s.parse::<u8>().expect("not a number");
-
                     rows[row][cell] = n;
                 }
             }
-
             rows
         })
         .collect();
 
+    (numbers, boards)
+}
+
+fn solve1(input: &[u8]) -> usize {
+    let (numbers, boards) = parse(input);
     for turn in 1..numbers.len() {
         let drawn = &numbers[0..turn];
 
@@ -58,38 +59,7 @@ fn solve1(input: &[u8]) -> usize {
 }
 
 fn solve2(input: &[u8]) -> usize {
-    let blocks = std::str::from_utf8(input)
-        .expect("input was not utf8")
-        .split("\n\n")
-        .collect::<Vec<&str>>();
-
-    let numbers: Vec<u8> = blocks[0]
-        .split(",")
-        .map(|n| n.parse::<u8>().expect("not a number"))
-        .collect();
-
-    let boards: Vec<Board> = blocks[1..]
-        .into_iter()
-        .map(|block| {
-            let mut rows: Board = [[0; 5]; 5];
-
-            for (row, line) in block.split("\n").enumerate() {
-                let mut cell = 0;
-                for s in line.split(" ") {
-                    if s == "" {
-                        continue;
-                    }
-
-                    let n = s.parse::<u8>().expect("not a number");
-
-                    rows[row][cell] = n;
-                    cell += 1;
-                }
-            }
-
-            rows
-        })
-        .collect();
+    let (numbers, boards) = parse(input);
 
     let mut wins_on: Vec<Option<usize>> = vec![None; boards.len()];
     for turn in 1..numbers.len() {
