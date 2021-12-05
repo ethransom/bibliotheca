@@ -229,3 +229,109 @@ fn bench_compute_wins_01_binary(b: &mut test::Bencher) {
         assert_eq!((first_score, last_score), (8468, 39984))
     });
 }
+
+#[bench]
+fn bench_compute_wins_02_memory(b: &mut test::Bencher) {
+    #[derive(Clone, Debug)]
+    struct MemoryBoard {
+        board: Board,
+        marked: [[bool; 5]; 5],
+    }
+    impl MemoryBoard {
+        fn new(board: &Board) -> MemoryBoard {
+            MemoryBoard {
+                board: *board,
+                marked: [[false; 5]; 5],
+            }
+        }
+        fn mark(&mut self, draw: u8) {
+            for row in 0..5 {
+                for col in 0..5 {
+                    if self.board[row][col] == draw {
+                        self.marked[row][col] = true;
+                    }
+                }
+            }
+        }
+        fn has_won(&self) -> bool {
+            'nextrow: for row in self.marked {
+                for cell in row {
+                    if cell == false {
+                        continue 'nextrow;
+                    }
+                }
+                return true;
+            }
+            'nextcol: for col in 0..5 {
+                for row in self.marked {
+                    if row[col] == false {
+                        continue 'nextcol;
+                    }
+                }
+                return true;
+            }
+
+            false
+        }
+        fn score(&self, drawn: &[u8]) -> usize {
+            let mut sum: usize = 0;
+            for row in self.board {
+                for cell in row {
+                    if let None = drawn.iter().position(|r| *r == cell) {
+                        sum += cell as usize;
+                    }
+                }
+            }
+            sum
+        }
+    }
+    let (numbers, raw_boards) = parse(INPUT);
+    let boards: Vec<MemoryBoard> = raw_boards
+        .iter()
+        .map(|board| MemoryBoard::new(board))
+        .collect();
+    b.iter(|| {
+        let mut boards: Vec<MemoryBoard> = boards.clone();
+        let mut wins_on: Vec<Option<usize>> = vec![None; boards.len()];
+        for (i, draw) in numbers.iter().enumerate() {
+            for (board_num, board) in boards.iter_mut().enumerate() {
+                if !board.has_won() {
+                    board.mark(*draw);
+                    if board.has_won() {
+                        wins_on[board_num] = Some(i + 1);
+                    }
+                }
+            }
+        }
+
+        // do we really need this check? puzzle input seems to always satisfy this...
+        let wins_on: Vec<usize> = wins_on
+            .into_iter()
+            .map(|win| {
+                if let Some(win) = win {
+                    win
+                } else {
+                    panic!("not all boards won!")
+                }
+            })
+            .collect();
+
+        let (board_no, turn) = wins_on
+            .iter()
+            .enumerate()
+            .max_by(|(_, turn_a), (_, turn_b)| turn_a.cmp(turn_b))
+            .expect("no wins");
+
+        let first_score = boards[board_no].score(&numbers[0..*turn]) * numbers[turn - 1] as usize;
+
+        let (board_no, turn) = wins_on
+            .iter()
+            .enumerate()
+            .min_by(|(_, turn_a), (_, turn_b)| turn_a.cmp(turn_b))
+            .expect("no wins");
+
+        let last_score = boards[board_no].score(&numbers[0..*turn]) * numbers[turn - 1] as usize;
+
+        assert_eq!((first_score, last_score), (8468, 39984))
+    });
+}
