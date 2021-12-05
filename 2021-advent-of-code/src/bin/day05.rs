@@ -41,23 +41,21 @@ fn render_lines<'a>(map: &mut Vec<Vec<usize>>, pairs: impl Iterator<Item = &'a L
         let ((mut x, mut y), (x_end, y_end)) = pair;
 
         loop {
-            use std::cmp::Ordering;
-
             map[y as usize][x as usize] += 1;
 
             if x == x_end && y == y_end {
                 break;
             }
 
-            match x.cmp(&x_end) {
-                Ordering::Less => x += 1,
-                Ordering::Equal => (),
-                Ordering::Greater => x -= 1,
+            if x < x_end {
+                x += 1;
+            } else if x > x_end {
+                x -= 1;
             }
-            match y.cmp(&y_end) {
-                Ordering::Less => y += 1,
-                Ordering::Equal => (),
-                Ordering::Greater => y -= 1,
+            if y < y_end {
+                y += 1;
+            } else if y > y_end {
+                y -= 1;
             }
         }
     }
