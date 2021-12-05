@@ -1,5 +1,10 @@
 #![feature(test)]
 
+// TODO:
+//  - [x] Can we use try_into for zero-copy assertion of two elements after these splits?
+//  - [ ] `perf` reports that most time is going to kernel malloc stuff, fix parsing?
+//  - [ ] Finish multi-dimensional array version
+
 extern crate test;
 
 const EXAMPLE: &[u8] = include_bytes!("example05.txt");
@@ -19,19 +24,14 @@ fn parse(input: &[u8]) -> Vec<Line> {
         .expect("input was not utf8")
         .split("\n")
         .map(|line| {
-            let mut parts = line.split(" -> ");
+            let (left, right) = line.split_once(" -> ").expect("expected '->'");
 
             fn parse_point(s: &str) -> Point {
-                let mut parts = s.split(",");
-                (
-                    parts.next().unwrap().parse().unwrap(),
-                    parts.next().unwrap().parse().unwrap(),
-                )
+                let (left, right) = s.split_once(",").expect("expected comma");
+                (left.parse().unwrap(), right.parse().unwrap())
             }
-            (
-                parse_point(parts.next().unwrap()),
-                parse_point(parts.next().unwrap()),
-            )
+
+            (parse_point(left), parse_point(right))
         })
         .collect::<Vec<Line>>()
 }
@@ -120,7 +120,7 @@ fn test_example() {
 #[bench]
 fn bench_parse_00_original(b: &mut test::Bencher) {
     b.iter(|| {
-        let pairs = std::str::from_utf8(INPUT)
+        std::str::from_utf8(INPUT)
             .expect("input was not utf8")
             .split("\n")
             .map(|line| {
@@ -138,16 +138,25 @@ fn bench_parse_00_original(b: &mut test::Bencher) {
                     parse_point(parts.next().unwrap()),
                 )
             })
-            .collect::<Vec<Line>>();
+            .collect::<Vec<Line>>()
+    });
+}
 
-        let points = pairs
+#[bench]
+fn bench_parse_01_current(b: &mut test::Bencher) {
+    b.iter(|| parse(INPUT));
+}
+
+#[bench]
+fn bench_flatten_points_from_pairs(b: &mut test::Bencher) {
+    let pairs = parse(INPUT);
+    b.iter(|| {
+        pairs
             .iter()
             .map(|(from, to)| [from.clone(), to.clone()])
             .flatten()
-            .collect::<Vec<Point>>();
-
-        (pairs, points)
-    });
+            .collect::<Vec<Point>>()
+    })
 }
 
 #[bench]
