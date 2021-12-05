@@ -99,7 +99,7 @@ fn it_handles_the_example_input() {
 }
 
 #[bench]
-fn bench_02_current(b: &mut test::Bencher) {
+fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
         assert_eq!(solve(INPUT), (3923414, 5852595));
     });
@@ -174,53 +174,10 @@ fn bench_parse_03_fucking_handrolled_capacity_hint(b: &mut test::Bencher) {
 }
 
 #[bench]
-fn bench_00_original(b: &mut test::Bencher) {
+fn bench_solve_original(b: &mut test::Bencher) {
     b.iter(|| {
         let lines = parse_original(INPUT);
         (part1_original(&lines), part2_original(&lines))
-    });
-}
-
-// TODO: Consider deleting this? Do we really need a comprehensive, snapshot benchmark?
-//       Isn't this covered by all the snapshot unit benchmarks?
-#[bench]
-fn bench_01_integers(b: &mut test::Bencher) {
-    fn part2(width: usize, input: &Vec<u32>) -> u32 {
-        let oxygen = prune(width, input, Keep::Majority);
-        let co2 = prune(width, input, Keep::Minority);
-        oxygen * co2
-    }
-    fn prune(width: usize, input: &Vec<u32>, keep: Keep) -> u32 {
-        let mut kept_values = input.clone();
-        for i in 0..width {
-            let mask = 1 << (width - 1 - i);
-            let ones = kept_values.iter().filter(|num| (*num & mask) > 0).count();
-            let majority = if ones * 2 >= kept_values.len() { 1 } else { 0 };
-            kept_values = kept_values
-                .into_iter()
-                .filter(|num| match (majority, &keep) {
-                    (1, Keep::Majority) => (num & mask) > 0,
-                    (1, Keep::Minority) => (num & mask) == 0,
-                    (0, Keep::Majority) => (num & mask) == 0,
-                    (0, Keep::Minority) => (num & mask) > 0,
-                    _ => unimplemented!(
-                        "just gotta get this working then we can eliminate this match :("
-                    ),
-                })
-                .collect();
-            if kept_values.len() == 1 {
-                break;
-            }
-        }
-        assert!(kept_values.len() == 1);
-        kept_values[0]
-    }
-    b.iter(|| {
-        let (width, nums) = parse(INPUT);
-        assert_eq!(
-            (part1(width, &nums), part2(width, &nums)),
-            (3923414, 5852595)
-        );
     });
 }
 

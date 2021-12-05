@@ -82,9 +82,36 @@ fn it_handles_the_example_input() {
 extern crate test;
 
 #[bench]
-fn bench_current(b: &mut test::Bencher) {
+fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
         assert_eq!(solve(INPUT), (1990000, 1975421260));
+    });
+}
+
+#[bench]
+fn bench_solve_original(b: &mut test::Bencher) {
+    fn parse(input: &[u8]) -> Vec<(Move, u64)> {
+        let mut commands: Vec<(Move, u64)> = Vec::new();
+        std::str::from_utf8(input)
+            .expect("bad input file!")
+            .lines()
+            .for_each(|line| {
+                let parts: Vec<&str> = line.split(' ').take(2).collect();
+                let dir = match parts[0] {
+                    "forward" => Move::Forward,
+                    "up" => Move::Up,
+                    "down" => Move::Down,
+                    _ => panic!("unknown command"),
+                };
+                let amt = parts[1].parse::<u64>().expect("couldn't parse");
+                commands.push((dir, amt));
+            });
+        commands
+    }
+
+    b.iter(|| {
+        let commands = parse(INPUT);
+        (part1(&commands), part2(&commands))
     });
 }
 
@@ -160,10 +187,4 @@ fn bench_parse_02_bytes_map(b: &mut test::Bencher) {
             })
             .collect::<Vec<(Move, u64)>>()
     });
-}
-
-#[bench]
-fn bench_solve_00_original(b: &mut test::Bencher) {
-    let commands = parse(INPUT);
-    b.iter(|| (part1(&commands), part2(&commands)));
 }
