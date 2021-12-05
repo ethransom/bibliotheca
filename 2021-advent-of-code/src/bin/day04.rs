@@ -138,6 +138,38 @@ fn bench_parse_00_current(b: &mut test::Bencher) {
 }
 
 #[bench]
+fn bench_parse_01_next(b: &mut test::Bencher) {
+    fn parse(input: &[u8]) -> (Vec<u8>, Vec<Board>) {
+        let mut blocks = std::str::from_utf8(input)
+            .expect("input was not utf8")
+            .split("\n\n");
+
+        let numbers: Vec<u8> = blocks
+            .next()
+            .expect("need list of called numbers")
+            .split(",")
+            .map(|n| n.parse::<u8>().expect("not a number"))
+            .collect();
+
+        let boards: Vec<Board> = blocks
+            .map(|block| {
+                let mut rows: Board = [[0; 5]; 5];
+                for (row, line) in block.lines().enumerate() {
+                    for (cell, s) in line.split_whitespace().enumerate() {
+                        let n = s.parse::<u8>().expect("not a number");
+                        rows[row][cell] = n;
+                    }
+                }
+                rows
+            })
+            .collect();
+
+        (numbers, boards)
+    }
+    b.iter(|| parse(INPUT));
+}
+
+#[bench]
 fn bench_compute_wins_00_original(b: &mut test::Bencher) {
     let (numbers, boards) = parse(INPUT);
     b.iter(|| {
