@@ -28,17 +28,11 @@ fn solve1(input: &[u8]) -> usize {
         .map(|block| {
             let mut rows: Board = [[0; 5]; 5];
 
-            for (row, line) in block.split("\n").enumerate() {
-                let mut cell = 0;
-                for s in line.split(" ") {
-                    if s == "" {
-                        continue;
-                    }
-
+            for (row, line) in block.lines().enumerate() {
+                for (cell, s) in line.split_whitespace().enumerate() {
                     let n = s.parse::<u8>().expect("not a number");
 
                     rows[row][cell] = n;
-                    cell += 1;
                 }
             }
 
@@ -108,8 +102,6 @@ fn solve2(input: &[u8]) -> usize {
         }
     }
 
-    dbg!(&wins_on);
-
     let mut losingest_turn = 0;
     let mut losingest_board: Option<&Board> = None;
     for (board_no, winning_turn) in wins_on.iter().enumerate() {
@@ -122,13 +114,6 @@ fn solve2(input: &[u8]) -> usize {
 
     let score = score(losingest_board.unwrap(), &numbers[0..losingest_turn]);
     let last_draw = numbers[losingest_turn - 1];
-
-    dbg!(
-        losingest_board,
-        score,
-        last_draw,
-        score * last_draw as usize
-    );
 
     return score * last_draw as usize;
 }
