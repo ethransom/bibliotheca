@@ -72,18 +72,26 @@ fn solve2(input: &[u8]) -> usize {
         }
     }
 
-    let mut losingest_turn = 0;
-    let mut losingest_board: Option<&Board> = None;
-    for (board_no, winning_turn) in wins_on.iter().enumerate() {
-        let turn = winning_turn.expect("board didn't win!");
-        if turn > losingest_turn {
-            losingest_turn = turn;
-            losingest_board = Some(&boards[board_no]);
-        }
-    }
+    // do we really need this check? puzzle input seems to always satisfy this...
+    let wins_on: Vec<usize> = wins_on
+        .into_iter()
+        .map(|win| {
+            if let Some(win) = win {
+                win
+            } else {
+                panic!("not all boards won!")
+            }
+        })
+        .collect();
 
-    let score = score(losingest_board.unwrap(), &numbers[0..losingest_turn]);
-    let last_draw = numbers[losingest_turn - 1];
+    let (board_no, turn) = wins_on
+        .into_iter()
+        .enumerate()
+        .max_by(|(_, turn_a), (_, turn_b)| turn_a.cmp(turn_b))
+        .expect("no wins");
+
+    let score = score(&boards[board_no], &numbers[0..turn]);
+    let last_draw = numbers[turn - 1];
 
     return score * last_draw as usize;
 }
