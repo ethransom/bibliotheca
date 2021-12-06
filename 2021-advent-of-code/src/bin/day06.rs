@@ -51,12 +51,12 @@ fn solve(input: &[u8]) -> (usize, usize) {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (5934, 0));
+    assert_eq!(solve(EXAMPLE), (5934, 26_984_457_539));
 }
 
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (354564, 1_609_058_859_115));
+        assert_eq!(solve(INPUT), (354_564, 1_609_058_859_115));
     });
 }
