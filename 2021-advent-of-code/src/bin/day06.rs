@@ -92,6 +92,87 @@ fn bench_solve_01_shift(b: &mut test::Bencher) {
 
 #[bench]
 fn bench_solve_02_stack_alloc(b: &mut test::Bencher) {
+    fn simulate(initial: &Vec<u8>, rounds: usize) -> usize {
+        let mut counts = vec![0 as usize; 9];
+
+        for &fish in initial {
+            counts[fish as usize] += 1;
+        }
+
+        for _round in 0..rounds {
+            let breeders = counts[0];
+
+            // shift down
+            for i in 1..9 {
+                counts[i - 1] = counts[i];
+            }
+            // don't use this instead, as it seems to prevent moving
+            // the array elements to registers
+            // counts.rotate_left(1);
+
+            counts[6] += breeders;
+            counts[8] = breeders;
+        }
+
+        return counts.iter().sum();
+    }
+
+    fn solve(input: &str) -> (usize, usize) {
+        let fishes = input
+            .split(",")
+            .map(|n| n.parse().expect("not a number"))
+            .collect::<Vec<u8>>();
+
+        (simulate(&fishes, 80), simulate(&fishes, 256))
+    }
+
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (354_564, 1_609_058_859_115));
+    });
+}
+
+#[bench]
+fn bench_solve_03_memoize(b: &mut test::Bencher) {
+    fn simulate(initial: &Vec<u8>, results: &mut [usize]) {
+        let mut counts = vec![0 as usize; 9];
+
+        for &fish in initial {
+            counts[fish as usize] += 1;
+        }
+
+        for round in 0..results.len() {
+            let breeders = counts[0];
+            // shift down
+            for i in 1..9 {
+                counts[i - 1] = counts[i];
+            }
+            counts[6] += breeders;
+            counts[8] = breeders;
+
+            results[round] = counts.iter().sum();
+        }
+    }
+
+    fn solve(input: &str) -> (usize, usize) {
+        let fishes = input
+            .split(",")
+            .map(|n| n.parse().expect("not a number"))
+            .collect::<Vec<u8>>();
+
+        let mut results = [0 as usize; 256];
+
+        simulate(&fishes, &mut results);
+
+        (results[80 - 1], results[256 - 1])
+    }
+
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (354_564, 1_609_058_859_115));
+    });
+}
+
+#[bench]
+fn bench_solve_04_memoize_no_alloc(b: &mut test::Bencher) {
     fn simulate(mut counts: [usize; 9], results: &mut [usize]) {
         for round in 0..results.len() {
             let breeders = counts[0];
