@@ -2,7 +2,7 @@
 
 extern crate test;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet, VecDeque};
 
 type Point = (i32, i32);
 
@@ -51,23 +51,58 @@ fn solve(input: &str) -> (usize, usize) {
             })
         });
 
+    let mut basins: Vec<usize> = low_points
+        .clone()
+        .map(|(col, row)| {
+            let mut visited: HashSet<Point> = HashSet::new();
+
+            // println!("basin starting at {:?}", (col, row));
+
+            // everyone's fucking favorite: <crowd chants along> ...BREADTH ...FIRST ...SEARCH!!!!
+            let mut to_visit: VecDeque<Point> = VecDeque::from([(col, row)]);
+            while let Some((col, row)) = to_visit.pop_front() {
+                if visited.contains(&(col, row)) {
+                    // revisiting
+                    continue;
+                }
+                visited.insert((col, row));
+
+                // println!("  visiting {:?}", (col, row));
+
+                IMMEDIATE_NEIGHBORS.into_iter().for_each(|(x, y)| {
+                    let neighbor = (col + x, row + y);
+                    if let Some(&value) = cells.get(&neighbor) {
+                        if value < 9 {
+                            to_visit.push_back(neighbor);
+                        }
+                    }
+                });
+            }
+
+            // println!("  ----------\n   -> SIZE: {}", visited.len());
+
+            visited.len()
+        })
+        .collect();
+
+    basins.sort();
+
     (
         low_points
-            .clone()
             .map(|(col, row)| *cells.get(&(col, row)).unwrap() as usize + 1)
             .sum(),
-        0,
+        basins.into_iter().rev().take(3).product::<usize>(),
     )
 }
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (15, 0));
+    assert_eq!(solve(EXAMPLE), (15, 1134));
 }
 
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (439, 0));
+        assert_eq!(solve(INPUT), (439, 900900));
     });
 }
