@@ -90,7 +90,58 @@ fn test_example() {
 }
 
 #[bench]
-fn bench_solve_current(b: &mut test::Bencher) {
+fn bench_solve_00_original(b: &mut test::Bencher) {
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (311895, 2904180541));
+    });
+}
+
+#[bench]
+fn bench_solve_01_eager(b: &mut test::Bencher) {
+    fn solve(input: &str) -> (usize, usize) {
+        let results: Vec<Result<Vec<char>, char>> = input.lines().map(parse_line).collect();
+
+        let invalid_score = results
+            .iter()
+            .map(|result| match result {
+                Ok(_) => 0,
+                Err(')') => 3,
+                Err(']') => 57,
+                Err('}') => 1197,
+                Err('>') => 25137,
+                Err(_) => panic!("unknown syntax error"),
+            })
+            .sum();
+
+        let mut scores = results
+            .iter()
+            .flat_map(|result| match result {
+                Ok(stack) => {
+                    assert!(!stack.is_empty());
+
+                    Some(stack.iter().rev().fold(0, |mut score, &brace| {
+                        score *= 5;
+                        score += match get_closing(brace) {
+                            ')' => 1,
+                            ']' => 2,
+                            '}' => 3,
+                            '>' => 4,
+                            _ => panic!("don't know how to score"),
+                        };
+                        score
+                    }))
+                }
+                Err(_) => None,
+            })
+            .collect::<Vec<usize>>();
+
+        scores.sort_unstable(); // unstable is slightly faster
+
+        let autocomplete_score = scores[scores.len() / 2];
+
+        (invalid_score, autocomplete_score)
+    }
+
     b.iter(|| {
         assert_eq!(solve(INPUT), (311895, 2904180541));
     });
