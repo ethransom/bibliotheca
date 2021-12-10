@@ -10,8 +10,8 @@ fn main() {
     dbg!(solve(INPUT));
 }
 
-fn simulate(initial: &Vec<u8>, rounds: usize) -> usize {
-    let mut counts = vec![0 as usize; 9];
+fn simulate(initial: &[u8], rounds: usize) -> usize {
+    let mut counts = vec![0; 9];
 
     for &fish in initial {
         counts[fish as usize] += 1;
@@ -35,7 +35,7 @@ fn simulate(initial: &Vec<u8>, rounds: usize) -> usize {
 
 fn solve(input: &str) -> (usize, usize) {
     let fishes = input
-        .split(",")
+        .split(',')
         .map(|n| n.parse().expect("not a number"))
         .collect::<Vec<u8>>();
 
@@ -57,7 +57,7 @@ fn bench_solve_00_original(b: &mut test::Bencher) {
 #[bench]
 fn bench_solve_01_shift(b: &mut test::Bencher) {
     fn simulate(initial: &Vec<u8>, rounds: usize) -> usize {
-        let mut counts = vec![0 as usize; 9];
+        let mut counts = vec![0; 9];
 
         for &fish in initial {
             counts[fish as usize] += 1;
@@ -78,7 +78,7 @@ fn bench_solve_01_shift(b: &mut test::Bencher) {
 
     fn solve(input: &str) -> (usize, usize) {
         let fishes = input
-            .split(",")
+            .split(',')
             .map(|n| n.parse().expect("not a number"))
             .collect::<Vec<u8>>();
 
@@ -93,7 +93,7 @@ fn bench_solve_01_shift(b: &mut test::Bencher) {
 #[bench]
 fn bench_solve_02_stack_alloc(b: &mut test::Bencher) {
     fn simulate(initial: &Vec<u8>, rounds: usize) -> usize {
-        let mut counts = vec![0 as usize; 9];
+        let mut counts = vec![0; 9];
 
         for &fish in initial {
             counts[fish as usize] += 1;
@@ -119,7 +119,7 @@ fn bench_solve_02_stack_alloc(b: &mut test::Bencher) {
 
     fn solve(input: &str) -> (usize, usize) {
         let fishes = input
-            .split(",")
+            .split(',')
             .map(|n| n.parse().expect("not a number"))
             .collect::<Vec<u8>>();
 
@@ -134,7 +134,7 @@ fn bench_solve_02_stack_alloc(b: &mut test::Bencher) {
 #[bench]
 fn bench_solve_03_memoize(b: &mut test::Bencher) {
     fn simulate(initial: &Vec<u8>, results: &mut [usize]) {
-        let mut counts = vec![0 as usize; 9];
+        let mut counts = vec![0; 9];
 
         for &fish in initial {
             counts[fish as usize] += 1;
@@ -155,7 +155,7 @@ fn bench_solve_03_memoize(b: &mut test::Bencher) {
 
     fn solve(input: &str) -> (usize, usize) {
         let fishes = input
-            .split(",")
+            .split(',')
             .map(|n| n.parse().expect("not a number"))
             .collect::<Vec<u8>>();
 
@@ -190,7 +190,7 @@ fn bench_solve_04_memoize_no_alloc(b: &mut test::Bencher) {
     fn solve(input: &str) -> (usize, usize) {
         let mut initial = [0 as usize; 9];
         input
-            .split(",")
+            .split(',')
             .for_each(|n| initial[n.parse::<usize>().expect("not a number")] += 1);
 
         let mut results = [0 as usize; 256];
