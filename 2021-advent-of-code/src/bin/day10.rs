@@ -25,7 +25,7 @@ fn solve(input: &str) -> (usize, usize) {
         })
         .sum();
 
-    let mut scores = lines
+    let mut autocomplete_scores = lines
         .clone()
         .flat_map(|result| match result {
             Ok(stack) => {
@@ -47,11 +47,11 @@ fn solve(input: &str) -> (usize, usize) {
         })
         .collect::<Vec<usize>>();
 
-    scores.sort_unstable(); // unstable is slightly faster
+    autocomplete_scores.sort_unstable(); // unstable is slightly faster
 
-    let autocomplete_score = scores[scores.len() / 2];
+    let middle_autocomplete_score = autocomplete_scores[autocomplete_scores.len() / 2];
 
-    (invalid_score, autocomplete_score)
+    (invalid_score, middle_autocomplete_score)
 }
 
 fn parse_line(line: &str) -> Result<Vec<char>, char> {
