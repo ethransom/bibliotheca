@@ -19,10 +19,7 @@ fn solve(input: &str) -> (usize, usize) {
             let output = output.trim_start().split(' ');
 
             output
-                .filter(|pattern| match pattern.len() {
-                    2 | 3 | 4 | 7 => true,
-                    _ => false,
-                })
+                .filter(|pattern| matches!(pattern.len(), 2 | 3 | 4 | 7))
                 .count()
         })
         .sum();
@@ -84,7 +81,7 @@ fn bits_to_pattern(bits: u8) -> String {
         s.push('g');
     }
 
-    return s;
+    s
 }
 
 fn decode_line(patterns: &[&str], outputs: &[&str]) -> usize {
@@ -180,7 +177,7 @@ fn decode_line(patterns: &[&str], outputs: &[&str]) -> usize {
 
     let key = [zero, one, two, three, four, five, six, seven, eight, nine];
 
-    outputs.into_iter().fold(0 as usize, |mut n, output| {
+    outputs.into_iter().fold(0_usize, |mut n, output| {
         n *= 10;
         n += match key.into_iter().position(|k| k == output) {
             None => panic!("can't decode {:b} {}", output, bits_to_pattern(output)),
