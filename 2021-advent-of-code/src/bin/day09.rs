@@ -85,7 +85,7 @@ fn solve(input: &str) -> (usize, usize) {
         })
         .collect();
 
-    basins.sort();
+    basins.sort_unstable(); // faster, and stability doesn't matter for ints
 
     (
         low_points
