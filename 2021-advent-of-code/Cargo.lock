@@ -5,3 +5,21 @@ version = 3
 [[package]]
 name = "advent-of-code-2021"
 version = "0.1.0"
+dependencies = [
+ "fxhash",
+]
+
+[[package]]
+name = "byteorder"
+version = "1.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
+
+[[package]]
+name = "fxhash"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fbaa85082d0b5db04eee920246bb37313153ec6aeb10374ab5d031b99812ea75"
+dependencies = [
+ "byteorder",
+]
