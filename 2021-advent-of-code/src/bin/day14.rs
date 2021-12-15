@@ -3,8 +3,7 @@
 
 extern crate test;
 
-use fxhash::FxHashMap;
-use iterslide::SlideIterator;
+use std::collections::HashMap;
 
 const EXAMPLE: &str = include_str!("example14.txt");
 const INPUT: &str = include_str!("input14.txt");
@@ -18,12 +17,10 @@ fn solve(input: &str) -> (usize, usize) {
     let (polymer, rules) = parse(input);
 
     let frequencies = simulate(&polymer, &rules, 10);
-    dbg!(&frequencies);
     let after_10_most_common = frequencies.iter().map(|(_k, v)| v).max().unwrap();
     let after_10_least_common = frequencies.iter().map(|(_k, v)| v).min().unwrap();
 
     let frequencies = simulate(&polymer, &rules, 40);
-    dbg!(&frequencies);
     let after_40_most_common = frequencies.iter().map(|(_k, v)| v).max().unwrap();
     let after_40_least_common = frequencies.iter().map(|(_k, v)| v).min().unwrap();
 
@@ -35,35 +32,48 @@ fn solve(input: &str) -> (usize, usize) {
 
 fn simulate(
     polymer: &[char],
-    rules: &FxHashMap<[char; 2], char>,
+    rules: &HashMap<[char; 2], char>,
     steps: usize,
-) -> FxHashMap<char, usize> {
-    let mut polymer: Box<dyn Iterator<Item = char>> = Box::new(polymer.iter().cloned());
-    for _step in 0..steps {
-        polymer = Box::new(polymer.slide(2).enumerate().flat_map(|(index, pair)| {
-            let element = rules[&[pair[0], pair[1]]];
-            if index == 0 {
-                return vec![pair[0], element, pair[1]];
-            } else {
-                return vec![element, pair[1]];
-            }
-        }));
-    }
-    // dbg!(polymer.collect::<String>());
-
+) -> HashMap<char, usize> {
     // https://stackoverflow.com/a/70234563/2545138
-    polymer
-        .enumerate()
-        .fold(FxHashMap::default(), |mut map, (idx, val)| {
-            if idx % 100_000_000 == 0 {
-                println!("at index {}", idx);
-            }
-            map.entry(val).and_modify(|frq| *frq += 1).or_insert(1);
-            map
-        })
+    let mut pairs = polymer.windows(2).fold(HashMap::new(), |mut map, val| {
+        map.entry([val[0], val[1]])
+            .and_modify(|frq| *frq += 1)
+            .or_insert(1);
+        map
+    });
+
+    let mut counts = polymer.iter().fold(HashMap::default(), |mut map, &val| {
+        map.entry(val).and_modify(|frq| *frq += 1).or_insert(1);
+        map
+    });
+
+    for _step in 0..steps {
+        pairs = pairs
+            .iter()
+            .fold(HashMap::new(), |mut map, (pair, &count)| {
+                let element = rules[&[pair[0], pair[1]]];
+
+                map.entry([pair[0], element])
+                    .and_modify(|frq| *frq += count)
+                    .or_insert(count);
+                map.entry([element, pair[1]])
+                    .and_modify(|frq| *frq += count)
+                    .or_insert(count);
+
+                counts
+                    .entry(element)
+                    .and_modify(|cnt| *cnt += count)
+                    .or_insert(count);
+
+                map
+            });
+    }
+
+    counts
 }
 
-fn parse(input: &str) -> (Vec<char>, FxHashMap<[char; 2], char>) {
+fn parse(input: &str) -> (Vec<char>, HashMap<[char; 2], char>) {
     let (polymer, rules) = input.split_once("\n\n").expect("expected two sections");
 
     let polymer: Vec<char> = polymer.chars().collect();
@@ -89,12 +99,12 @@ fn parse(input: &str) -> (Vec<char>, FxHashMap<[char; 2], char>) {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (1588, 0));
+    assert_eq!(solve(EXAMPLE), (1588, 2_188_189_693_529));
 }
 
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (2170, 0));
+        assert_eq!(solve(INPUT), (2170, 2_422_444_761_283));
     });
 }
