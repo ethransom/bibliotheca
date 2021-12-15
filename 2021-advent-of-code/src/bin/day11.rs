@@ -8,7 +8,7 @@ const EXAMPLE: &str = include_str!("example11.txt");
 const INPUT: &str = include_str!("input11.txt");
 
 fn main() {
-    dbg!(solve(EXAMPLE));
+        dbg!(solve(EXAMPLE));
     dbg!(solve(INPUT));
 }
 
@@ -1004,6 +1004,177 @@ fn bench_solve_10_vistd_tbl_shrtcrct_n_rng_lps_n_mmze(b: &mut test::Bencher) {
             }
 
             if flash_count == grid_size {
+                return (first_100_flashes, step + 1);
+            }
+
+            to_flash.clear();
+        }
+
+        unreachable!();
+    }
+
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (1591, 314));
+    });
+}
+
+#[bench]
+fn bench_solve_11_all_vecs_shrtcrct_n_rng_lps_n_mmze(b: &mut test::Bencher) {
+    fn solve(input: &str) -> (usize, usize) {
+        let mut grid = input
+            .lines()
+            .map(|line| {
+                line.chars()
+                    .map(|c| c.to_digit(10).expect("not a number"))
+                    .collect()
+            })
+            .collect::<Vec<Vec<u32>>>();
+
+        step(&mut grid)
+    }
+
+    fn step(grid: &mut Vec<Vec<u32>>) -> (usize, usize) {
+        let grid_size = grid.iter().map(|row| row.len()).sum::<usize>();
+        let grid_rows = grid[0].len();
+
+        let mut first_100_flashes = 0;
+
+        let mut to_flash = Vec::<(usize, usize)>::with_capacity(100);
+        let mut flashed = vec![-1_isize; grid_size];
+
+        for step in 0.. {
+            // take my energy!
+            for (r, row) in grid.iter_mut().enumerate() {
+                for (c, cell) in row.iter_mut().enumerate() {
+                    *cell += 1;
+                    if *cell > 9 {
+                        to_flash.push((c, r));
+                    }
+                }
+            }
+
+            while let Some((c, r)) = to_flash.pop() {
+                if flashed[r * grid_rows + c] == step as isize {
+                    continue;
+                }
+                flashed[r * grid_rows + c] = step as isize;
+
+                for rr in -1..=1 {
+                    for cc in -1..=1 {
+                        if rr == 0 && cc == 0 {
+                            continue;
+                        }
+
+                        let r = (r as i64 + rr) as usize;
+                        let c = (c as i64 + cc) as usize;
+
+                        if let Some(row) = grid.get_mut(r) {
+                            if let Some(val) = row.get_mut(c) {
+                                *val += 1;
+                                if *val > 9 {
+                                    to_flash.push((c, r));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            let mut flash_count = 0;
+            for row in grid.iter_mut() {
+                for cell in row.iter_mut() {
+                    if *cell > 9 {
+                        *cell = 0;
+                        flash_count += 1;
+                    }
+                }
+            }
+
+            if step < 100 {
+                first_100_flashes += flash_count;
+            }
+
+            if flash_count == grid_size {
+                return (first_100_flashes, step + 1);
+            }
+
+            to_flash.clear();
+        }
+
+        unreachable!();
+    }
+
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (1591, 314));
+    });
+}
+
+#[bench]
+fn bench_solve_12_all_vecs_1dmensnl_shrtcrct_n_rng_lps_n_mmze(b: &mut test::Bencher) {
+    fn solve(input: &str) -> (usize, usize) {
+        let mut grid = input
+            .lines()
+            .flat_map(|line| line.chars().map(|c| c.to_digit(10).expect("not a number")))
+            .collect::<Vec<u32>>();
+
+        let rows = input.lines().count();
+
+        step(&mut grid, rows)
+    }
+
+    fn step(grid: &mut Vec<u32>, grid_rows: usize) -> (usize, usize) {
+        let mut first_100_flashes = 0;
+
+        let mut to_flash = Vec::<(usize, usize)>::with_capacity(100);
+        let mut flashed = vec![-1_isize; grid.len()];
+
+        for step in 0.. {
+            // take my energy!
+            for (c, cell) in grid.iter_mut().enumerate() {
+                *cell += 1;
+                if *cell > 9 {
+                    to_flash.push((c % grid_rows, c / grid_rows));
+                }
+            }
+
+            while let Some((c, r)) = to_flash.pop() {
+                if flashed[r * grid_rows + c] == step as isize {
+                    continue;
+                }
+                flashed[r * grid_rows + c] = step as isize;
+
+                for rr in -1..=1 {
+                    for cc in -1..=1 {
+                        if rr == 0 && cc == 0 {
+                            continue;
+                        }
+
+                        let r = (r as i64 + rr) as usize;
+                        let c = (c as i64 + cc) as usize;
+
+                        if let Some(val) = grid.get_mut(r) {
+                            *val += 1;
+                            if *val > 9 {
+                                to_flash.push((c, r));
+                            }
+                        }
+                    }
+                }
+            }
+
+            let mut flash_count = 0;
+            for cell in grid.iter_mut() {
+                if *cell > 9 {
+                    *cell = 0;
+                    flash_count += 1;
+                }
+            }
+
+            if step < 100 {
+                first_100_flashes += flash_count;
+            }
+
+            if flash_count == grid.len() {
                 return (first_100_flashes, step + 1);
             }
 
