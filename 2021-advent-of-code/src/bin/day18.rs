@@ -10,12 +10,15 @@ fn main() {
     dbg!(solve(INPUT));
 }
 
-fn solve(input: &str) -> (usize, usize) {
+fn solve(input: &str) -> (u32, u32) {
     let numbers: Vec<Pair> = input.lines().map(Pair::from).collect();
 
-    dbg!(numbers);
+    let result = numbers
+        .into_iter()
+        .reduce(|a, b| a + b)
+        .expect("not enough numbers to add");
 
-    (0, 0)
+    (result.magnitude(), 0)
 }
 
 #[derive(PartialEq, Debug)]
@@ -155,14 +158,49 @@ fn test_magnitude() {
     );
 }
 
+impl std::ops::Add<Pair> for Pair {
+    type Output = Pair;
+
+    fn add(self, other: Pair) -> Pair {
+        Pair {
+            left: Branch(Box::new(self)),
+            right: Branch(Box::new(other)),
+        }
+        // TODO: .reduce()
+    }
+}
+
+#[test]
+fn test_add() {
+    assert_eq!(
+        Pair::from("[1,2]") + Pair::from("[[3,4],5]"),
+        Pair::from("[[1,2],[[3,4],5]]")
+    );
+
+    // no reduction yet, mostly a test of API
+    assert_eq!(
+        ["[1,1]", "[2,2]", "[3,3]", "[4,4]"]
+            .into_iter()
+            .map(Pair::from)
+            .reduce(|a, b| a + b)
+            .unwrap(),
+        Pair::from("[[[[1,1],[2,2]],[3,3]],[4,4]]")
+    );
+
+    // assert_eq!(
+    //     Pair::from("[[[[4,3],4],4],[7,[[8,4],9]]]") + Pair::from("[1,1]"),
+    //     Pair::from("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")
+    // );
+}
+
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (0, 0));
+    assert_eq!(solve(EXAMPLE), (4140, 0));
 }
 
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (0, 0));
+        assert_eq!(solve(INPUT), (2210319790, 0));
     });
 }
