@@ -121,6 +121,40 @@ fn test_parse() {
     let _ = Pair::from("[[[[1,3],[5,3]],[[1,3],[8,7]]],[[[4,9],[6,9]],[[8,2],[7,3]]]]");
 }
 
+impl Arm {
+    fn magnitude(&self) -> u32 {
+        match &self {
+            Num(n) => *n,
+            Branch(b) => b.magnitude(),
+        }
+    }
+}
+
+impl Pair {
+    fn magnitude(&self) -> u32 {
+        3 * &self.left.magnitude() + 2 * &self.right.magnitude()
+    }
+}
+
+#[test]
+fn test_magnitude() {
+    assert_eq!(Pair::from("[[1,2],[[3,4],5]]").magnitude(), 143);
+    assert_eq!(
+        Pair::from("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]").magnitude(),
+        1384
+    );
+    assert_eq!(Pair::from("[[[[1,1],[2,2]],[3,3]],[4,4]]").magnitude(), 445);
+    assert_eq!(Pair::from("[[[[3,0],[5,3]],[4,4]],[5,5]]").magnitude(), 791);
+    assert_eq!(
+        Pair::from("[[[[5,0],[7,4]],[5,5]],[6,6]]").magnitude(),
+        1137
+    );
+    assert_eq!(
+        Pair::from("[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]").magnitude(),
+        3488
+    );
+}
+
 #[test]
 fn test_example() {
     assert_eq!(solve(EXAMPLE), (0, 0));
