@@ -276,8 +276,7 @@ impl Pair {
                 continue;
             }
 
-            pair.split(&mut dirty);
-            if dirty {
+            if pair.split() {
                 println!("split: {:?}", &pair);
                 continue;
             }
@@ -404,31 +403,41 @@ impl Pair {
         right_carry
     }
 
-    fn split(&mut self, dirty: &mut bool) {
+    fn split(&mut self) -> bool {
         match &mut self.left {
-            Branch(left) => left.split(dirty),
+            Branch(left) => {
+                if left.split() {
+                    return true;
+                }
+            }
             &mut Num(num) => {
                 if num >= 10 {
                     self.left = Branch(Box::new(Pair {
                         left: Num(num / 2),
                         right: Num((num + 1) / 2),
                     }));
-                    *dirty = true;
+                    return true;
                 }
             }
         }
         match &mut self.right {
-            Branch(right) => right.split(dirty),
+            Branch(right) => {
+                if right.split() {
+                    return true;
+                }
+            }
             &mut Num(num) => {
                 if num >= 10 {
                     self.right = Branch(Box::new(Pair {
                         left: Num(num / 2),
                         right: Num((num + 1) / 2),
                     }));
-                    *dirty = true;
+                    return true;
                 }
             }
         }
+
+        false
     }
 }
 
@@ -478,38 +487,30 @@ fn test_explode() {
 
 #[test]
 fn test_split() {
-    let mut dirty = false;
     // reduced numbers do not split
     let mut pair = Pair::from("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]");
-    pair.split(&mut dirty);
+    assert_eq!(pair.split(), false);
     assert_eq!(pair, Pair::from("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]"));
-    assert_eq!(dirty, false);
 
-    let mut dirty = false;
     let mut pair = Pair {
         left: Num(1),
         right: Num(10),
     };
-    pair.split(&mut dirty);
-    assert_eq!(dirty, true);
+    assert_eq!(pair.split(), true);
     assert_eq!(pair, Pair::from("[1,[5,5]]"));
 
-    let mut dirty = false;
     let mut pair = Pair {
         left: Num(1),
         right: Num(11),
     };
-    pair.split(&mut dirty);
-    assert_eq!(dirty, true);
+    assert_eq!(pair.split(), true);
     assert_eq!(pair, Pair::from("[1,[5,6]]"));
 
-    let mut dirty = false;
     let mut pair = Pair {
         left: Num(1),
         right: Num(12),
     };
-    pair.split(&mut dirty);
-    assert_eq!(dirty, true);
+    assert_eq!(pair.split(), true);
     assert_eq!(pair, Pair::from("[1,[6,6]]"));
 }
 
@@ -525,21 +526,11 @@ fn test_reduce_example() {
         Pair::from("[[[[0,7],4],[[7,8],[0,[6,7]]]],[1,1]]").reduce(),
         Pair::from("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")
     );
-    // // split
-    // assert_eq!(
-    //     Pair::from("[[[[0,7],4],[[7,8],[0,13]]],[1,1]]").reduce(),
-    //     Pair::from("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")
-    // );
-    // // split
-    // assert_eq!(
-    //     Pair::from("[[[[0,7],4],[15,[0,13]]],[1,1]]").reduce(),
-    //     Pair::from("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")
-    // );
-    // // explode
-    // assert_eq!(
-    //     Pair::from("[[[[0,7],4],[7,[[8,4],9]]],[1,1]]").reduce(),
-    //     Pair::from("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")
-    // );
+    // explode
+    assert_eq!(
+        Pair::from("[[[[0,7],4],[7,[[8,4],9]]],[1,1]]").reduce(),
+        Pair::from("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")
+    );
     // explode
     // NOTE: same as addition example
     assert_eq!(
@@ -556,6 +547,6 @@ fn test_example() {
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (2210319790, 0));
+        assert_eq!(solve(INPUT), (4072, 0));
     });
 }
