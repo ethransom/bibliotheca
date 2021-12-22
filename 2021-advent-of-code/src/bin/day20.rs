@@ -12,8 +12,41 @@ fn main() {
     dbg!(solve(INPUT));
 }
 
+#[derive(Default, Clone)]
+struct Image {
+    background: bool,
+    pixels: HashSet<(i32, i32)>,
+}
+
+impl Image {
+    fn new(background: bool) -> Self {
+        Image {
+            background,
+            pixels: HashSet::<(i32, i32)>::default(),
+        }
+    }
+
+    fn set(&mut self, pos: (i32, i32), val: bool) {
+        if val != self.background {
+            self.pixels.insert(pos);
+        }
+    }
+
+    fn get(&self, pos: &(i32, i32)) -> bool {
+        if self.background {
+            !self.pixels.contains(pos)
+        } else {
+            self.pixels.contains(pos)
+        }
+    }
+
+    fn lit(&self) -> usize {
+        self.pixels.len()
+    }
+}
+
 fn solve(input: &str) -> (usize, usize) {
-    let (algorithm, image) = input
+    let (algorithm, pixels) = input
         .split_once("\n\n")
         .expect("expected both algorithm and image");
 
@@ -26,28 +59,51 @@ fn solve(input: &str) -> (usize, usize) {
         })
         .collect::<Vec<bool>>();
 
-    let image: HashSet<(i32, i32)> = image
-        .lines()
-        .enumerate()
-        .flat_map(|(r, line)| {
-            line.chars()
-                .enumerate()
-                .flat_map(move |(c, ch)| if ch == '#' { Some((c as i32, r as i32)) } else { None })
+    let mut image = Image::new(false);
+
+    pixels.lines().enumerate().for_each(|(r, line)| {
+        line.chars().enumerate().for_each(|(c, ch)| {
+            if ch == '#' {
+                image.set((c as i32, r as i32), true)
+            }
         })
-        .collect();
+    });
 
-    let width = image.iter().map(|(c, _)| c + 1).max().expect("can't solve empty image");
-    let height = image.iter().map(|(_, r)| r + 1).max().expect("can't solve empty image");
+    let width = image
+        .pixels
+        .iter()
+        .map(|(c, _)| c + 1)
+        .max()
+        .expect("can't solve empty image");
+    let height = image
+        .pixels
+        .iter()
+        .map(|(_, r)| r + 1)
+        .max()
+        .expect("can't solve empty image");
 
+    let twice_enhanced = enhance(&image, width, height, &algorithm, 2);
+
+    let fifty_enhanced = enhance(&image, width, height, &algorithm, 50);
+
+    (twice_enhanced.lit(), fifty_enhanced.lit())
+}
+
+fn enhance(image: &Image, width: i32, height: i32, algorithm: &[bool], steps: usize) -> Image {
     let neighbors = neighbors();
 
-    let mut image = image;
-    let (mut start_x, mut end_x, mut start_y, mut end_y) = (-1, width, -1, height);
+    let mut image: Image = image.clone();
 
-    for _step in 0..2 {
-        println!("wide: {}, high: {}", end_x - start_x, end_y - start_y);
+    let (mut start_x, mut end_x, mut start_y, mut end_y) = (-1, width + 1, -1, height + 1);
 
-        let mut next_image: HashSet<(i32, i32)> = HashSet::new();
+    for _step in 0..steps {
+        let next_background = if algorithm[0] {
+            !image.background
+        } else {
+            false
+        };
+
+        let mut next_image = Image::new(next_background);
 
         for c in start_x..=end_x {
             for r in start_y..=end_y {
@@ -55,29 +111,26 @@ fn solve(input: &str) -> (usize, usize) {
 
                 for (i, j) in &neighbors {
                     bin <<= 1;
-                    if image.contains(&((c + j), (r + i))) {
+                    if image.get(&((c + j), (r + i))) {
                         bin += 1;
                     }
                 }
 
                 print!("{}", if algorithm[bin] { '#' } else { '.' });
 
-               if algorithm[bin] {
-                   next_image.insert((c, r));
-               }
-
+                next_image.set((c, r), algorithm[bin]);
             }
-            println!("");
+            println!();
         }
 
         image = next_image;
         start_x -= 1;
         end_x += 1;
         start_y -= 1;
-        end_y +=1;
+        end_y += 1;
     }
 
-    (image.len(), 0)
+    image
 }
 
 fn neighbors() -> Vec<(i32, i32)> {
@@ -94,12 +147,12 @@ fn neighbors() -> Vec<(i32, i32)> {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (35, 0));
+    assert_eq!(solve(EXAMPLE), (35, 3351));
 }
 
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (0, 0));
+        assert_eq!(solve(INPUT), (5359, 12333));
     });
 }
