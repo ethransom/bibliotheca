@@ -1,6 +1,6 @@
 #![feature(test)]
 
-use std::collections::HashSet;
+use fxhash::FxHashSet;
 
 extern crate test;
 
@@ -15,14 +15,14 @@ fn main() {
 #[derive(Default, Clone)]
 struct Image {
     background: bool,
-    pixels: HashSet<(i32, i32)>,
+    pixels: FxHashSet<(i32, i32)>,
 }
 
 impl Image {
     fn new(background: bool) -> Self {
         Image {
             background,
-            pixels: HashSet::<(i32, i32)>::default(),
+            pixels: FxHashSet::<(i32, i32)>::default(),
         }
     }
 
