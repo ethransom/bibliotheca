@@ -88,25 +88,20 @@ impl From<&str> for Operand {
     }
 }
 
-fn solve(input: &str) -> (u64, u64) {
+fn solve(input: &str) -> (i64, i64) {
     let instrs = input.lines().map(Instr::from).collect::<Vec<Instr>>();
 
-    let start = (1..14).fold(9 as u64, |n, _| n * 10 + 9);
+    let start = (1..14).fold(9 as i64, |n, _| n * 10 + 9);
 
-    //     let highest_monad = (0..start).rev().into_par_iter().find_first(|&i| {
-    //         if i % 1_000 == 0 {
-    //             println!("{}", i);
-    //         }
-    //         run_alu(&instrs, i)
-    //     });
+    let end = start / 10;
 
-    let highest_monad = (0..start)
+    let highest_monad = (end..start)
         .rev()
         .find(|&i| {
             if i % 1_000_000 == 0 {
                 println!("{}", i);
             }
-            run_alu(&instrs, i)
+            run_alu(&instrs, i as u64)
         })
         .expect("NO SOLUTION");
 
@@ -118,6 +113,10 @@ fn run_alu(instrs: &[Instr], input: u64) -> bool {
     let mut regs = [0; 4];
 
     let input = input.to_string();
+
+    if input.chars().any(|c| c == '0') {
+        return false;
+    }
 
     let mut inputs = input.chars().map(|d| d.to_digit(10).unwrap() as i64);
 
@@ -180,6 +179,74 @@ fn run_alu(instrs: &[Instr], input: u64) -> bool {
 
 #[test]
 fn test_run_alu() {
+    fn run_alu(instrs: &[Instr], input: u64) -> bool {
+        let mut regs = [0; 4];
+
+        let input = input.to_string();
+
+        if input.chars().any(|c| c == '0') {
+            return false;
+        }
+
+        let mut inputs = input.chars().map(|d| d.to_digit(10).unwrap() as i64);
+
+        for instr in instrs {
+            match *instr {
+                Instr::Inp(Operand::Reg(dst)) => {
+                    let i = inputs.next().expect("asked for too many inputs");
+                    regs[dst] = i;
+                }
+
+                Instr::Add(Operand::Reg(dst), Operand::Reg(src)) => {
+                    regs[dst] = regs[dst] + regs[src];
+                }
+
+                Instr::Add(Operand::Reg(dst), Operand::Imm(src)) => {
+                    regs[dst] = regs[dst] + src;
+                }
+
+                Instr::Mul(Operand::Reg(dst), Operand::Reg(src)) => {
+                    regs[dst] = regs[dst] * regs[src];
+                }
+
+                Instr::Mul(Operand::Reg(dst), Operand::Imm(src)) => {
+                    regs[dst] = regs[dst] * src;
+                }
+
+                Instr::Div(Operand::Reg(dst), Operand::Reg(src)) => {
+                    regs[dst] = regs[dst] / regs[src];
+                }
+
+                Instr::Div(Operand::Reg(dst), Operand::Imm(src)) => {
+                    regs[dst] = regs[dst] / src;
+                }
+
+                Instr::Mod(Operand::Reg(dst), Operand::Reg(src)) => {
+                    regs[dst] = regs[dst] % regs[src];
+                }
+
+                Instr::Mod(Operand::Reg(dst), Operand::Imm(src)) => {
+                    regs[dst] = regs[dst] % src;
+                }
+
+                Instr::Eql(Operand::Reg(dst), Operand::Reg(src)) => {
+                    regs[dst] = (regs[dst] == regs[src]) as i64;
+                }
+
+                Instr::Eql(Operand::Reg(dst), Operand::Imm(src)) => {
+                    regs[dst] = (regs[dst] == src) as i64;
+                }
+
+                _ => {
+                    // dbg!(bad);
+                    panic!();
+                }
+            }
+        }
+
+        regs[3] == 0
+    }
+
     let instrs = INPUT.lines().map(Instr::from).collect::<Vec<Instr>>();
 
     assert_eq!(run_alu(&instrs, 13579246899999), false);
