@@ -93,7 +93,7 @@ fn bench_solve_01_shift(b: &mut test::Bencher) {
 #[bench]
 fn bench_solve_02_stack_alloc(b: &mut test::Bencher) {
     fn simulate(initial: &Vec<u8>, rounds: usize) -> usize {
-        let mut counts = vec![0; 9];
+        let mut counts = [0; 9];
 
         for &fish in initial {
             counts[fish as usize] += 1;
