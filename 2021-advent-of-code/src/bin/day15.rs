@@ -30,19 +30,14 @@ fn parse(input: &str) -> Vec<Vec<u32>> {
 
 const NEIGHBORS: [(i32, i32); 4] = [(-1, 0), (0, -1), (0, 1), (1, 0)];
 
-fn min_cost(grid: &Vec<Vec<u32>>) -> u32 {
+fn min_cost(grid: &[Vec<u32>]) -> u32 {
     let mut distance: Vec<Vec<u32>> = vec![vec![u32::MAX; grid[0].len()]; grid.len()];
     let mut to_visit: Vec<(u32, (usize, usize))> = Vec::new();
 
     distance[0][0] = 0;
     to_visit.push((0, (0, 0)));
 
-    loop {
-        let (cum_cost, (c, r)) = match pop_min(&mut to_visit) {
-            Some((cum_cost, (c, r))) => (cum_cost, (c, r)),
-            None => break,
-        };
-
+    while let Some((cum_cost, (c, r))) = pop_min(&mut to_visit) {
         // println!("visiting {:?} at cost: {} from queue {:?}", (c, r), cum_cost, to_visit);
 
         // for row in &distance {
@@ -102,7 +97,7 @@ fn pop_min(to_visit: &mut Vec<(u32, (usize, usize))>) -> Option<(u32, (usize, us
         return Some(min);
     }
 
-    return None;
+    None
 }
 
 #[test]
@@ -117,7 +112,7 @@ fn test_pop_min() {
     );
 }
 
-fn expand_grid(original: &Vec<Vec<u32>>, count: usize) -> Vec<Vec<u32>> {
+fn expand_grid(original: &[Vec<u32>], count: usize) -> Vec<Vec<u32>> {
     (0..original.len() * count)
         .map(|row| {
             let source_row = &original[row % original.len()];
