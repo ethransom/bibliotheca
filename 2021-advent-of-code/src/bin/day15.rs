@@ -2,7 +2,7 @@
 
 extern crate test;
 
-use std::collections::BinaryHeap;
+// use std::collections::BinaryHeap;
 
 const EXAMPLE: &str = include_str!("example15.txt");
 const INPUT: &str = include_str!("input15.txt");
@@ -24,37 +24,33 @@ fn solve(input: &str) -> (u32, usize) {
 const NEIGHBORS: [(i32, i32); 4] = [(-1, 0), (0, -1), (0, 1), (1, 0)];
 
 fn min_cost(grid: &Vec<Vec<u32>>) -> u32 {
-    // let visited: Vec<Vec<bool>> = vec![vec![false; grid[0].len()]; grid.len()];
-
     let mut distance: Vec<Vec<u32>> = vec![vec![u32::MAX; grid[0].len()]; grid.len()];
-
     let mut to_visit: Vec<(u32, (usize, usize))> = Vec::new();
 
     distance[0][0] = 0;
     to_visit.push((0, (0, 0)));
 
-    while let Some((cum_cost, (c, r))) = to_visit
-        .iter()
-        .min_by(|(cost, _), (cost_b, _)| cost.cmp(cost_b))
-    {
-        println!(
-            "visiting {:?} at cost: {} from queue {:?}",
-            (c, r),
-            cum_cost,
-            to_visit
-        );
+    loop {
+        let (cum_cost, (c, r)) = match pop_min(&mut to_visit) {
+            Some((cum_cost, (c, r))) => (cum_cost, (c, r)),
+            None => break,
+        };
 
-        for row in &distance {
-            for cell in row {
-                print!("{:4} ", cell);
-            }
-            println!();
-        }
+        // println!("visiting {:?} at cost: {} from queue {:?}", (c, r), cum_cost, to_visit);
 
+        // for row in &distance {
+        //     for cell in row {
+        //         print!("{:4} ", cell);
+        //     }
+        //     println!();
+        // }
+
+        // if at bottom right corner
         if c == grid[0].len() - 1 && r == grid.len() - 1 {
             return cum_cost;
         }
 
+        // we already know about a cheaper route to this (c, r)
         if cum_cost > distance[r][c] {
             continue;
         }
@@ -64,7 +60,7 @@ fn min_cost(grid: &Vec<Vec<u32>>) -> u32 {
             let c = c as i32 + x;
 
             if r < 0 || c < 0 {
-                println!("skipping neighbor < 0 {}, {}", r, c);
+                // skip when off top or left edges
                 continue;
             }
 
@@ -72,30 +68,46 @@ fn min_cost(grid: &Vec<Vec<u32>>) -> u32 {
             let c = c as usize;
 
             if r == grid.len() || c == grid[0].len() {
-                println!("skipping neighbor > len {}, {}", r, c);
+                // skip when off right or bottom edges
                 continue;
             }
 
-            println!("evaluating neighbor {}, {}", r, c);
-
             if cum_cost + grid[r][c] < distance[r][c] {
-                println!(
-                    "queuing neighbor {}, {} because of cost {} vs prev best known {}",
-                    r,
-                    c,
-                    cum_cost + grid[r][c],
-                    distance[r][c]
-                );
-
+                // queue (c, r) because we've found a better path than previously known
                 distance[r][c] = cum_cost + grid[r][c];
                 to_visit.push((cum_cost + grid[r][c], (c, r)));
             }
         }
     }
 
-    dbg!(to_visit);
-
     unreachable!("no solution to grid!");
+}
+
+// ENHANCEMENT: make generic?
+// fn pop_min_generic<T>(vec: &mut Vec<T>, cmp: fn(&T, &T) -> std::cmp::Ordering) -> T { ... }
+fn pop_min(to_visit: &mut Vec<(u32, (usize, usize))>) -> Option<(u32, (usize, usize))> {
+    if let Some((ind, &min)) = to_visit
+        .iter()
+        .enumerate()
+        .min_by(|(_i, (cost, _)), (_j, (cost_b, _))| cost.cmp(cost_b)) {
+        to_visit.swap_remove(ind);
+
+        return Some(min);
+    }
+
+    return None;
+}
+
+#[test]
+fn test_pop_min() {
+    assert_eq!(
+        pop_min(&mut vec![(3, (1, 2)), (2, (5, 6)), (1, (9, 8))]),
+        Some((1, (9, 8)))
+    );
+    assert_eq!(
+        pop_min(&mut vec![]),
+        None
+    );
 }
 
 #[test]
@@ -106,6 +118,6 @@ fn test_example() {
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (0, 0));
+        assert_eq!(solve(INPUT), (435, 0));
     });
 }
