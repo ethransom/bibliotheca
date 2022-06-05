@@ -1,9 +1,8 @@
 #![feature(test)]
 #![feature(mixed_integer_ops)]
+#![feature(map_first_last)]
 
 extern crate test;
-
-// use std::collections::BinaryHeap;
 
 const EXAMPLE: &str = include_str!("example15.txt");
 const INPUT: &str = include_str!("input15.txt");
@@ -173,9 +172,8 @@ fn test_expand_grid() {
     let actual = expand_grid(&parse(EXAMPLE), 5);
     assert_eq!(actual.len(), expected.len());
 
-    for (idx, (row_actual, row_expected)) in actual.iter().zip(expected.iter()).enumerate() {
+    for (row_actual, row_expected) in actual.iter().zip(expected.iter()) {
         assert_eq!(row_actual, row_expected);
-        println!("row {} OK", idx);
     }
 }
 
@@ -191,3 +189,65 @@ fn bench_min_cost_00_current(b: &mut test::Bencher) {
         assert_eq!(min_cost(&grid), 435);
     });
 }
+
+// An attempt to use std::collections::BinaryHeap. Failed because it's a max heap, not a min heap.
+//
+// #[bench]
+// fn bench_min_cost_01_btreemap(b: &mut test::Bencher) {
+//     use std::collections::BinaryHeap;
+//
+//     fn min_cost(grid: &[Vec<u32>]) -> u32 {
+//         let mut distance: Vec<Vec<u32>> = vec![vec![u32::MAX; grid[0].len()]; grid.len()];
+//         let mut to_visit: BinaryHeap<(u32, (usize, usize))> = BinaryHeap::new();
+//
+//         distance[0][0] = 0;
+//         to_visit.push((0, (0, 0)));
+//
+//         // dbg!(&to_visit);
+//
+//         while let Some((cum_cost, (c, r))) = to_visit.pop() {
+//             println!("visiting {:?} at cost: {} from queue {:?}", (c, r), cum_cost, to_visit);
+//
+//             for row in &distance {
+//                 for cell in row {
+//                     print!("{:4} ", cell);
+//                 }
+//                 println!();
+//             }
+//
+//             // if at bottom right corner
+//             if c == grid[0].len() - 1 && r == grid.len() - 1 {
+//                 return cum_cost;
+//             }
+//
+//             // we already know about a cheaper route to this (c, r)
+//             if cum_cost > distance[r][c] {
+//                 continue;
+//             }
+//
+//             for (x, y) in NEIGHBORS {
+//                 let (r, c) = match (r.checked_add_signed(y), c.checked_add_signed(x)) {
+//                     (Some(r), Some(c)) if r != grid.len() && c != grid[r].len() => (r, c),
+//                     _ => continue, // out of bounds
+//                 };
+//
+//                 if cum_cost + grid[r][c] < distance[r][c] {
+//                     // queue (c, r) because we've found a better path than previously known
+//                     distance[r][c] = cum_cost + grid[r][c];
+//                     to_visit.push((cum_cost + grid[r][c], (c, r)));
+//                 }
+//             }
+//
+//             // dbg!(&to_visit);
+//         }
+//
+//         // dbg!(distance[9][9]);
+//
+//         unreachable!("no solution to grid!");
+//     }
+//
+//     let grid = parse(EXAMPLE);
+//     b.iter(|| {
+//         assert_eq!(min_cost(&grid), 435);
+//     });
+// }
