@@ -1,4 +1,5 @@
 #![feature(test)]
+#![feature(mixed_integer_ops)]
 
 extern crate test;
 
@@ -28,7 +29,7 @@ fn parse(input: &str) -> Vec<Vec<u32>> {
         .collect()
 }
 
-const NEIGHBORS: [(i32, i32); 4] = [(-1, 0), (0, -1), (0, 1), (1, 0)];
+const NEIGHBORS: [(isize, isize); 4] = [(-1, 0), (0, -1), (0, 1), (1, 0)];
 
 fn min_cost(grid: &[Vec<u32>]) -> u32 {
     let mut distance: Vec<Vec<u32>> = vec![vec![u32::MAX; grid[0].len()]; grid.len()];
@@ -58,21 +59,10 @@ fn min_cost(grid: &[Vec<u32>]) -> u32 {
         }
 
         for (x, y) in NEIGHBORS {
-            let r = r as i32 + y;
-            let c = c as i32 + x;
-
-            if r < 0 || c < 0 {
-                // skip when off top or left edges
-                continue;
-            }
-
-            let r = r as usize;
-            let c = c as usize;
-
-            if r == grid.len() || c == grid[0].len() {
-                // skip when off right or bottom edges
-                continue;
-            }
+            let (r, c) = match (r.checked_add_signed(y), c.checked_add_signed(x)) {
+                (Some(r), Some(c)) if r != grid.len() && c != grid[r].len() => (r, c),
+                _ => continue, // out of bounds
+            };
 
             if cum_cost + grid[r][c] < distance[r][c] {
                 // queue (c, r) because we've found a better path than previously known
@@ -119,7 +109,7 @@ fn expand_grid(original: &[Vec<u32>], count: usize) -> Vec<Vec<u32>> {
             (0..source_row.len() * count)
                 .map(|col| {
                     let source_val = source_row[col % source_row.len()];
-                    let val = source_val + (row/original.len()) as u32 + (col/source_row.len()) as u32;
+                    let val = source_val + (row / original.len()) as u32 + (col / source_row.len()) as u32;
                     if val >= 10 { (val % 10) + 1 } else { val }
                 })
                 .collect()
