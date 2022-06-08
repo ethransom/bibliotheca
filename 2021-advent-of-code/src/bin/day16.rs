@@ -24,7 +24,7 @@ fn solve(input: &str) -> (usize, usize) {
 
 #[derive(Debug, PartialEq, Eq)]
 enum Packet {
-    Literal(u8, Vec<u8>),
+    Literal(u8, usize),
     Operator(u8, Vec<Packet>),
 }
 
@@ -43,7 +43,7 @@ fn parse(slice: &mut &[u8]) -> Packet {
                 break;
             }
         }
-        Literal(version, payload)
+        Literal(version, slice_to_byte_usize(&payload))
     } else {
         let length_type_id = slice[0] != 0;
         *slice = &slice[1..];
@@ -132,31 +132,14 @@ fn test_binary_slice() {
 
 #[test]
 fn test_parse() {
-    assert_eq!(
-        parse(&mut &binary_slice("D2FE28")[..]),
-        Literal(6, bb("011111100101"))
-    );
+    assert_eq!(parse(&mut &binary_slice("D2FE28")[..]), Literal(6, 2021));
     assert_eq!(
         parse(&mut &binary_slice("38006F45291200")[..]),
-        Operator(
-            1,
-            vec![
-                Literal(6, /* 10 */ bb("1010")),
-                Literal(2, /* 20 */ bb("00010100"))
-            ]
-        ),
+        Operator(1, vec![Literal(6, 10), Literal(2, 20)]),
     );
-    println!("====================");
     assert_eq!(
         parse(&mut &binary_slice("EE00D40C823060")[..]),
-        Operator(
-            1,
-            vec![
-                Literal(2, /* 1 */ bb("000")),
-                Literal(4, /* 2 */ bb("010")),
-                Literal(1, /* 3 */ bb("011")),
-            ]
-        ),
+        Operator(7, vec![Literal(2, 1), Literal(4, 2), Literal(1, 3)]),
     );
     // assert_eq!(parse(&binary_slice("D")), 6);
 }
