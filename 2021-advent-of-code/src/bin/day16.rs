@@ -17,9 +17,9 @@ fn main() {
 fn solve(input: &str) -> (usize, usize) {
     let slice = binary_slice(input);
 
-    parse(&mut &slice[..]);
+    let root = parse(&mut &slice[..]);
 
-    (0, 0)
+    (version_sum(&root), 0)
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -28,8 +28,20 @@ enum Packet {
     Operator(u8, Vec<Packet>),
 }
 
+fn version_sum(packet: &Packet) -> usize {
+    match packet {
+        Literal(version, _) => *version as usize,
+        Operator(version, children) => {
+            let mut sum = *version as usize;
+            for child in children {
+                sum += version_sum(child);
+            }
+            sum
+        }
+    }
+}
+
 fn parse(slice: &mut &[u8]) -> Packet {
-    println!("parse() slice of length {}", slice.len());
     let version = slice_to_byte(&slice[..3]);
     let type_id = slice_to_byte(&slice[3..6]); // TODO: safely handle out-of-range errors?
     *slice = &slice[6..];
@@ -60,12 +72,13 @@ fn parse(slice: &mut &[u8]) -> Packet {
         } else {
             let length = slice_to_byte_usize(&slice[..15]);
             *slice = &slice[15..];
+
             let mut payload = &slice[..length];
             let mut children = vec![];
             while payload.len() != 0 {
                 children.push(parse(&mut payload));
             }
-            *slice = payload; // ?!?!?!?!?
+            *slice = &slice[length..];
             Operator(version, children)
         }
     }
@@ -92,7 +105,7 @@ fn test_slice_to_byte() {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (0, 0));
+    assert_eq!(solve(EXAMPLE), (31, 0));
 }
 
 fn binary_slice(input: &str) -> Vec<u8> {
@@ -141,12 +154,29 @@ fn test_parse() {
         parse(&mut &binary_slice("EE00D40C823060")[..]),
         Operator(7, vec![Literal(2, 1), Literal(4, 2), Literal(1, 3)]),
     );
+    assert_eq!(
+        parse(&mut &binary_slice("8A004A801A8002F478")[..]),
+        Operator(4, vec![Operator(1, vec![Operator(5, vec![Literal(6, 2)])])]),
+    );
     // assert_eq!(parse(&binary_slice("D")), 6);
+}
+
+#[test]
+fn test_version_sum() {
+    for (hex, sum) in [
+        ("8A004A801A8002F478", 16),
+        ("620080001611562C8802118E34", 12),
+        ("C0015000016115A2E0802F182340", 23),
+        ("A0016C880162017C3686B18A3D4780", 31), // same as example16.txt
+    ] {
+        dbg!(hex, sum);
+        assert_eq!(version_sum(&parse(&mut &binary_slice(hex)[..])), sum);
+    }
 }
 
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (0, 0));
+        assert_eq!(solve(INPUT), (989, 0));
     });
 }
