@@ -17,7 +17,7 @@ fn main() {
 fn solve(input: &str) -> (usize, usize) {
     let slice = binary_slice(input);
 
-    parse(&slice);
+    parse(&mut &slice[..]);
 
     (0, 0)
 }
@@ -25,39 +25,48 @@ fn solve(input: &str) -> (usize, usize) {
 #[derive(Debug, PartialEq, Eq)]
 enum Packet {
     Literal(u8, Vec<u8>),
-    Operator(u8, Vec<u8>),
+    Operator(u8, Vec<Packet>),
 }
 
-fn parse(mut slice: &[u8]) -> Packet {
+fn parse(slice: &mut &[u8]) -> Packet {
     let version = slice_to_byte(&slice[..3]);
     let type_id = slice_to_byte(&slice[3..6]); // TODO: safely handle out-of-range errors?
-    slice = &slice[6..];
+    *slice = &slice[6..];
     if type_id == 4 {
         let mut payload = vec![];
         loop {
             let stop = slice[0] == 0;
             payload.extend_from_slice(&slice[1..5]);
-            slice = &slice[5..];
+            *slice = &slice[5..];
             if stop {
                 break;
             }
         }
         Literal(version, payload)
     } else {
-        dbg!(slice
-            .iter()
-            .map(|b| b.to_string())
-            .collect::<Vec<String>>()
-            .join(","));
         let length_type_id = slice[0] != 0;
-        slice = &slice[1..];
-        let length_length = if length_type_id { 11 } else { 15 };
-        let length = slice_to_byte_usize(&slice[..length_length]);
-        slice = &slice[length_length..];
+        *slice = &slice[1..];
 
-        let payload = &slice[..length];
-
-        Operator(version, payload.iter().cloned().collect())
+        if length_type_id {
+            let length = slice_to_byte_usize(&slice[..11]);
+            // TODO length is num of sub packets
+            for packet in 0..length {
+                dbg!(packet, parse(slice));
+            }
+            // *slice = &slice[11..];
+            // &slice[..length]
+            Operator(version, vec![])
+        } else {
+            let length = slice_to_byte_usize(&slice[..15]);
+            *slice = &slice[15..];
+            let mut payload = &slice[..length];
+            let mut children = vec![];
+            while payload.len() != 0 {
+                children.push(parse(&mut payload));
+            }
+            *slice = payload; // ?!?!?!?!?
+            Operator(version, children)
+        }
     }
 }
 
@@ -123,13 +132,23 @@ fn test_binary_slice() {
 #[test]
 fn test_parse() {
     assert_eq!(
-        parse(&binary_slice("D2FE28")),
+        parse(&mut &binary_slice("D2FE28")[..]),
         Literal(6, bb("011111100101"))
     );
     assert_eq!(
-        parse(&binary_slice("38006F45291200")),
-        Operator(1, bb("110100010100101001000100100")),
+        parse(&mut &binary_slice("38006F45291200")[..]),
+        Operator(
+            1,
+            vec![
+                Literal(6, /* 10 */ bb("1010")),
+                Literal(2, /* 20 */ bb("00010100"))
+            ]
+        ),
     );
+    // assert_eq!(
+    //     parse(&mut &binary_slice("EE00D40C823060")[..]),
+    //     Operator(1, bb("010100000011001000001000110000011")),
+    // );
     // assert_eq!(parse(&binary_slice("D")), 6);
 }
 
