@@ -1,8 +1,10 @@
 #![feature(test)]
 #![feature(exclusive_range_pattern)]
 
-extern crate test;
 extern crate core;
+extern crate test;
+
+use crate::Packet::{Literal, Operator};
 
 const EXAMPLE: &str = include_str!("example16.txt");
 const INPUT: &str = include_str!("input16.txt");
@@ -13,9 +15,69 @@ fn main() {
 }
 
 fn solve(input: &str) -> (usize, usize) {
-    let _blocks = parse(input);
+    let slice = binary_slice(input);
+
+    parse(&slice);
 
     (0, 0)
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum Packet {
+    Literal(u8, Vec<u8>),
+    Operator(u8, Vec<u8>),
+}
+
+fn parse(mut slice: &[u8]) -> Packet {
+    let version = slice_to_byte(&slice[..3]);
+    let type_id = slice_to_byte(&slice[3..6]); // TODO: safely handle out-of-range errors?
+    slice = &slice[6..];
+    if type_id == 4 {
+        let mut payload = vec![];
+        loop {
+            let stop = slice[0] == 0;
+            payload.extend_from_slice(&slice[1..5]);
+            slice = &slice[5..];
+            if stop {
+                break;
+            }
+        }
+        Literal(version, payload)
+    } else {
+        dbg!(slice
+            .iter()
+            .map(|b| b.to_string())
+            .collect::<Vec<String>>()
+            .join(","));
+        let length_type_id = slice[0] != 0;
+        slice = &slice[1..];
+        let length_length = if length_type_id { 11 } else { 15 };
+        let length = slice_to_byte_usize(&slice[..length_length]);
+        slice = &slice[length_length..];
+
+        let payload = &slice[..length];
+
+        Operator(version, payload.iter().cloned().collect())
+    }
+}
+
+// TODO: make generic
+// fn slice_to_byte<T>(slice: &[u8]) -> T {
+//     slice.iter().fold(0, |byte, bit| (byte << 1) + bit)
+// }
+fn slice_to_byte(slice: &[u8]) -> u8 {
+    slice.iter().fold(0, |byte, bit| (byte << 1) + bit)
+}
+fn slice_to_byte_usize(slice: &[u8]) -> usize {
+    slice
+        .iter()
+        .fold(0, |byte, bit| (byte << 1) + *bit as usize)
+}
+
+#[test]
+fn test_slice_to_byte() {
+    assert_eq!(slice_to_byte(&vec![1, 1, 0]), 6);
+    assert_eq!(slice_to_byte(&vec![1, 0, 0]), 4);
 }
 
 #[test]
@@ -23,13 +85,15 @@ fn test_example() {
     assert_eq!(solve(EXAMPLE), (0, 0));
 }
 
-fn parse(input: &str) -> Vec<u8> {
+fn binary_slice(input: &str) -> Vec<u8> {
     // assert_eq!(input.len() % 2, 0);
     input
         .chars()
         .map(|c| hex_to_byte(c))
         .flat_map(|byte| {
-            (0..4).rev().map(move |pos| if (byte & 1 << pos) > 0 { 1 } else { 0 })
+            (0..4)
+                .rev()
+                .map(move |pos| if (byte & 1 << pos) > 0 { 1 } else { 0 })
         })
         .collect()
 }
@@ -42,10 +106,31 @@ fn hex_to_byte(c: char) -> u8 {
     }
 }
 
+#[cfg(test)]
+fn bb(b: &str) -> Vec<u8> {
+    b.chars().map(|c| (c == '1') as u8).collect::<Vec<u8>>()
+}
+
+#[test]
+fn test_binary_slice() {
+    assert_eq!(binary_slice("D2FE28"), bb("110100101111111000101000"));
+    assert_eq!(
+        binary_slice("38006F45291200"),
+        bb("00111000000000000110111101000101001010010001001000000000")
+    );
+}
+
 #[test]
 fn test_parse() {
-    assert_eq!(parse("D2FE28"),
-               "110100101111111000101000".chars().map(|c| (c == '1') as u8).collect::<Vec<u8>>());
+    assert_eq!(
+        parse(&binary_slice("D2FE28")),
+        Literal(6, bb("011111100101"))
+    );
+    assert_eq!(
+        parse(&binary_slice("38006F45291200")),
+        Operator(1, bb("110100010100101001000100100")),
+    );
+    // assert_eq!(parse(&binary_slice("D")), 6);
 }
 
 #[bench]
