@@ -29,6 +29,7 @@ enum Packet {
 }
 
 fn parse(slice: &mut &[u8]) -> Packet {
+    println!("parse() slice of length {}", slice.len());
     let version = slice_to_byte(&slice[..3]);
     let type_id = slice_to_byte(&slice[3..6]); // TODO: safely handle out-of-range errors?
     *slice = &slice[6..];
@@ -49,13 +50,13 @@ fn parse(slice: &mut &[u8]) -> Packet {
 
         if length_type_id {
             let length = slice_to_byte_usize(&slice[..11]);
-            // TODO length is num of sub packets
-            for packet in 0..length {
-                dbg!(packet, parse(slice));
+            *slice = &slice[11..];
+
+            let mut children = vec![];
+            for _packet in 0..length {
+                children.push(parse(slice));
             }
-            // *slice = &slice[11..];
-            // &slice[..length]
-            Operator(version, vec![])
+            Operator(version, children)
         } else {
             let length = slice_to_byte_usize(&slice[..15]);
             *slice = &slice[15..];
@@ -145,10 +146,18 @@ fn test_parse() {
             ]
         ),
     );
-    // assert_eq!(
-    //     parse(&mut &binary_slice("EE00D40C823060")[..]),
-    //     Operator(1, bb("010100000011001000001000110000011")),
-    // );
+    println!("====================");
+    assert_eq!(
+        parse(&mut &binary_slice("EE00D40C823060")[..]),
+        Operator(
+            1,
+            vec![
+                Literal(2, /* 1 */ bb("000")),
+                Literal(4, /* 2 */ bb("010")),
+                Literal(1, /* 3 */ bb("011")),
+            ]
+        ),
+    );
     // assert_eq!(parse(&binary_slice("D")), 6);
 }
 
