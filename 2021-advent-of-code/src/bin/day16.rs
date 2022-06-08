@@ -145,19 +145,27 @@ fn test_binary_slice() {
 
 #[test]
 fn test_parse() {
-    assert_eq!(parse(&mut &binary_slice("D2FE28")[..]), Literal(6, 2021));
-    assert_eq!(
-        parse(&mut &binary_slice("38006F45291200")[..]),
-        Operator(1, vec![Literal(6, 10), Literal(2, 20)]),
-    );
-    assert_eq!(
-        parse(&mut &binary_slice("EE00D40C823060")[..]),
-        Operator(7, vec![Literal(2, 1), Literal(4, 2), Literal(1, 3)]),
-    );
-    assert_eq!(
-        parse(&mut &binary_slice("8A004A801A8002F478")[..]),
-        Operator(4, vec![Operator(1, vec![Operator(5, vec![Literal(6, 2)])])]),
-    );
+    for (hex, packets) in [
+        ("D2FE28", Literal(6, 2021)),
+        (
+            "38006F45291200",
+            Operator(1, vec![Literal(6, 10), Literal(2, 20)]),
+        ),
+        (
+            "EE00D40C823060",
+            Operator(7, vec![Literal(2, 1), Literal(4, 2), Literal(1, 3)]),
+        ),
+        (
+            "8A004A801A8002F478",
+            Operator(
+                4,
+                vec![Operator(1, vec![Operator(5, vec![Literal(6, 15)])])],
+            ),
+        ),
+    ] {
+        dbg!(hex, &packets);
+        assert_eq!(parse(&mut &binary_slice(hex)[..]), packets);
+    }
     // assert_eq!(parse(&binary_slice("D")), 6);
 }
 
