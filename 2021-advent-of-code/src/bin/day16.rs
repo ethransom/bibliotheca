@@ -75,7 +75,7 @@ fn parse(slice: &mut &[u8]) -> Packet {
 
             let mut payload = &slice[..length];
             let mut children = vec![];
-            while payload.len() != 0 {
+            while !payload.is_empty() {
                 children.push(parse(&mut payload));
             }
             *slice = &slice[length..];
@@ -112,7 +112,7 @@ fn binary_slice(input: &str) -> Vec<u8> {
     // assert_eq!(input.len() % 2, 0);
     input
         .chars()
-        .map(|c| hex_to_byte(c))
+        .map(hex_to_byte)
         .flat_map(|byte| {
             (0..4)
                 .rev()
@@ -123,8 +123,8 @@ fn binary_slice(input: &str) -> Vec<u8> {
 
 fn hex_to_byte(c: char) -> u8 {
     match c {
-        '0'..='9' => c as u8 - '0' as u8,
-        'A'..='F' => (c as u8 - 'A' as u8) + 10,
+        '0'..='9' => c as u8 - b'0',
+        'A'..='F' => (c as u8 - b'A') + 10,
         _ => panic!("unknown char: {}", c),
     }
 }
