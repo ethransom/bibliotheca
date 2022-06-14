@@ -31,8 +31,8 @@ fn solve(input: &str) -> (usize, usize) {
 
     let mut heights: Vec<i32> = vec![];
 
-    for (r, y) in (-max..max).enumerate() {
-        for (c, x) in (-max..max).enumerate() {
+    for y in -max..max {
+        for x in -max..max {
             // simulate for vel x, y, discarding those that don't intersect dest and keeping max
             // height
             if let Some(height) = stepped_intersect(x, y, a, b) {
