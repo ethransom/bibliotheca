@@ -8,7 +8,7 @@ const EXAMPLE: &str = include_str!("example11.txt");
 const INPUT: &str = include_str!("input11.txt");
 
 fn main() {
-        dbg!(solve(EXAMPLE));
+    dbg!(solve(EXAMPLE));
     dbg!(solve(INPUT));
 }
 
