@@ -34,7 +34,7 @@ fn minimize_cost(crabs: &[u32], cost: fn(u32) -> u32) -> u32 {
 fn solve(input: &[u8]) -> (u32, u32) {
     let crabs = std::str::from_utf8(input)
         .expect("input was not utf8")
-        .split(",")
+        .split(',')
         .map(|n| n.parse().expect("not a number"))
         .collect::<Vec<u32>>();
 
