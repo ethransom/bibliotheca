@@ -179,72 +179,12 @@ fn run_alu(instrs: &[Instr], input: u64) -> bool {
 
 #[test]
 fn test_run_alu() {
-    fn run_alu(instrs: &[Instr], input: u64) -> bool {
-        let mut regs = [0; 4];
-
-        let input = input.to_string();
-
-        if input.chars().any(|c| c == '0') {
-            return false;
+    let instrs = EXAMPLE.lines().map(Instr::from).collect::<Vec<Instr>>();
+    for i in 0..=9 {
+        if i == 0 {
+            continue;
         }
-
-        let mut inputs = input.chars().map(|d| d.to_digit(10).unwrap() as i64);
-
-        for instr in instrs {
-            match *instr {
-                Instr::Inp(Operand::Reg(dst)) => {
-                    let i = inputs.next().expect("asked for too many inputs");
-                    regs[dst] = i;
-                }
-
-                Instr::Add(Operand::Reg(dst), Operand::Reg(src)) => {
-                    regs[dst] = regs[dst] + regs[src];
-                }
-
-                Instr::Add(Operand::Reg(dst), Operand::Imm(src)) => {
-                    regs[dst] = regs[dst] + src;
-                }
-
-                Instr::Mul(Operand::Reg(dst), Operand::Reg(src)) => {
-                    regs[dst] = regs[dst] * regs[src];
-                }
-
-                Instr::Mul(Operand::Reg(dst), Operand::Imm(src)) => {
-                    regs[dst] = regs[dst] * src;
-                }
-
-                Instr::Div(Operand::Reg(dst), Operand::Reg(src)) => {
-                    regs[dst] = regs[dst] / regs[src];
-                }
-
-                Instr::Div(Operand::Reg(dst), Operand::Imm(src)) => {
-                    regs[dst] = regs[dst] / src;
-                }
-
-                Instr::Mod(Operand::Reg(dst), Operand::Reg(src)) => {
-                    regs[dst] = regs[dst] % regs[src];
-                }
-
-                Instr::Mod(Operand::Reg(dst), Operand::Imm(src)) => {
-                    regs[dst] = regs[dst] % src;
-                }
-
-                Instr::Eql(Operand::Reg(dst), Operand::Reg(src)) => {
-                    regs[dst] = (regs[dst] == regs[src]) as i64;
-                }
-
-                Instr::Eql(Operand::Reg(dst), Operand::Imm(src)) => {
-                    regs[dst] = (regs[dst] == src) as i64;
-                }
-
-                _ => {
-                    // dbg!(bad);
-                    panic!();
-                }
-            }
-        }
-
-        regs[3] == 0
+        assert_eq!(run_alu(&instrs, i), (i % 2) == 0);
     }
 
     let instrs = INPUT.lines().map(Instr::from).collect::<Vec<Instr>>();
