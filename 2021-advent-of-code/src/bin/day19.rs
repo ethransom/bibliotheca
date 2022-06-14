@@ -37,7 +37,7 @@ fn solve(input: &str) -> (usize, usize) {
                             z.parse::<i32>().expect("z coord not a number")
                         } else {
                             0
-                        }
+                        },
                     )
                 })
                 .collect()
