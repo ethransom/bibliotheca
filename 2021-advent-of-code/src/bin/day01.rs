@@ -12,11 +12,8 @@ fn main() {
 }
 
 fn parse(dat: &[u8]) -> Vec<u64> {
-    dat.split(|b| *b == '\n' as u8)
-        .map(|line| {
-            line.iter()
-                .fold(0 as u64, |n, b| n * 10 + (b - ('0' as u8)) as u64)
-        })
+    dat.split(|b| *b == b'\n')
+        .map(|line| line.iter().fold(0_u64, |n, b| n * 10 + (b - b'0') as u64))
         .collect::<Vec<u64>>()
 }
 
@@ -69,7 +66,7 @@ fn bench_parse_01_unsafe_str(b: &mut test::Bencher) {
 fn bench_parse_02_bytes(b: &mut test::Bencher) {
     b.iter(|| {
         INPUT
-            .split(|b| *b == '\n' as u8)
+            .split(|b| *b == b'\n')
             .map(|line| {
                 std::str::from_utf8(line)
                     .expect("not utf8")
@@ -84,7 +81,7 @@ fn bench_parse_02_bytes(b: &mut test::Bencher) {
 fn bench_parse_03_bytes_flat_map(b: &mut test::Bencher) {
     b.iter(|| {
         INPUT
-            .split(|b| *b == '\n' as u8)
+            .split(|b| *b == b'\n')
             .flat_map(|line| unsafe { std::str::from_utf8_unchecked(line) }.parse::<u32>())
             .collect::<Vec<u32>>()
     });
@@ -94,7 +91,7 @@ fn bench_parse_03_bytes_flat_map(b: &mut test::Bencher) {
 fn bench_parse_04_bytes_unsafe(b: &mut test::Bencher) {
     b.iter(|| {
         INPUT
-            .split(|b| *b == '\n' as u8)
+            .split(|b| *b == b'\n')
             .map(|line| {
                 unsafe { std::str::from_utf8_unchecked(line) }
                     .parse::<u64>()
@@ -108,7 +105,7 @@ fn bench_parse_04_bytes_unsafe(b: &mut test::Bencher) {
 fn bench_parse_05_bytes_u16(b: &mut test::Bencher) {
     b.iter(|| {
         INPUT
-            .split(|b| *b == '\n' as u8)
+            .split(|b| *b == b'\n')
             .map(|line| {
                 unsafe { std::str::from_utf8_unchecked(line) }
                     .parse::<u16>()
@@ -123,10 +120,7 @@ fn bench_parse_06_bytes_custom(b: &mut test::Bencher) {
     b.iter(|| {
         INPUT
             .split(|b| *b == '\n' as u8)
-            .map(|line| {
-                line.iter()
-                    .fold(0 as u64, |n, b| n * 10 + (b - ('0' as u8)) as u64)
-            })
+            .map(|line| line.iter().fold(0_u64, |n, b| n * 10 + (b - b'0') as u64))
             .collect::<Vec<u64>>()
     });
 }
@@ -136,10 +130,7 @@ fn bench_parse_07_bytes_custom_u16(b: &mut test::Bencher) {
     b.iter(|| {
         INPUT
             .split(|b| *b == '\n' as u8)
-            .map(|line| {
-                line.iter()
-                    .fold(0 as u16, |n, b| n * 10 + (b - ('0' as u8)) as u16)
-            })
+            .map(|line| line.iter().fold(0_u16, |n, b| n * 10 + (b - b'0') as u16))
             .collect::<Vec<u16>>()
     });
 }
@@ -149,9 +140,7 @@ fn bench_parse_08_bytes_size_hint(b: &mut test::Bencher) {
     b.iter(|| {
         let mut vec: Vec<u64> = Vec::with_capacity(2000);
         INPUT.split(|b| *b == '\n' as u8).for_each(|line| {
-            let n = line
-                .iter()
-                .fold(0 as u64, |n, b| n * 10 + (b - ('0' as u8)) as u64);
+            let n = line.iter().fold(0_u64, |n, b| n * 10 + (b - b'0') as u64);
 
             vec.push(n);
         })
