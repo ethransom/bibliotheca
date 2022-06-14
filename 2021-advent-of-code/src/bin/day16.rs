@@ -44,11 +44,7 @@ fn version_sum(packet: &Packet) -> usize {
     match packet {
         Literal(version, _) => *version as usize,
         Operator(version, _, children) => {
-            let mut sum = *version as usize;
-            for child in children {
-                sum += version_sum(child);
-            }
-            sum
+            (*version as usize) + children.iter().map(version_sum).sum::<usize>()
         }
     }
 }
