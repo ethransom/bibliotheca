@@ -42,30 +42,30 @@ enum Instr {
 
 impl From<&str> for Instr {
     fn from(line: &str) -> Instr {
-        let (instr, args) = line.split_once(" ").unwrap();
+        let (instr, args) = line.split_once(' ').unwrap();
 
         match instr {
             "inp" => {
                 Instr::Inp(Operand::from(args))
             }
             "add" => {
-                let (a, b) = args.split_once(" ").unwrap();
+                let (a, b) = args.split_once(' ').unwrap();
                 Instr::Add(Operand::from(a), Operand::from(b))
             }
             "mul" => {
-                let (a, b) = args.split_once(" ").unwrap();
+                let (a, b) = args.split_once(' ').unwrap();
                 Instr::Mul(Operand::from(a), Operand::from(b))
             }
             "div" => {
-                let (a, b) = args.split_once(" ").unwrap();
+                let (a, b) = args.split_once(' ').unwrap();
                 Instr::Div(Operand::from(a), Operand::from(b))
             }
             "mod" => {
-                let (a, b) = args.split_once(" ").unwrap();
+                let (a, b) = args.split_once(' ').unwrap();
                 Instr::Mod(Operand::from(a), Operand::from(b))
             }
             "eql" => {
-                let (a, b) = args.split_once(" ").unwrap();
+                let (a, b) = args.split_once(' ').unwrap();
                 Instr::Eql(Operand::from(a), Operand::from(b))
             }
             _ => panic!("in C this would have corrupted my hard drive and also unplugged my mother's ventilator")
@@ -308,7 +308,7 @@ fn test_input_is_solution() {
 
     let instrs = INPUT.lines().map(Instr::from).collect::<Vec<Instr>>();
 
-    let regs = simplify(&instrs);
+    let _regs = simplify(&instrs);
 
     // assert_eq!(regs[3].input_is_solution(13579246899999), false);
 }
@@ -382,35 +382,35 @@ fn bench_run_alu(b: &mut test::Bencher) {
                 }
 
                 Instr::Add(Operand::Reg(dst), Operand::Reg(src)) => {
-                    regs[dst] = regs[dst] + regs[src];
+                    regs[dst] += regs[src];
                 }
 
                 Instr::Add(Operand::Reg(dst), Operand::Imm(src)) => {
-                    regs[dst] = regs[dst] + src;
+                    regs[dst] += src;
                 }
 
                 Instr::Mul(Operand::Reg(dst), Operand::Reg(src)) => {
-                    regs[dst] = regs[dst] * regs[src];
+                    regs[dst] *= regs[src];
                 }
 
                 Instr::Mul(Operand::Reg(dst), Operand::Imm(src)) => {
-                    regs[dst] = regs[dst] * src;
+                    regs[dst] *= src;
                 }
 
                 Instr::Div(Operand::Reg(dst), Operand::Reg(src)) => {
-                    regs[dst] = regs[dst] / regs[src];
+                    regs[dst] /= regs[src];
                 }
 
                 Instr::Div(Operand::Reg(dst), Operand::Imm(src)) => {
-                    regs[dst] = regs[dst] / src;
+                    regs[dst] /= src;
                 }
 
                 Instr::Mod(Operand::Reg(dst), Operand::Reg(src)) => {
-                    regs[dst] = regs[dst] % regs[src];
+                    regs[dst] %= regs[src];
                 }
 
                 Instr::Mod(Operand::Reg(dst), Operand::Imm(src)) => {
-                    regs[dst] = regs[dst] % src;
+                    regs[dst] %= src;
                 }
 
                 Instr::Eql(Operand::Reg(dst), Operand::Reg(src)) => {
