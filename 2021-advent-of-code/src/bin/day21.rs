@@ -29,19 +29,19 @@ fn solve(input: &str) -> (u32, u32) {
     while scores.iter().filter(|&s| *s >= 1000).count() == 0 {
         dbg!(&scores, &positions);
         for (i, player) in positions.iter_mut().enumerate() {
-            print!("player {} rolls ", i + 1);
+            // print!("player {} rolls ", i + 1);
             let mut roll = 0;
             for _ in 0..3 {
                 // TODO: make this iterator
                 rolls += 1;
                 roll += rolls % 100;
-                print!("{} + ", rolls % 100);
+                // print!("{} + ", rolls % 100);
             }
             println!(" = {}", roll);
 
             *player = (*player + roll) % 10;
 
-            println!("player {} moves to {}", i + 1, *player + 1);
+            // println!("player {} moves to {}", i + 1, *player + 1);
 
             scores[i] += *player + 1;
 

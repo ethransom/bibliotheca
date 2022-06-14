@@ -40,7 +40,7 @@ impl MemoryBoard {
     fn has_won(&self) -> bool {
         'nextrow: for row in self.marked {
             for cell in row {
-                if cell == false {
+                if !cell {
                     continue 'nextrow;
                 }
             }
@@ -48,7 +48,7 @@ impl MemoryBoard {
         }
         'nextcol: for col in 0..5 {
             for row in self.marked {
-                if row[col] == false {
+                if !row[col] {
                     continue 'nextcol;
                 }
             }
@@ -61,7 +61,7 @@ impl MemoryBoard {
         let mut sum: usize = 0;
         for row in self.board {
             for cell in row {
-                if let None = drawn.iter().position(|r| *r == cell) {
+                if drawn.iter().position(|r| *r == cell).is_none() {
                     sum += cell as usize;
                 }
             }
@@ -76,12 +76,12 @@ fn parse(input: &[u8]) -> (Vec<u8>, Vec<Board>) {
         .split("\n\n")
         .collect::<Vec<&str>>();
     let numbers: Vec<u8> = blocks[0]
-        .split(",")
+        .split(',')
         .map(|n| n.parse::<u8>().expect("not a number"))
         .collect();
 
     let boards: Vec<Board> = blocks[1..]
-        .into_iter()
+        .iter()
         .map(|block| {
             let mut rows: Board = [[0; 5]; 5];
             for (row, line) in block.lines().enumerate() {
@@ -101,10 +101,10 @@ fn solve(input: &[u8]) -> (usize, usize) {
     let (numbers, raw_boards) = parse(input);
     let boards: Vec<MemoryBoard> = raw_boards
         .iter()
-        .map(|board| MemoryBoard::new(board))
+        .map(MemoryBoard::new)
         .collect();
 
-    let mut boards: Vec<MemoryBoard> = boards.clone();
+    let mut boards: Vec<MemoryBoard> = boards;
     for draw in numbers.iter() {
         for board in boards.iter_mut() {
             if !board.has_won() {
@@ -159,7 +159,7 @@ fn bench_parse_01_next(b: &mut test::Bencher) {
         let numbers: Vec<u8> = blocks
             .next()
             .expect("need list of called numbers")
-            .split(",")
+            .split(',')
             .map(|n| n.parse::<u8>().expect("not a number"))
             .collect();
 
@@ -233,7 +233,7 @@ fn bench_solve_00_original(b: &mut test::Bencher) {
     fn has_won(board: &Board, drawn: &[u8]) -> bool {
         'nextrow: for row in board {
             for cell in row {
-                if let None = drawn.iter().position(|&r| r == *cell) {
+                if drawn.iter().position(|&r| r == *cell).is_none() {
                     continue 'nextrow;
                 }
             }
@@ -243,7 +243,7 @@ fn bench_solve_00_original(b: &mut test::Bencher) {
 
         'nextcol: for col in 0..5 {
             for row in board {
-                if let None = drawn.iter().position(|&r| r == row[col]) {
+                if drawn.iter().position(|&r| r == row[col]).is_none() {
                     continue 'nextcol;
                 }
             }
@@ -258,7 +258,7 @@ fn bench_solve_00_original(b: &mut test::Bencher) {
         let mut sum: usize = 0;
         for row in board {
             for cell in row {
-                if let None = drawn.iter().position(|r| *r == *cell) {
+                if drawn.iter().position(|r| *r == *cell).is_none() {
                     sum += *cell as usize;
                 }
             }
@@ -277,7 +277,7 @@ fn bench_solve_01_binary(b: &mut test::Bencher) {
         let mut sum: usize = 0;
         for row in board {
             for cell in row {
-                if let None = drawn.iter().position(|r| *r == *cell) {
+                if drawn.iter().position(|r| *r == *cell).is_none() {
                     sum += *cell as usize;
                 }
             }
@@ -364,9 +364,9 @@ fn bench_solve_02_memory(b: &mut test::Bencher) {
         let (numbers, raw_boards) = parse(INPUT);
         let boards: Vec<MemoryBoard> = raw_boards
             .iter()
-            .map(|board| MemoryBoard::new(board))
+            .map(MemoryBoard::new)
             .collect();
-        let mut boards: Vec<MemoryBoard> = boards.clone();
+        let mut boards: Vec<MemoryBoard> = boards;
         let mut wins_on: Vec<Option<usize>> = vec![None; boards.len()];
         for (i, draw) in numbers.iter().enumerate() {
             for (board_num, board) in boards.iter_mut().enumerate() {
@@ -417,10 +417,10 @@ fn bench_solve_03_memory_memoize_turns(b: &mut test::Bencher) {
         let (numbers, raw_boards) = parse(input);
         let boards: Vec<MemoryBoard> = raw_boards
             .iter()
-            .map(|board| MemoryBoard::new(board))
+            .map(MemoryBoard::new)
             .collect();
 
-        let mut boards: Vec<MemoryBoard> = boards.clone();
+        let mut boards: Vec<MemoryBoard> = boards;
         for draw in numbers.iter() {
             for board in boards.iter_mut() {
                 if !board.has_won() {

@@ -159,7 +159,7 @@ fn bench_solve_03_memoize(b: &mut test::Bencher) {
             .map(|n| n.parse().expect("not a number"))
             .collect::<Vec<u8>>();
 
-        let mut results = [0 as usize; 256];
+        let mut results = [0_usize; 256];
 
         simulate(&fishes, &mut results);
 
@@ -188,12 +188,12 @@ fn bench_solve_04_memoize_no_alloc(b: &mut test::Bencher) {
     }
 
     fn solve(input: &str) -> (usize, usize) {
-        let mut initial = [0 as usize; 9];
+        let mut initial = [0_usize; 9];
         input
             .split(',')
             .for_each(|n| initial[n.parse::<usize>().expect("not a number")] += 1);
 
-        let mut results = [0 as usize; 256];
+        let mut results = [0_usize; 256];
 
         simulate(initial, &mut results);
 

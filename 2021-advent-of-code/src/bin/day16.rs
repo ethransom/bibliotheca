@@ -138,8 +138,8 @@ fn slice_to_byte_usize(slice: &[u8]) -> usize {
 
 #[test]
 fn test_slice_to_byte() {
-    assert_eq!(slice_to_byte(&vec![1, 1, 0]), 6);
-    assert_eq!(slice_to_byte(&vec![1, 0, 0]), 4);
+    assert_eq!(slice_to_byte(&[1, 1, 0]), 6);
+    assert_eq!(slice_to_byte(&[1, 0, 0]), 4);
 }
 
 #[test]

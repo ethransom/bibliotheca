@@ -128,7 +128,7 @@ fn bench_parse_06_bytes_custom(b: &mut test::Bencher) {
     b.iter(|| {
         INPUT
             .as_bytes()
-            .split(|b| *b == '\n' as u8)
+            .split(|b| *b == b'\n')
             .map(|line| line.iter().fold(0_u64, |n, b| n * 10 + (b - b'0') as u64))
             .collect::<Vec<u64>>()
     });
@@ -139,7 +139,7 @@ fn bench_parse_07_bytes_custom_u16(b: &mut test::Bencher) {
     b.iter(|| {
         INPUT
             .as_bytes()
-            .split(|b| *b == '\n' as u8)
+            .split(|b| *b == b'\n')
             .map(|line| line.iter().fold(0_u16, |n, b| n * 10 + (b - b'0') as u16))
             .collect::<Vec<u16>>()
     });
@@ -149,14 +149,11 @@ fn bench_parse_07_bytes_custom_u16(b: &mut test::Bencher) {
 fn bench_parse_08_bytes_size_hint(b: &mut test::Bencher) {
     b.iter(|| {
         let mut vec: Vec<u64> = Vec::with_capacity(2000);
-        INPUT
-            .as_bytes()
-            .split(|b| *b == '\n' as u8)
-            .for_each(|line| {
-                let n = line.iter().fold(0_u64, |n, b| n * 10 + (b - b'0') as u64);
+        INPUT.as_bytes().split(|b| *b == b'\n').for_each(|line| {
+            let n = line.iter().fold(0_u64, |n, b| n * 10 + (b - b'0') as u64);
 
-                vec.push(n);
-            })
+            vec.push(n);
+        })
     });
 }
 

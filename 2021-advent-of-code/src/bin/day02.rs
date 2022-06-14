@@ -29,10 +29,10 @@ fn solve(input: &[u8]) -> (u64, u64) {
 
 fn parse(input: &[u8]) -> Vec<(Move, u64)> {
     let mut commands: Vec<(Move, u64)> = Vec::new();
-    input.split(|b| *b == '\n' as u8).for_each(|line| {
+    input.split(|b| *b == b'\n').for_each(|line| {
         let split = line
             .iter()
-            .position(|&r| r == ' ' as u8)
+            .position(|&r| r == b' ')
             .expect("expected space as delimiter");
         let dir = match &line[0..split] {
             b"forward" => Move::Forward,
@@ -141,10 +141,10 @@ fn bench_parse_00_original(b: &mut test::Bencher) {
 fn bench_parse_01_bytes(b: &mut test::Bencher) {
     b.iter(|| {
         let mut commands: Vec<(Move, u64)> = Vec::new();
-        INPUT.split(|b| *b == '\n' as u8).for_each(|line| {
+        INPUT.split(|b| *b == b'\n').for_each(|line| {
             let split = line
                 .iter()
-                .position(|&r| r == ' ' as u8)
+                .position(|&r| r == b' ')
                 .expect("expected space as delimiter");
             let dir = match &line[0..split] {
                 b"forward" => Move::Forward,
@@ -167,11 +167,11 @@ fn bench_parse_02_bytes_map(b: &mut test::Bencher) {
     // largely a failed experiment, seems slightly slower
     b.iter(|| {
         INPUT
-            .split(|b| *b == '\n' as u8)
+            .split(|b| *b == b'\n')
             .map(|line| {
                 let split = line
                     .iter()
-                    .position(|&r| r == ' ' as u8)
+                    .position(|&r| r == b' ')
                     .expect("expected space as delimiter");
                 let dir = match &line[0..split] {
                     b"forward" => Move::Forward,

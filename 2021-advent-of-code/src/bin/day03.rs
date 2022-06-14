@@ -25,12 +25,12 @@ fn parse(input: &[u8]) -> (usize, Vec<u32>) {
     let mut nums: Vec<u32> = Vec::with_capacity(1001);
     let mut n = 0u32;
     for byte in input {
-        if *byte == '\n' as u8 {
+        if *byte == b'\n' {
             nums.push(n);
             n = 0;
             continue;
         }
-        let bit = (*byte == '1' as u8) as u32;
+        let bit = (*byte == b'1') as u32;
         n = (n << 1) + bit;
     }
     ((input.len() + 1) / nums.len() - 1, nums)
@@ -40,8 +40,8 @@ fn part1(width: usize, nums: &[u32]) -> u32 {
     let mut gamma = 0;
     let mut epsilon = 0;
     for i in 0..width {
-        gamma = gamma << 1;
-        epsilon = epsilon << 1;
+        gamma <<= 1;
+        epsilon <<= 1;
 
         let mask = 1 << (width - 1 - i);
 
@@ -109,7 +109,7 @@ fn bench_solve_current(b: &mut test::Bencher) {
 fn bench_parse_01_str_ints(b: &mut test::Bencher) {
     b.iter(|| {
         INPUT
-            .split(|b| *b == '\n' as u8)
+            .split(|b| *b == b'\n')
             .map(|line| {
                 u32::from_str_radix(std::str::from_utf8(line).expect("not a string"), 2)
                     .expect("not a binary number")
@@ -122,10 +122,10 @@ fn bench_parse_01_str_ints(b: &mut test::Bencher) {
 fn bench_parse_02_custom_ints(b: &mut test::Bencher) {
     fn parse(input: &[u8]) -> (usize, Vec<u32>) {
         let lines = input
-            .split(|b| *b == '\n' as u8)
+            .split(|b| *b == b'\n')
             .map(|line| {
                 line.iter().fold(0u32, |acc, b| {
-                    let bit = (*b == '1' as u8) as u32;
+                    let bit = (*b == b'1') as u32;
                     (acc << 1) + bit
                 })
             })
@@ -141,12 +141,12 @@ fn bench_parse_03_fucking_handrolled(b: &mut test::Bencher) {
         let mut nums: Vec<u32> = Vec::new();
         let mut n = 0u32;
         for byte in input {
-            if *byte == '\n' as u8 {
+            if *byte == b'\n' {
                 nums.push(n);
                 n = 0;
                 continue;
             }
-            let bit = (*byte == '1' as u8) as u32;
+            let bit = (*byte == b'1') as u32;
             n = (n << 1) + bit;
         }
         ((input.len() + 1) / nums.len() - 1, nums)
@@ -160,12 +160,12 @@ fn bench_parse_03_fucking_handrolled_capacity_hint(b: &mut test::Bencher) {
         let mut nums: Vec<u32> = Vec::with_capacity(1001);
         let mut n = 0u32;
         for byte in input {
-            if *byte == '\n' as u8 {
+            if *byte == b'\n' {
                 nums.push(n);
                 n = 0;
                 continue;
             }
-            let bit = (*byte == '1' as u8) as u32;
+            let bit = (*byte == b'1') as u32;
             n = (n << 1) + bit;
         }
         ((input.len() + 1) / nums.len() - 1, nums)
@@ -183,7 +183,7 @@ fn bench_solve_original(b: &mut test::Bencher) {
 
 #[cfg(test)]
 fn parse_original(input: &[u8]) -> Vec<&[u8]> {
-    input.split(|b| *b == '\n' as u8).collect()
+    input.split(|b| *b == b'\n').collect()
 }
 
 #[cfg(test)]
@@ -191,10 +191,10 @@ fn part1_original(lines: &[&[u8]]) -> u32 {
     let mut gamma = 0;
     let mut epsilon = 0;
     for i in 0..lines[0].len() {
-        gamma = gamma << 1;
-        epsilon = epsilon << 1;
+        gamma <<= 1;
+        epsilon <<= 1;
 
-        let ones = lines.iter().filter(|line| line[i] == '1' as u8).count();
+        let ones = lines.iter().filter(|line| line[i] == b'1').count();
         if ones >= lines.len() / 2 {
             gamma += 1;
         } else {
@@ -212,7 +212,7 @@ fn part2_original(input: &Vec<&[u8]>) -> u32 {
         for i in 0..input[0].len() {
             let ones = kept_values
                 .iter()
-                .filter(|line| line[i] == '1' as u8)
+                .filter(|line| line[i] == b'1')
                 .count();
             let majority: char;
             if ones * 2 >= kept_values.len() {

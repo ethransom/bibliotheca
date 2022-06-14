@@ -83,7 +83,7 @@ fn bench_solve_example_str(b: &mut test::Bencher) {
 
     fn solve(input: &str) -> (u32, u32) {
         let crabs = input
-            .split(",")
+            .split(',')
             .map(|n| n.parse().expect("not a number"))
             .collect::<Vec<u32>>();
 
