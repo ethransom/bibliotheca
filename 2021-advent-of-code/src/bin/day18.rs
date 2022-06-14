@@ -11,15 +11,36 @@ fn main() {
 }
 
 fn solve(input: &str) -> (u32, u32) {
-    let result = input
+    let sum = input
         .lines()
         .map(Pair::from)
         .reduce(|a, b| a + b)
+        .expect("not enough numbers to add")
+        .magnitude();
+
+    let pairs: Vec<_> = input.lines().collect();
+
+    let &max = (0..(pairs.len() - 1))
+        .flat_map(|left| {
+            ((left + 1)..pairs.len())
+                .flat_map(|right| {
+                    [
+                        (Pair::from(String::from(pairs[left]).as_str())
+                            + Pair::from(String::from(pairs[right]).as_str()))
+                        .magnitude(),
+                        (Pair::from(String::from(pairs[right]).as_str())
+                            + Pair::from(String::from(pairs[left]).as_str()))
+                        .magnitude(),
+                    ]
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>()
+        .iter()
+        .max()
         .expect("not enough numbers to add");
 
-    println!("result: {:?}", result);
-
-    (result.magnitude(), 0)
+    (sum, max)
 }
 
 #[derive(PartialEq)]
@@ -272,12 +293,10 @@ impl Pair {
             let mut dirty = false;
             pair.explode(&mut dirty, 0);
             if dirty {
-                println!("explode: {:?}", &pair);
                 continue;
             }
 
             if pair.split() {
-                println!("split: {:?}", &pair);
                 continue;
             }
 
@@ -404,40 +423,24 @@ impl Pair {
     }
 
     fn split(&mut self) -> bool {
-        match &mut self.left {
-            Branch(left) => {
-                if left.split() {
-                    return true;
-                }
-            }
-            &mut Num(num) => {
-                if num >= 10 {
-                    self.left = Branch(Box::new(Pair {
-                        left: Num(num / 2),
-                        right: Num((num + 1) / 2),
-                    }));
-                    return true;
-                }
-            }
-        }
-        match &mut self.right {
-            Branch(right) => {
-                if right.split() {
-                    return true;
-                }
-            }
-            &mut Num(num) => {
-                if num >= 10 {
-                    self.right = Branch(Box::new(Pair {
-                        left: Num(num / 2),
-                        right: Num((num + 1) / 2),
-                    }));
-                    return true;
+        fn split_variant(arm: &mut Arm) -> bool {
+            match arm {
+                Branch(b) => b.split(),
+                &mut Num(num) => {
+                    if num >= 10 {
+                        *arm = Branch(Box::new(Pair {
+                            left: Num(num / 2),
+                            right: Num((num + 1) / 2),
+                        }));
+                        true
+                    } else {
+                        false
+                    }
                 }
             }
         }
 
-        false
+        split_variant(&mut self.left) || split_variant(&mut self.right)
     }
 }
 
@@ -541,12 +544,12 @@ fn test_reduce_example() {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (4140, 0));
+    assert_eq!(solve(EXAMPLE), (4140, 3993));
 }
 
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (4072, 0));
+        assert_eq!(solve(INPUT), (4072, 4483));
     });
 }
