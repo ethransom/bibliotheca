@@ -62,7 +62,7 @@ impl Display for Region {
 
 impl Region {
     fn empty(&self, pos: &(usize, usize)) -> bool {
-        self.east.contains(&pos) || self.south.contains(&pos)
+        self.east.contains(pos) || self.south.contains(pos)
     }
 
     fn step(&self) -> Region {
@@ -205,6 +205,8 @@ fn bench_step_current(b: &mut test::Bencher) {
 
 #[bench]
 fn bench_step_fxhash(b: &mut test::Bencher) {
+    use fxhash::FxHashSet;
+
     #[derive(Debug, Default, PartialEq, Eq)]
     struct Region {
         east: FxHashSet<(usize, usize)>,
