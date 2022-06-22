@@ -23,6 +23,10 @@ fn solve(input: &str) -> (usize, usize) {
             return (step, 0);
         }
         region = next;
+
+        print!("{esc}c", esc = 27 as char);
+
+        std::thread::sleep(std::time::Duration::from_millis(100));
     }
 
     unreachable!()
