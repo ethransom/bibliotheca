@@ -14,7 +14,7 @@ fn main() {
 }
 
 fn solve(input: &str) -> (usize, usize) {
-    let blocks = Region::from(input);
+    let region = Region::from(input).step();
 
     (0, 0)
 }
@@ -47,17 +47,29 @@ impl Debug for Region {
 }
 
 impl Region {
+    fn empty(&self, pos: &(usize, usize)) -> bool {
+        self.east.contains(&pos) || self.south.contains(&pos)
+    }
+
     fn step(&self) -> Region {
-        Region {
+        // east moves first
+        let region = Region {
             east: HashSet::from_iter(self.east.iter().cloned().map(|(x, y)| {
-                if self.east.contains(&(x + 1, y)) {
+                if self.empty(&(x + 1, y)) {
                     (x, y)
                 } else {
                     (x + 1, y)
                 }
             })),
+            south: self.south.clone(),
+            width: self.width,
+            height: self.height,
+        };
+
+        Region {
+            east: region.east.clone(),
             south: HashSet::from_iter(self.south.iter().cloned().map(|(x, y)| {
-                if self.south.contains(&(x, y + 1)) {
+                if region.empty(&(x, y + 1)) {
                     (x, y)
                 } else {
                     (x, y + 1)
@@ -119,6 +131,25 @@ fn test_region_step() {
     assert_eq!(
         Region::from("...>>>>>...").step(),
         Region::from("...>>>>.>..")
+    );
+    assert_eq!(
+        Region::from("...>>>>>...").step().step(),
+        Region::from("...>>>.>.>.")
+    );
+    assert_eq!(
+        Region::from(
+            "..........\n\
+            .>v....v..\n\
+            .......>..\n\
+            .........."
+        )
+        .step(),
+        Region::from(
+            "..........\n\
+            .>........\n\
+            ..v....v>.\n\
+            .........."
+        )
     );
 }
 

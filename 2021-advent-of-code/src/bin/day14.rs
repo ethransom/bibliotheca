@@ -83,13 +83,13 @@ fn parse(input: &str) -> (Vec<char>, HashMap<[char; 2], char>) {
         .map(|line| {
             let (left, right) = line.split_once(" -> ").expect("expected ' -> '");
 
-            let mut left = left.chars();
+            // let mut left = left.chars();
 
             let mut right = right.chars();
 
             (
-                [left.next().unwrap(), left.next().unwrap()],
-                right.next().unwrap(),
+                left.chars().collect::<Vec<char>>().try_into().unwrap(),
+                right.try_into().unwrap(),
             )
         })
         .collect();
