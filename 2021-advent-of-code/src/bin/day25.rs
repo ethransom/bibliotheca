@@ -2,6 +2,7 @@
 
 extern crate test;
 
+use fxhash::FxHashSet;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
 
@@ -197,7 +198,89 @@ fn test_example() {
 }
 
 #[bench]
-fn bench_solve_current(b: &mut test::Bencher) {
+fn bench_step_current(b: &mut test::Bencher) {
+    let initial = Region::from(INPUT);
+    b.iter(|| assert_ne!(initial, initial.step()));
+}
+
+#[bench]
+fn bench_step_fxhash(b: &mut test::Bencher) {
+    #[derive(Debug, Default, PartialEq, Eq)]
+    struct Region {
+        east: FxHashSet<(usize, usize)>,
+        south: FxHashSet<(usize, usize)>,
+        width: usize,
+        height: usize,
+    }
+
+    impl Region {
+        fn empty(&self, pos: &(usize, usize)) -> bool {
+            self.east.contains(&pos) || self.south.contains(&pos)
+        }
+
+        fn step(&self) -> Region {
+            // east moves first
+            let region = Region {
+                east: HashSet::from_iter(self.east.iter().cloned().map(|(x, y)| {
+                    let next = ((x + 1) % self.width, y);
+                    if self.empty(&next) {
+                        (x, y)
+                    } else {
+                        next
+                    }
+                })),
+                south: self.south.clone(),
+                width: self.width,
+                height: self.height,
+            };
+
+            Region {
+                east: region.east.clone(),
+                south: HashSet::from_iter(self.south.iter().cloned().map(|(x, y)| {
+                    let next = (x, (y + 1) % self.height);
+                    if region.empty(&next) {
+                        (x, y)
+                    } else {
+                        next
+                    }
+                })),
+                width: self.width,
+                height: self.height,
+            }
+        }
+    }
+
+    impl From<&str> for Region {
+        fn from(input: &str) -> Region {
+            let mut east = FxHashSet::<(usize, usize)>::default();
+            let mut south = FxHashSet::<(usize, usize)>::default();
+
+            let mut width: usize = 0;
+            let mut height: usize = 0;
+
+            for (row, line) in input.lines().enumerate() {
+                for (col, char) in line.chars().enumerate() {
+                    match char {
+                        '>' => &mut east,
+                        'v' => &mut south,
+                        _ => continue,
+                    }
+                    .insert((col, row));
+                }
+
+                width = usize::max(width, line.chars().count());
+                height += 1;
+            }
+
+            Region {
+                east,
+                south,
+                width,
+                height,
+            }
+        }
+    }
+
     let initial = Region::from(INPUT);
     b.iter(|| assert_ne!(initial, initial.step()));
 }
