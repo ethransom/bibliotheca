@@ -199,5 +199,5 @@ fn test_example() {
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     let initial = Region::from(INPUT);
-    b.iter(|| initial.step());
+    b.iter(|| assert_ne!(initial, initial.step()));
 }
