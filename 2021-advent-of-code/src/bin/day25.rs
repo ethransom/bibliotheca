@@ -55,10 +55,11 @@ impl Region {
         // east moves first
         let region = Region {
             east: HashSet::from_iter(self.east.iter().cloned().map(|(x, y)| {
-                if self.empty(&(x + 1, y)) {
+                let next = ((x + 1) % self.width, y);
+                if self.empty(&next) {
                     (x, y)
                 } else {
-                    (x + 1, y)
+                    next
                 }
             })),
             south: self.south.clone(),
@@ -69,10 +70,11 @@ impl Region {
         Region {
             east: region.east.clone(),
             south: HashSet::from_iter(self.south.iter().cloned().map(|(x, y)| {
-                if region.empty(&(x, y + 1)) {
+                let next = (x, (y + 1) % self.height);
+                if region.empty(&next) {
                     (x, y)
                 } else {
-                    (x, y + 1)
+                    next
                 }
             })),
             width: self.width,
@@ -149,6 +151,29 @@ fn test_region_step() {
             .>........\n\
             ..v....v>.\n\
             .........."
+        )
+    );
+    assert_eq!(Region::from("...>>>>>").step(), Region::from(">..>>>>."));
+    assert_eq!(Region::from("..\nv.").step(), Region::from("v.\n.."));
+    assert_eq!(
+        Region::from(
+            "...>...\n\
+            .......\n\
+            ......>\n\
+            v.....>\n\
+            ......>\n\
+            .......\n\
+            ..vvv.."
+        )
+        .step(),
+        Region::from(
+            "..vv>..\n\
+            .......\n\
+            >......\n\
+            v.....>\n\
+            >......\n\
+            .......\n\
+            ....v.."
         )
     );
 }
