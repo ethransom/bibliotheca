@@ -3,7 +3,7 @@
 extern crate test;
 
 use std::collections::HashSet;
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Display, Formatter};
 
 const EXAMPLE: &str = include_str!("example25.txt");
 const INPUT: &str = include_str!("input25.txt");
@@ -14,12 +14,21 @@ fn main() {
 }
 
 fn solve(input: &str) -> (usize, usize) {
-    let region = Region::from(input).step();
+    let mut region = Region::from(input);
 
-    (0, 0)
+    for step in 1.. {
+        let next = region.step();
+        println!("step {}:\n{}", step, next);
+        if region == next {
+            return (step, 0);
+        }
+        region = next;
+    }
+
+    unreachable!()
 }
 
-#[derive(Default, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq)]
 struct Region {
     east: HashSet<(usize, usize)>,
     south: HashSet<(usize, usize)>,
@@ -27,7 +36,7 @@ struct Region {
     height: usize,
 }
 
-impl Debug for Region {
+impl Display for Region {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for row in 0..self.height {
             for col in 0..self.width {
@@ -180,12 +189,11 @@ fn test_region_step() {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (0, 0));
+    assert_eq!(solve(EXAMPLE), (58, 0));
 }
 
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
-    b.iter(|| {
-        assert_eq!(solve(INPUT), (0, 0));
-    });
+    let initial = Region::from(INPUT);
+    b.iter(|| initial.step());
 }
