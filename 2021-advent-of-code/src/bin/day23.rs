@@ -289,15 +289,17 @@ fn get_moves(burrow: &Burrow) -> Vec<(Burrow, usize)> {
 
     // ROOM DIRECTLY INTO ROOM
     for src in 0..burrow.rooms.len() {
+        // FIXME: what if src is at depth 1?
         if let Some(roompod) = burrow.rooms[src][0] {
             for dst in 0..burrow.rooms.len() {
                 if src == dst {
                     continue;
                 }
-                // do not enter a room that has an unsatisfied amphipod below
+                // do not enter a non-destination room
                 if !at_dest_room(roompod, dst) {
                     continue;
                 }
+                // FIXME: do not enter a room with an unsatisfied amphipod below?
                 if can_walk_hallway(burrow, src, dst) {
                     continue;
                 }
@@ -305,7 +307,8 @@ fn get_moves(burrow: &Burrow) -> Vec<(Burrow, usize)> {
                     let mut burrow: Burrow = burrow.clone();
                     burrow.rooms[dst][0] = Some(roompod);
                     burrow.rooms[src][0] = None;
-                    output.push((burrow, 0));
+                    let cost = (1 + src.abs_diff(dst) + 1) * energy_per_step(roompod);
+                    output.push((burrow, cost));
                 }
             }
             break;
@@ -334,7 +337,8 @@ fn get_moves(burrow: &Burrow) -> Vec<(Burrow, usize)> {
                     let mut burrow: Burrow = burrow.clone();
                     burrow.hallway[hallway] = burrow.rooms[room][depth];
                     burrow.rooms[room][depth] = None;
-                    output.push((burrow, 0));
+                    let cost = (depth + hallway_to_room_dist(hallway, room)) * energy_per_step(pod);
+                    output.push((burrow, cost));
                 }
                 break;
             }
