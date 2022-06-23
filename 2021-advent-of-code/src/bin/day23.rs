@@ -199,7 +199,7 @@ fn get_moves(burrow: &Burrow) -> Vec<Burrow> {
         if let Some(hallpod) = burrow.hallway[hallway] {
             for room in 0..burrow.rooms.len() {
                 // cannot enter non-destination room
-                if (hallpod as u8 - b'A') != room as u8 {
+                if !at_dest_room(hallpod, room) {
                     continue;
                 }
                 if let None = burrow.rooms[room][1] {
@@ -229,7 +229,7 @@ fn get_moves(burrow: &Burrow) -> Vec<Burrow> {
                     continue;
                 }
                 // do not enter a room that has an unsatisfied amphipod below
-                if (roompod as u8 - b'A') != dst as u8 {
+                if !at_dest_room(roompod, dst) {
                     continue;
                 }
                 let path_blocked = if src > dst {
@@ -256,12 +256,12 @@ fn get_moves(burrow: &Burrow) -> Vec<Burrow> {
     for room in 0..burrow.rooms.len() {
         for depth in 0..2 {
             if let Some(pod) = burrow.rooms[room][depth] {
-                if (pod as u8 - b'A') == room as u8 {
+                if at_dest_room(pod, room) {
                     if depth == 1 {
                         // pod is correctly placed, cannot move
                         break;
                     } else if let Some(underpod) = burrow.rooms[room][1] {
-                        if (underpod as u8 - b'A') == room as u8 {
+                        if at_dest_room(underpod, room) {
                             // pod, and the pod below it are placed, cannot move
                             break;
                         }
@@ -293,6 +293,10 @@ fn get_moves(burrow: &Burrow) -> Vec<Burrow> {
     }
 
     output
+}
+
+fn at_dest_room(pod: char, room: usize) -> bool {
+    (pod as u8 - b'A') == room as u8
 }
 
 #[test]
