@@ -19,13 +19,17 @@ fn solve(input: &str) -> (usize, usize) {
 
     for step in 1.. {
         let next = region.step();
-        println!("step {}:\n{}", step, next);
+
+        println!(
+            "{esc}cstep {step}:\n{next}",
+            esc = 27 as char,
+            step = step,
+            next = next
+        );
         if region == next {
             return (step, 0);
         }
         region = next;
-
-        print!("{esc}c", esc = 27 as char);
 
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
@@ -43,6 +47,7 @@ struct Region {
 
 impl Display for Region {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut output = String::new();
         for row in 0..self.height {
             for col in 0..self.width {
                 let c = if self.east.contains(&(col, row)) {
@@ -52,10 +57,11 @@ impl Display for Region {
                 } else {
                     '.'
                 };
-                write!(f, "{}", c)?;
+                output.push(c);
             }
-            writeln!(f)?;
+            output.push('\n');
         }
+        write!(f, "{}", output)?;
         Ok(())
     }
 }
