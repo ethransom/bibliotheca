@@ -123,7 +123,7 @@ fn test_get_moves() {
   #########"
         ))
         .len(),
-        8
+        7
     );
     assert_eq!(
         get_moves(&parse(
@@ -157,8 +157,24 @@ fn test_get_moves() {
         )),
         vec![parse(
             "#############
-#.......D.A.#
+#.....D...A.#
 ###.#B#C#.###
+  #A#B#C#D#
+  #########"
+        )]
+    );
+    assert_eq!(
+        get_moves(&parse(
+            "#############
+#.....D...A.#
+###.#B#C#.###
+  #A#B#C#D#
+  #########"
+        )),
+        vec![parse(
+            "#############
+#.........A.#
+###.#B#C#D###
   #A#B#C#D#
   #########"
         )]
@@ -202,6 +218,23 @@ fn get_moves(burrow: &Burrow) -> Vec<Burrow> {
                 if !at_dest_room(hallpod, room) {
                     continue;
                 }
+                // cannot walk through occupied hallway
+                let can_walk_hallway = if hallway > room {
+                    room..hallway
+                } else {
+                    (hallway + 1)..(room + 1)
+                }
+                .find_map(|i| burrow.hallway[i])
+                .is_none();
+                if !can_walk_hallway {
+                    continue;
+                }
+                if let Some(underpod) = burrow.rooms[room][1] {
+                    if !at_dest_room(underpod, room) {
+                        // cannot box in pod not at final destination
+                        break;
+                    }
+                }
                 if let None = burrow.rooms[room][1] {
                     let mut burrow: Burrow = burrow.clone();
                     burrow.rooms[room][1] = Some(hallpod);
@@ -217,7 +250,6 @@ fn get_moves(burrow: &Burrow) -> Vec<Burrow> {
                     break;
                 }
             }
-            break;
         }
     }
 
