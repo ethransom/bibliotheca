@@ -98,6 +98,24 @@ fn test_parse() {
             ],
         }
     );
+    assert_eq!(
+        parse(
+            "#############
+#.....D.D.A.#
+###.#B#C#.###
+  #A#B#C#.#
+  #########"
+        ),
+        Burrow {
+            hallway: [None, None, Some('D'), Some('D'), Some('A')],
+            rooms: [
+                [None, Some('A')],
+                [Some('B'), Some('B')],
+                [Some('C'), Some('C')],
+                [None, None]
+            ],
+        }
+    );
 }
 
 #[test]
@@ -155,12 +173,15 @@ fn test_get_moves() {
   #A#B#C#.#
   #########"
         )),
-        vec![parse(
-            "#############
+        vec![(
+            parse(
+                "#############
 #.....D...A.#
 ###.#B#C#.###
   #A#B#C#D#
   #########"
+            ),
+            3000
         )]
     );
     assert_eq!(
@@ -171,12 +192,15 @@ fn test_get_moves() {
   #A#B#C#D#
   #########"
         )),
-        vec![parse(
-            "#############
+        vec![(
+            parse(
+                "#############
 #.........A.#
 ###.#B#C#D###
   #A#B#C#D#
   #########"
+            ),
+            4000
         )]
     );
     assert_eq!(
@@ -187,12 +211,15 @@ fn test_get_moves() {
   #A#B#C#D#
   #########"
         )),
-        vec![parse(
-            "#############
+        vec![(
+            parse(
+                "#############
 #...........#
 ###A#B#C#D###
   #A#B#C#D#
   #########"
+            ),
+            8
         )]
     );
     assert_eq!(
@@ -207,13 +234,14 @@ fn test_get_moves() {
     );
 }
 
-fn get_moves(burrow: &Burrow) -> Vec<Burrow> {
+fn get_moves(burrow: &Burrow) -> Vec<(Burrow, usize)> {
     let mut output = vec![];
 
     // HALLWAY INTO ROOMS
     for hallway in 0..burrow.hallway.len() {
         if let Some(hallpod) = burrow.hallway[hallway] {
             for room in 0..burrow.rooms.len() {
+                println!("for {} at {} to room {}", hallpod, hallway, room);
                 // cannot enter non-destination room
                 if !at_dest_room(hallpod, room) {
                     continue;
@@ -239,14 +267,20 @@ fn get_moves(burrow: &Burrow) -> Vec<Burrow> {
                     let mut burrow: Burrow = burrow.clone();
                     burrow.rooms[room][1] = Some(hallpod);
                     burrow.hallway[hallway] = None;
-                    output.push(burrow);
+                    output.push((
+                        burrow,
+                        (hallway_to_room_dist(hallway, room) + 2) * energy_per_step(hallpod),
+                    ));
                     break;
                 }
                 if let None = burrow.rooms[room][0] {
                     let mut burrow: Burrow = burrow.clone();
                     burrow.rooms[room][0] = Some(hallpod);
                     burrow.hallway[hallway] = None;
-                    output.push(burrow);
+                    output.push((
+                        burrow,
+                        (hallway_to_room_dist(hallway, room) + 1) * energy_per_step(hallpod),
+                    ));
                     break;
                 }
             }
@@ -271,7 +305,7 @@ fn get_moves(burrow: &Burrow) -> Vec<Burrow> {
                     let mut burrow: Burrow = burrow.clone();
                     burrow.rooms[dst][0] = Some(roompod);
                     burrow.rooms[src][0] = None;
-                    output.push(burrow);
+                    output.push((burrow, 0));
                 }
             }
             break;
@@ -300,7 +334,7 @@ fn get_moves(burrow: &Burrow) -> Vec<Burrow> {
                     let mut burrow: Burrow = burrow.clone();
                     burrow.hallway[hallway] = burrow.rooms[room][depth];
                     burrow.rooms[room][depth] = None;
-                    output.push(burrow);
+                    output.push((burrow, 0));
                 }
                 break;
             }
@@ -308,11 +342,47 @@ fn get_moves(burrow: &Burrow) -> Vec<Burrow> {
     }
 
     println!("moves for input:\n{}\n------------------------\n", burrow);
-    for b in &output {
-        println!("{}\n", b);
+    for (b, c) in &output {
+        println!("{}\nCost: {}", b, c);
     }
 
     output
+}
+
+fn energy_per_step(pod: char) -> usize {
+    // TODO: make this a match on an enum?
+    10_usize.pow((pod as u32) - b'A' as u32)
+}
+
+fn hallway_to_room_dist(hallway: usize, room: usize) -> usize {
+    match (hallway, room) {
+        (4, 0) => 7,
+        (4, 1) => 5,
+        (4, 2) => 3,
+        (4, 3) => 1,
+
+        (3, 0) => 5,
+        (3, 1) => 3,
+        (3, 2) => 1,
+        (3, 3) => 1,
+
+        (2, 0) => 3,
+        (2, 1) => 1,
+        (2, 2) => 1,
+        (2, 3) => 3,
+
+        (1, 0) => 1,
+        (1, 1) => 1,
+        (1, 2) => 3,
+        (1, 3) => 5,
+
+        (0, 0) => 1,
+        (0, 1) => 3,
+        (0, 2) => 5,
+        (0, 3) => 7,
+
+        _ => unreachable!(),
+    }
 }
 
 fn can_walk_hallway(burrow: &Burrow, src: usize, dst: usize) -> bool {
