@@ -112,7 +112,7 @@ fn test_get_moves() {
   #########"
         ))
         .len(),
-        8
+        7
     );
     assert_eq!(
         get_moves(&parse(
@@ -125,6 +125,70 @@ fn test_get_moves() {
         .len(),
         8
     );
+    assert_eq!(
+        get_moves(&parse(
+            "#############
+#.....D.....#
+###B#.#C#D###
+  #A#B#C#A#
+  #########"
+        ))
+        .len(),
+        5
+    );
+    assert_eq!(
+        get_moves(&parse(
+            "#############
+#.....D.....#
+###.#B#C#D###
+  #A#B#C#A#
+  #########"
+        ))
+        .len(),
+        2
+    );
+    assert_eq!(
+        get_moves(&parse(
+            "#############
+#.....D.D.A.#
+###.#B#C#.###
+  #A#B#C#.#
+  #########"
+        )),
+        vec![parse(
+            "#############
+#.......D.A.#
+###.#B#C#.###
+  #A#B#C#D#
+  #########"
+        )]
+    );
+    assert_eq!(
+        get_moves(&parse(
+            "#############
+#.........A.#
+###.#B#C#D###
+  #A#B#C#D#
+  #########"
+        )),
+        vec![parse(
+            "#############
+#...........#
+###A#B#C#D###
+  #A#B#C#D#
+  #########"
+        )]
+    );
+    assert_eq!(
+        get_moves(&parse(
+            "#############
+#...........#
+###A#B#C#D###
+  #A#B#C#D#
+  #########"
+        )),
+        vec![]
+    );
 }
 
 fn get_moves(burrow: &Burrow) -> Vec<Burrow> {
@@ -134,14 +198,24 @@ fn get_moves(burrow: &Burrow) -> Vec<Burrow> {
     for hallway in 0..burrow.hallway.len() {
         if let Some(hallpod) = burrow.hallway[hallway] {
             for room in 0..burrow.rooms.len() {
-                if let Some(_) = burrow.rooms[room][0] {
+                // cannot enter non-destination room
+                if (hallpod as u8 - b'A') != room as u8 {
                     continue;
                 }
-                let mut burrow: Burrow = burrow.clone();
-                burrow.rooms[room][0] = Some(hallpod);
-                burrow.hallway[hallway] = None;
-                output.push(burrow);
-                break;
+                if let None = burrow.rooms[room][1] {
+                    let mut burrow: Burrow = burrow.clone();
+                    burrow.rooms[room][1] = Some(hallpod);
+                    burrow.hallway[hallway] = None;
+                    output.push(burrow);
+                    break;
+                }
+                if let None = burrow.rooms[room][0] {
+                    let mut burrow: Burrow = burrow.clone();
+                    burrow.rooms[room][0] = Some(hallpod);
+                    burrow.hallway[hallway] = None;
+                    output.push(burrow);
+                    break;
+                }
             }
             break;
         }
@@ -158,16 +232,6 @@ fn get_moves(burrow: &Burrow) -> Vec<Burrow> {
                 if (roompod as u8 - b'A') != dst as u8 {
                     continue;
                 }
-                println!(
-                    "going from room {} to {} will pass hallways {:?}",
-                    src,
-                    dst,
-                    if src > dst {
-                        dst..=src
-                    } else {
-                        (src + 1)..=dst
-                    }
-                );
                 let path_blocked = if src > dst {
                     dst..=src
                 } else {
@@ -204,22 +268,6 @@ fn get_moves(burrow: &Burrow) -> Vec<Burrow> {
                     }
                 }
                 for hallway in 0..burrow.hallway.len() {
-                    // println!(
-                    //     "\t{}->{}: {:?}: {:?}",
-                    //     hallway,
-                    //     room,
-                    //     if hallway > room {
-                    //         (room + 1..=hallway).collect::<Vec<usize>>()
-                    //     } else {
-                    //         (hallway..=room).collect::<Vec<usize>>()
-                    //     },
-                    //     (if hallway > room {
-                    //         room + 1..=hallway
-                    //     } else {
-                    //         hallway..=room
-                    //     })
-                    //     .find_map(|i| burrow.hallway[i])
-                    // );
                     let path_blocked = (if hallway > room {
                         room + 1..=hallway
                     } else {
@@ -227,16 +275,8 @@ fn get_moves(burrow: &Burrow) -> Vec<Burrow> {
                     })
                     .find_map(|i| burrow.hallway[i]);
                     if let Some(_) = path_blocked {
-                        println!(
-                            "could NOT move room {} @ {} (contains: {:?}) to hallway {} (contains: {:?})",
-                            room, depth, burrow.rooms[room][depth], hallway, burrow.hallway[hallway]
-                        );
                         continue;
                     }
-                    println!(
-                        "could move room {} @ {} (contains: {:?}) to hallway {} (contains: {:?})",
-                        room, depth, burrow.rooms[room][depth], hallway, burrow.hallway[hallway]
-                    );
                     let mut burrow: Burrow = burrow.clone();
                     burrow.hallway[hallway] = burrow.rooms[room][depth];
                     burrow.rooms[room][depth] = None;
