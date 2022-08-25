@@ -45,7 +45,10 @@ func main() {
 	buildSchema(db)
 
 	http.HandleFunc("/query", makeRetriever(db))
-	http.HandleFunc("/", makeReceiver(db))
+	http.HandleFunc("/readings", makeReceiver(db))
+
+	http.Handle("/", http.FileServer(http.Dir("./www")))
+
 	http.ListenAndServe(":8080", nil)
 }
 
