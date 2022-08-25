@@ -117,24 +117,38 @@ func insertReadingQuery(db *sql.DB, reading rtlamrRecord) (err error) {
 
 func readQuery(db *sql.DB, w io.Writer) (err error) {
 	jsonQuery := `
-		with intervals as (
+			with intervals as (
+				select 
+					*,
+					watt_hours - lag(watt_hours) over (order by start_time asc) as new_watt_hours,
+					(start_time - lag(start_time) over (order by start_time asc)) / 3600.0 as hours_since_last_update,
+					(watt_hours - lag(watt_hours) over (order by start_time asc))
+					/ 
+					((start_time - lag(start_time) over (order by start_time asc)) / 3600.0) as avg_watts_in_interval
+				from (
+					select 
+					    min(time) as start_timestamp,
+						unixepoch(min(time)) as start_time,
+						consumption * 10 as watt_hours
+					from readings 
+					-- where time >= now() - interval '1 week'
+					group by consumption
+				)
+				order by start_time desc
+				limit 1000 -- FIXME: we gotta do something more flexible
+			)
 			select 
-				min(time) as start_time,
-				UNIXEPOCH(min(time)) as start_time_unix,
-				consumption * 10 as watt_hours
-			from readings 
-			where time >= datetime('now', '-1 week')
-			group by consumption
-		)
-		select 
-			start_time,
-			start_time_unix,
-			(watt_hours - lag(watt_hours, 2) over (order by start_time))
-			/ 
-			((start_time_unix - lag(start_time_unix, 2) over (order by start_time)) / 3600) as avg_watts_in_interval
-		from intervals
-		order by start_time desc;
-	`
+			    json_group_array( 
+					json_object(
+						'start_time', start_time,
+						'watt_hours', watt_hours,
+					    'new_watt_hours', new_watt_hours,
+						'hours_since_last_update', hours_since_last_update,
+					    'avg_watts_in_interval', avg_watts_in_interval
+					)
+				)
+			from intervals;
+		`
 
 	var result string
 	row := db.QueryRow(jsonQuery)

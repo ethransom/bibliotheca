@@ -57,9 +57,9 @@
                 .filter(d => d.avg_watts_in_interval != null)
                 .map(function (d) {
                     return {
-                        date: new Date(d.start_time_unix),
-                        date_unix: d.start_time_unix,
-                        value: Math.round(d.avg_watts_in_interval),
+                        date: new Date(d.start_time),
+                        date_unix: d.start_time,
+                        value: Math.round(Math.min(d.avg_watts_in_interval, 23000)), // https://physics.stackexchange.com/a/267941
                     };
                 });
 
