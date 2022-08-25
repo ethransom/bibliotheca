@@ -13,9 +13,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const dbInfo = "host=localhost port=5432 user=postgres dbname=meter_readings sslmode=disable"
-
-type rtlamr_record struct {
+type rtlamrRecord struct {
 	Time    string `json:"Time"`
 	Offset  int    `json:"Offset"`
 	Length  int    `json:"Length"`
@@ -49,7 +47,7 @@ func main() {
 
 	http.Handle("/", http.FileServer(http.Dir("./www")))
 
-	http.ListenAndServe(":8080", nil)
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 func buildSchema(db *sql.DB) {
@@ -75,7 +73,7 @@ func makeReceiver(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Println("message:", string(body))
-		var reading rtlamr_record
+		var reading rtlamrRecord
 		err = json.Unmarshal(body, &reading)
 		if err != nil {
 			log.Println("error parsing json", err)
@@ -96,14 +94,14 @@ func makeRetriever(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
 		err := readQuery(db, w)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Internal Server Error"))
+			_, _ = w.Write([]byte("Internal Server Error"))
 			log.Println("error reading from db", err)
 			return
 		}
 	}
 }
 
-func insertReadingQuery(db *sql.DB, reading rtlamr_record) (err error) {
+func insertReadingQuery(db *sql.DB, reading rtlamrRecord) (err error) {
 	query := "INSERT INTO readings (time, id, type, consumption) VALUES ($1, $2, $3, $4)"
 
 	_, err = db.Exec(
@@ -131,9 +129,9 @@ func readQuery(db *sql.DB, w io.Writer) (err error) {
 		select 
 			start_time,
 			start_time_unix,
-			(watt_hours - lag(watt_hours, 2) over (order by start_time asc))
+			(watt_hours - lag(watt_hours, 2) over (order by start_time))
 			/ 
-			((start_time_unix - lag(start_time_unix, 2) over (order by start_time asc)) / 3600) as avg_watts_in_interval
+			((start_time_unix - lag(start_time_unix, 2) over (order by start_time)) / 3600) as avg_watts_in_interval
 		from intervals
 		order by start_time desc;
 	`
@@ -143,11 +141,11 @@ func readQuery(db *sql.DB, w io.Writer) (err error) {
 	err = row.Scan(&result)
 	switch err {
 	case sql.ErrNoRows:
-		fmt.Fprintln(w, []string{})
-		return nil
+		_, err := fmt.Fprintln(w, []string{})
+		return err
 	case nil:
-		fmt.Fprintln(w, result)
-		return nil
+		_, err := fmt.Fprintln(w, result)
+		return err
 	}
 
 	return err
