@@ -33,7 +33,10 @@ type rtlamr_record struct {
 func main() {
 	dsnStr := "file:test.db?cache=shared&mode=memory"
 	if path, ok := os.LookupEnv("POWER_METERS_DB_PATH"); ok {
-		dsnStr = fmt.Sprintf("file:%s?cache=shared&mode=wal", path)
+		dsnStr = fmt.Sprintf("file:%s?cache=shared&_journal=wal&mode=rwc", path)
+		log.Printf("INFO using disk db at '%s'\n", path)
+	} else {
+		log.Println("INFO using in-memory db")
 	}
 	db, err := sql.Open("sqlite3", dsnStr)
 	if err != nil {
@@ -47,8 +50,9 @@ func main() {
 }
 
 func buildSchema(db *sql.DB) {
-	if _, err := db.Query(`
-		create table readings(
+	log.Println("migrating db...")
+	if _, err := db.Exec(`
+		create table if not exists readings(
 			time timestamp,
 			id integer,
 			type integer,
@@ -57,6 +61,7 @@ func buildSchema(db *sql.DB) {
 	`); err != nil {
 		log.Fatal(err)
 	}
+	log.Println("migrated db")
 }
 
 func makeReceiver(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +90,7 @@ func makeReceiver(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
 func makeRetriever(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		err := readQuery(db, powerTimeseriesQuery, w)
+		err := readQuery(db, w)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Internal Server Error"))
@@ -109,39 +114,38 @@ func insertReadingQuery(db *sql.DB, reading rtlamr_record) (err error) {
 	return
 }
 
-const powerTimeseriesQuery = `
-with intervals as (
-	select 
-		min(time)::timestamptz at time zone 'America/Denver' as start_time,
-		EXTRACT(epoch from min(time)) as start_time_unix,
-		consumption * 10 as watt_hours
-	from readings 
-	where time >= now() - interval '1 week'
-	group by consumption
-)
-select 
-	start_time,
-	start_time_unix,
-	(watt_hours - lag(watt_hours, 2) over (order by start_time asc))
-	/ 
-	((start_time_unix - lag(start_time_unix, 2) over (order by start_time asc)) / 3600) as avg_watts_in_interval
-from intervals
-order by start_time desc
-`
-
-func readQuery(db *sql.DB, query string, w io.Writer) (err error) {
-	jsonQuery := fmt.Sprintf("select json_agg(t) from (%s) as t", query)
+func readQuery(db *sql.DB, w io.Writer) (err error) {
+	jsonQuery := `
+		with intervals as (
+			select 
+				min(time) as start_time,
+				UNIXEPOCH(min(time)) as start_time_unix,
+				consumption * 10 as watt_hours
+			from readings 
+			where time >= datetime('now', '-1 week')
+			group by consumption
+		)
+		select 
+			start_time,
+			start_time_unix,
+			(watt_hours - lag(watt_hours, 2) over (order by start_time asc))
+			/ 
+			((start_time_unix - lag(start_time_unix, 2) over (order by start_time asc)) / 3600) as avg_watts_in_interval
+		from intervals
+		order by start_time desc;
+	`
 
 	var result string
 	row := db.QueryRow(jsonQuery)
 	err = row.Scan(&result)
 	switch err {
 	case sql.ErrNoRows:
-		fmt.Fprintln(w, "No rows were returned!")
-		return
+		fmt.Fprintln(w, []string{})
+		return nil
 	case nil:
 		fmt.Fprintln(w, result)
+		return nil
 	}
 
-	return
+	return err
 }
