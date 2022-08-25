@@ -57,7 +57,7 @@
                 .filter(d => d.avg_watts_in_interval != null)
                 .map(function (d) {
                     return {
-                        date: new Date(d.start_time),
+                        date: new Date(d.start_time_unix),
                         date_unix: d.start_time_unix,
                         value: Math.round(d.avg_watts_in_interval),
                     };
@@ -138,7 +138,7 @@
 
         }
 
-        fetch('http://143.110.231.29/query')
+        fetch('/query')
             .then(response => response.json())
             .then(data => onReceiveData(data))
             // .catch(err => alert(err));
