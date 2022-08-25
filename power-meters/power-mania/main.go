@@ -67,6 +67,8 @@ func makeRetriever(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		err := readQuery(db, powerTimeseriesQuery, w)
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Internal Server Error"))
 			log.Println("error reading from db", err)
 			return
 		}
