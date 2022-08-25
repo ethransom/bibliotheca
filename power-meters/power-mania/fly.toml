@@ -11,10 +11,15 @@ processes = []
 
 [env]
   PORT = "8080"
+  POWER_METERS_DB_PATH = "/data/power_meters.db"
 
 [experimental]
   allowed_public_ports = []
   auto_rollback = true
+
+[mounts]
+  source="power_mania_vol"
+  destination="/data"
 
 [[services]]
   http_checks = []

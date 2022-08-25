@@ -8,8 +8,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
-	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const dbInfo = "host=localhost port=5432 user=postgres dbname=meter_readings sslmode=disable"
@@ -30,13 +31,32 @@ type rtlamr_record struct {
 }
 
 func main() {
-	db, err := sql.Open("postgres", dbInfo)
+	dsnStr := "file:test.db?cache=shared&mode=memory"
+	if path, ok := os.LookupEnv("POWER_METERS_DB_PATH"); ok {
+		dsnStr = fmt.Sprintf("file:%s?cache=shared&mode=wal", path)
+	}
+	db, err := sql.Open("sqlite3", dsnStr)
 	if err != nil {
 		log.Fatal(err)
 	}
+	buildSchema(db)
+
 	http.HandleFunc("/query", makeRetriever(db))
 	http.HandleFunc("/", makeReceiver(db))
 	http.ListenAndServe(":8080", nil)
+}
+
+func buildSchema(db *sql.DB) {
+	if _, err := db.Query(`
+		create table readings(
+			time timestamp,
+			id integer,
+			type integer,
+			consumption integer
+		);
+	`); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func makeReceiver(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
