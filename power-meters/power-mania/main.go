@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -67,7 +66,7 @@ func buildSchema(db *sql.DB) {
 
 func makeReceiver(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			log.Println("error reading request", err)
 			return
@@ -120,11 +119,11 @@ func readQuery(db *sql.DB, w io.Writer) (err error) {
 			with intervals as (
 				select 
 					*,
-					watt_hours - lag(watt_hours) over (order by start_time asc) as new_watt_hours,
-					(start_time - lag(start_time) over (order by start_time asc)) / 3600.0 as hours_since_last_update,
-					(watt_hours - lag(watt_hours) over (order by start_time asc))
+					watt_hours - lag(watt_hours) over () as new_watt_hours,
+					(start_time - lag(start_time) over ()) / 3600.0 as hours_since_last_update,
+					(watt_hours - lag(watt_hours) over ())
 					/ 
-					((start_time - lag(start_time) over (order by start_time asc)) / 3600.0) as avg_watts_in_interval
+					((start_time - lag(start_time) over ()) / 3600.0) as avg_watts_in_interval
 				from (
 					select 
 					    min(time) as start_timestamp,
