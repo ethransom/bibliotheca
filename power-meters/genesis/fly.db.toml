@@ -1,0 +1,25 @@
+app = "genesis-db"
+
+[mounts]
+  destination = "/victoria-metrics-data"
+  source = "genesis_db_data"
+
+# [metrics]
+#   port = 9091
+#   path = "/metrics"
+
+[build]
+  image = "victoriametrics/victoria-metrics:latest"
+
+# Uncomment these lines for public internet access to Redis on port 10000
+#
+# [[services]]
+# internal_port = 6379
+# protocol      = "tcp"
+
+#   [[services.ports]]
+#   port     = "10000"
+
+#   [[services.tcp_checks]]
+#   interval = 10000
+#   timeout  = 2000
