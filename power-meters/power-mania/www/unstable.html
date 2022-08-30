@@ -90,9 +90,9 @@
                 .filter(d => d.avg_watts_in_interval != null)
                 .map(function (d) {
                     return {
-                        date: new Date(d.start_time),
-                        date_unix: d.start_time_unix,
-                        value: Math.round(d.avg_watts_in_interval),
+                        date: new Date(d.start_time * 1_000),
+                        date_unix: d.start_time,
+                        value: Math.round(Math.min(d.avg_watts_in_interval, 23_000)), // https://physics.stackexchange.com/a/267941
                     };
                 });
 
@@ -110,7 +110,7 @@
             console.log("rendering with ", timerange);
             let rangeStart = getRangeStart(timerange);
 
-            let data = data.filter(d => d.date >= rangeStart);
+            let data = serverData.filter(d => d.date >= rangeStart);
 
             let table = data
                 .map(row => {
@@ -194,7 +194,7 @@
 
         }
 
-        fetch('http://143.110.231.29/query')
+        fetch('/query')
             .then(response => response.json())
             .then(data => onReceiveData(data))
             // .catch(err => alert(err));
