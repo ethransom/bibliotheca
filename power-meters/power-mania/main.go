@@ -119,11 +119,11 @@ func readQuery(db *sql.DB, w io.Writer) (err error) {
 			with intervals as (
 				select 
 					*,
-					watt_hours - lag(watt_hours) over () as new_watt_hours,
-					(start_time - lag(start_time) over ()) / 3600.0 as hours_since_last_update,
-					(watt_hours - lag(watt_hours) over ())
+					watt_hours - lag(watt_hours, 2) over () as new_watt_hours,
+					(start_time - lag(start_time, 2) over ()) / 3600.0 as hours_since_last_update,
+					(watt_hours - lag(watt_hours, 2) over ())
 					/ 
-					((start_time - lag(start_time) over ()) / 3600.0) as avg_watts_in_interval
+					((start_time - lag(start_time, 2) over ()) / 3600.0) as avg_watts_in_interval
 				from (
 					select 
 					    min(time) as start_timestamp,
