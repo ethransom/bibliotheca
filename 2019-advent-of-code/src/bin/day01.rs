@@ -45,3 +45,24 @@ fn bench_solve_current(b: &mut test::Bencher) {
         assert_eq!(solve(INPUT), 3_167_282);
     });
 }
+
+#[bench]
+fn bench_solve_part1(b: &mut test::Bencher) {
+    let masses = INPUT
+        .lines()
+        .map(str::parse::<u64>)
+        .collect::<Result<Vec<u64>, ParseIntError>>()
+        .expect("couldn't parse input file");
+
+    fn module_fuel(mass: u64) -> u64 {
+        mass / 3 - 2
+    }
+
+    // see also: https://rust.godbolt.org/z/vz4cYKscd
+    b.iter(|| {
+        assert_eq!(
+            masses.iter().cloned().map(module_fuel).sum::<u64>(),
+            3_167_282
+        );
+    });
+}
