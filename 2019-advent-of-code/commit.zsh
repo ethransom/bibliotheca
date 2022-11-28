@@ -7,8 +7,20 @@ set -e
 cargo test
 cargo clippy
 
+day=$(git status . --porcelain | (rg '2019-advent-of-code/src/bin/(day\d\d).rs' -or '$1' || true))
+
+if [[ -z "${day// }" ]]; then
+    echo 'WARNING: NO DAY DETECTED'
+    day=""
+elif [ $(echo $day | wc -l) = "1" ]; then
+    echo "DETECTED $day"
+    day=" $day:"
+else
+    echo 'WARNING: MULTIPLE DAYS DETECTED'
+    day=""
+fi
+
 git add .
 
 echo 'COMMIT MESSAGE: (Ctrl+C to abort)'
-# TODO: autodetect what day we are committing to
-git commit -m "aoc19: 1: $(read -r; printf '%s' "$REPLY")"
+git commit -m "aoc19:$day $(read -r; printf '%s' "$REPLY")"
