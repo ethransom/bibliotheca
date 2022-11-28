@@ -44,7 +44,10 @@ fn rocket_equation(initial_mass: u64) -> u64 {
             break;
         }
 
-        total_fuel += u64::try_from(fuel).expect("fixme");
+        total_fuel += match u64::try_from(fuel) {
+            Ok(fuel) => fuel,
+            Err(_) => return total_fuel,
+        };
 
         fuel = fuel / 3 - 2;
     }
