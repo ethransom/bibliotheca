@@ -13,16 +13,20 @@ fn main() {
 }
 
 fn solve(input: &str) -> (u64, u64) {
-    let masses = input
-        .lines()
-        .map(str::parse::<u64>)
-        .collect::<Result<Vec<u64>, ParseIntError>>()
-        .expect("couldn't parse input file");
+    let masses = parse(input);
 
     (
         masses.iter().cloned().map(module_fuel).sum::<u64>(),
         masses.iter().cloned().map(rocket_equation).sum::<u64>(),
     )
+}
+
+fn parse(input: &str) -> Vec<u64> {
+    input
+        .lines()
+        .map(str::parse::<u64>)
+        .collect::<Result<Vec<u64>, ParseIntError>>()
+        .expect("couldn't parse input file")
 }
 
 fn module_fuel(mass: u64) -> u64 {
@@ -78,11 +82,7 @@ fn bench_solve_current(b: &mut test::Bencher) {
 
 #[bench]
 fn bench_solve_part1(b: &mut test::Bencher) {
-    let masses = INPUT
-        .lines()
-        .map(str::parse::<u64>)
-        .collect::<Result<Vec<u64>, ParseIntError>>()
-        .expect("couldn't parse input file");
+    let masses = parse(INPUT);
 
     fn module_fuel(mass: u64) -> u64 {
         mass / 3 - 2
