@@ -35,8 +35,6 @@ fn run(intcode: &mut [u64]) {
     while let Some(instr) = intcode.get(ip..(ip + 4)) {
         let [opcode, input1, input2, output]: [u64; 4] = instr.try_into().unwrap();
 
-        dbg!(opcode, input1, input2, output);
-
         let op = match opcode {
             1 => u64::checked_add,
             2 => u64::checked_mul,
