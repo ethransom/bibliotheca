@@ -13,10 +13,7 @@ fn main() {
 fn solve(input: &str) -> (u64, u64) {
     let mut intcode = parse(input);
 
-    intcode[1] = 12;
-    intcode[2] = 2;
-
-    run(&mut intcode);
+    run(&mut intcode, 12, 2);
 
     (intcode[0], 0)
 }
@@ -29,7 +26,10 @@ fn parse(input: &str) -> Vec<u64> {
         .expect("couldn't parse input file")
 }
 
-fn run(intcode: &mut [u64]) {
+fn run(intcode: &mut [u64], input1: u64, input2: u64) {
+    intcode[1] = input1;
+    intcode[2] = input2;
+
     let mut ip = 0;
 
     while let Some(instr) = intcode.get(ip..(ip + 4)) {
@@ -52,7 +52,8 @@ fn run(intcode: &mut [u64]) {
 fn test_run() {
     fn test(initial_state: &[u64], end_state: &[u64]) {
         let mut state = initial_state.to_owned();
-        run(&mut state);
+        let (input1, input2) = (state[1], state[2]);
+        run(&mut state, input1, input2);
         assert_eq!(state, end_state);
     }
     test(
@@ -72,7 +73,9 @@ fn test_run() {
 fn test_example() {
     let mut intcode = parse(EXAMPLE);
 
-    run(&mut intcode);
+    let (input1, input2) = (intcode[1], intcode[2]);
+
+    run(&mut intcode, input1, input2);
 
     assert_eq!(intcode[0], 3_500);
 }
