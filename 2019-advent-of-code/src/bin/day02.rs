@@ -15,7 +15,19 @@ fn solve(input: &str) -> (u64, u64) {
 
     let after_example_inputs = run(&intcode, 12, 2);
 
-    (after_example_inputs[0], 0)
+    let (found_noun, found_verb) = (0..100)
+        .find_map(|noun| {
+            (0..100).find_map(|verb| {
+                if 19690720 == run(&intcode, noun, verb)[0] {
+                    Some((noun, verb))
+                } else {
+                    None
+                }
+            })
+        })
+        .expect("could not find inputs resulting in solution");
+
+    (after_example_inputs[0], 100 * found_noun + found_verb)
 }
 
 fn parse(input: &str) -> Vec<u64> {
@@ -80,6 +92,6 @@ fn test_example() {
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (5_290_681, 0));
+        assert_eq!(solve(INPUT), (5_290_681, 5_741));
     });
 }
