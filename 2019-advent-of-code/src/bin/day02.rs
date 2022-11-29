@@ -61,7 +61,7 @@ fn run(intcode: &[u64], input1: u64, input2: u64) -> Vec<u64> {
         ip += 4;
     }
 
-    memory.to_owned()
+    memory
 }
 
 #[test]
