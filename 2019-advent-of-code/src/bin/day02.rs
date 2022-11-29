@@ -54,11 +54,8 @@ fn run(intcode: &[u64], input1: u64, input2: u64) -> Vec<u64> {
 
 #[test]
 fn test_run() {
-    fn test(initial_state: &[u64], end_state: &[u64]) {
-        let state = initial_state.to_owned();
-        let (input1, input2) = (state[1], state[2]);
-        let state = run(&state, input1, input2);
-        assert_eq!(state, end_state);
+    fn test(intcode: &[u64], end_state: &[u64]) {
+        assert_eq!(run(&intcode, intcode[1], intcode[2]), end_state);
     }
     test(
         &parse(EXAMPLE),
@@ -77,9 +74,7 @@ fn test_run() {
 fn test_example() {
     let intcode = parse(EXAMPLE);
 
-    let (input1, input2) = (intcode[1], intcode[2]);
-
-    assert_eq!(run(&intcode, input1, input2)[0], 3_500);
+    assert_eq!(run(&intcode, intcode[1], intcode[2])[0], 3_500);
 }
 
 #[bench]
