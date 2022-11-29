@@ -11,11 +11,11 @@ fn main() {
 }
 
 fn solve(input: &str) -> (u64, u64) {
-    let mut intcode = parse(input);
+    let intcode = parse(input);
 
-    run(&mut intcode, 12, 2);
+    let after_example_inputs = run(&intcode, 12, 2);
 
-    (intcode[0], 0)
+    (after_example_inputs[0], 0)
 }
 
 fn parse(input: &str) -> Vec<u64> {
@@ -26,7 +26,9 @@ fn parse(input: &str) -> Vec<u64> {
         .expect("couldn't parse input file")
 }
 
-fn run(intcode: &mut [u64], input1: u64, input2: u64) {
+fn run(intcode: &[u64], input1: u64, input2: u64) -> Vec<u64> {
+    let mut intcode = intcode.to_owned();
+
     intcode[1] = input1;
     intcode[2] = input2;
 
@@ -46,14 +48,16 @@ fn run(intcode: &mut [u64], input1: u64, input2: u64) {
 
         ip += 4;
     }
+
+    intcode.to_owned()
 }
 
 #[test]
 fn test_run() {
     fn test(initial_state: &[u64], end_state: &[u64]) {
-        let mut state = initial_state.to_owned();
+        let state = initial_state.to_owned();
         let (input1, input2) = (state[1], state[2]);
-        run(&mut state, input1, input2);
+        let state = run(&state, input1, input2);
         assert_eq!(state, end_state);
     }
     test(
@@ -71,13 +75,11 @@ fn test_run() {
 
 #[test]
 fn test_example() {
-    let mut intcode = parse(EXAMPLE);
+    let intcode = parse(EXAMPLE);
 
     let (input1, input2) = (intcode[1], intcode[2]);
 
-    run(&mut intcode, input1, input2);
-
-    assert_eq!(intcode[0], 3_500);
+    assert_eq!(run(&intcode, input1, input2)[0], 3_500);
 }
 
 #[bench]
