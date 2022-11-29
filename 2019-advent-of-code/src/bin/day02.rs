@@ -32,8 +32,8 @@ fn parse(input: &str) -> Vec<u64> {
 fn run(intcode: &mut [u64]) {
     let mut ip = 0;
 
-    while ip + 4 < intcode.len() {
-        let [opcode, input1, input2, output]: [u64; 4] = intcode[ip..(ip + 4)].try_into().unwrap();
+    while let Some(instr) = intcode.get(ip..(ip + 4)) {
+        let [opcode, input1, input2, output]: [u64; 4] = instr.try_into().unwrap();
 
         dbg!(opcode, input1, input2, output);
 
