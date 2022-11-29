@@ -27,14 +27,14 @@ fn parse(input: &str) -> Vec<u64> {
 }
 
 fn run(intcode: &[u64], input1: u64, input2: u64) -> Vec<u64> {
-    let mut intcode = intcode.to_owned();
+    let mut memory = intcode.to_owned();
 
-    intcode[1] = input1;
-    intcode[2] = input2;
+    memory[1] = input1;
+    memory[2] = input2;
 
     let mut ip = 0;
 
-    while let Some(instr) = intcode.get(ip..(ip + 4)) {
+    while let Some(instr) = memory.get(ip..(ip + 4)) {
         let [opcode, input1, input2, output]: [u64; 4] = instr.try_into().unwrap();
 
         let op = match opcode {
@@ -43,13 +43,13 @@ fn run(intcode: &[u64], input1: u64, input2: u64) -> Vec<u64> {
             _ => break,
         };
 
-        intcode[output as usize] =
-            op(intcode[input1 as usize], intcode[input2 as usize]).expect("arithmetic overflow");
+        memory[output as usize] =
+            op(memory[input1 as usize], memory[input2 as usize]).expect("arithmetic overflow");
 
         ip += 4;
     }
 
-    intcode.to_owned()
+    memory.to_owned()
 }
 
 #[test]
