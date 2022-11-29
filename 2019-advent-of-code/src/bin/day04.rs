@@ -11,13 +11,22 @@ fn main() {
 fn solve(input: &str) -> (usize, usize) {
     let (start, end) = parse(input);
 
-    let passwords = (start..=end).filter(|&n| {
-        let digits = to_digits(n);
+    (
+        (start..=end)
+            .filter(|&n| {
+                let digits = to_digits(n);
 
-        is_increasing(digits) && has_repeat(digits)
-    });
+                is_increasing(digits) && has_repeat(digits)
+            })
+            .count(),
+        (start..=end)
+            .filter(|&n| {
+                let digits = to_digits(n);
 
-    (passwords.count(), 0)
+                is_increasing(digits) && has_single_repeat(digits)
+            })
+            .count(),
+    )
 }
 
 fn parse(input: &str) -> (u64, u64) {
@@ -55,6 +64,21 @@ fn test_has_repeat() {
     assert!(!has_repeat(dbg!(to_digits(123789))));
 }
 
+fn has_single_repeat(digits: [u8; 6]) -> bool {
+    (digits[0] == digits[1] && (digits[1] != digits[2]))
+        || (digits[1] == digits[2] && (digits[0] != digits[1] && digits[2] != digits[3]))
+        || (digits[2] == digits[3] && (digits[1] != digits[2] && digits[3] != digits[4]))
+        || (digits[3] == digits[4] && (digits[2] != digits[3] && digits[4] != digits[5]))
+        || (digits[4] == digits[5] && (digits[3] != digits[4]))
+}
+
+#[test]
+fn test_has_single_repeat() {
+    assert!(has_single_repeat(to_digits(112233)));
+    assert!(!has_single_repeat(dbg!(to_digits(123444))));
+    assert!(has_single_repeat(dbg!(to_digits(111122))));
+}
+
 fn is_increasing(digits: [u8; 6]) -> bool {
     digits.windows(2).all(|window| window[0] <= window[1])
 }
@@ -66,8 +90,8 @@ fn test_is_increasing() {
 }
 
 #[bench]
-fn bench_solve_current(b: &mut test::Bencher) {
+fn bench_solve_00_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (2779, 0));
+        assert_eq!(solve(INPUT), (2779, 1972));
     });
 }
