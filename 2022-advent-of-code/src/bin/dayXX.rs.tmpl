@@ -11,11 +11,13 @@ fn main() {
 }
 
 fn solve(input: &str) -> (usize, usize) {
-    let blocks = input
-        .lines()
-        .collect::<Vec<&str>>();
+    let blocks = parse(input);
 
     (0, 0)
+}
+
+fn parse(input: &str) -> Vec<&str> {
+    input.lines().collect::<Vec<&str>>()
 }
 
 #[test]
