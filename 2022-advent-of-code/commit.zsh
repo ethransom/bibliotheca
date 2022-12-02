@@ -7,7 +7,7 @@ set -e
 cargo test
 cargo clippy
 
-day=$(git status . --porcelain | (rg '2019-advent-of-code/src/bin/(day\d\d).rs' -or '$1' || true))
+day=$(git status . --porcelain | (rg 'src/bin/(day\d\d).rs' -or '$1' || true))
 
 if [[ -z "${day// }" ]]; then
     echo 'WARNING: NO DAY DETECTED'
