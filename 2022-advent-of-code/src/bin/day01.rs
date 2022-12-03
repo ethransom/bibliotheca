@@ -39,7 +39,34 @@ fn test_example() {
 }
 
 #[bench]
-fn bench_solve_current(b: &mut test::Bencher) {
+fn bench_solve_00_original(b: &mut test::Bencher) {
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (71_023, 206_289));
+    });
+}
+
+#[bench]
+fn bench_solve_01_onealloc(b: &mut test::Bencher) {
+    fn solve(input: &str) -> (u32, u32) {
+        let mut per_elf = input
+            .split("\n\n")
+            .map(|line| {
+                line.lines().try_fold(0, |sum, item| {
+                    str::parse::<u32>(item).and_then(|i| Ok(sum + i))
+                })
+            })
+            .collect::<Result<Vec<u32>, ParseIntError>>()
+            .unwrap();
+
+        per_elf.sort();
+
+        let max = per_elf.iter().rev().take(1).sum();
+
+        let top_three = per_elf.iter().rev().take(3).sum();
+
+        (max, top_three)
+    }
+
     b.iter(|| {
         assert_eq!(solve(INPUT), (71_023, 206_289));
     });
