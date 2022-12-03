@@ -3,7 +3,6 @@
 #![feature(let_chains)]
 
 use std::num::ParseIntError;
-use std::slice::Iter;
 
 extern crate test;
 
@@ -79,12 +78,15 @@ fn bench_solve_01_onealloc(b: &mut test::Bencher) {
 
 #[bench]
 fn bench_solve_02_noalloc(b: &mut test::Bencher) {
-    #[derive(Default)]
-    struct StaticMaxHeap {
-        heap: [Option<u32>; 3],
+    struct StaticMaxHeap<const N: usize> {
+        heap: [Option<u32>; N],
     }
 
-    impl StaticMaxHeap {
+    impl<const N: usize> StaticMaxHeap<N> {
+        fn new() -> StaticMaxHeap<N> {
+            StaticMaxHeap { heap: [None; N] }
+        }
+
         fn add(&mut self, calories: u32) {
             for i in self.heap.iter_mut() {
                 if i.is_none() {
@@ -103,7 +105,7 @@ fn bench_solve_02_noalloc(b: &mut test::Bencher) {
     fn solve(input: &str) -> (u32, u32) {
         let heap = input
             .split("\n\n")
-            .try_fold(StaticMaxHeap::default(), |mut heap, line| {
+            .try_fold(StaticMaxHeap::new(), |mut heap, line| {
                 line.lines()
                     .try_fold(0, |sum, item| {
                         str::parse::<u32>(item).and_then(|i| Ok(sum + i))
