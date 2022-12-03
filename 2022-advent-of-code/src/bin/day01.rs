@@ -3,6 +3,7 @@
 #![feature(let_chains)]
 
 use std::num::ParseIntError;
+use std::slice::Iter;
 
 extern crate test;
 
@@ -78,39 +79,48 @@ fn bench_solve_01_onealloc(b: &mut test::Bencher) {
 
 #[bench]
 fn bench_solve_02_noalloc(b: &mut test::Bencher) {
+    #[derive(Default)]
+    struct StaticMaxHeap {
+        heap: [Option<u32>; 3],
+    }
+
+    impl StaticMaxHeap {
+        fn add(&mut self, calories: u32) {
+            for i in self.heap.iter_mut() {
+                if i.is_none() {
+                    *i = Some(calories);
+                    return;
+                }
+            }
+
+            let min = self.heap.iter_mut().min().unwrap();
+            if min.unwrap() < calories {
+                *min = Some(calories);
+            }
+        }
+    }
+
     fn solve(input: &str) -> (u32, u32) {
-        let top_three = input
+        let heap = input
             .split("\n\n")
-            .try_fold([Option::None::<u32>; 3], |mut top_three, line| {
+            .try_fold(StaticMaxHeap::default(), |mut heap, line| {
                 line.lines()
                     .try_fold(0, |sum, item| {
                         str::parse::<u32>(item).and_then(|i| Ok(sum + i))
                     })
                     .and_then(|calories| {
-                        // refactor: extract this into a StaticNHeap or similar
-                        for i in top_three.iter_mut() {
-                            if i.is_none() {
-                                *i = Some(calories);
-                                return Ok(top_three);
-                            }
-                        }
+                        heap.add(calories);
 
-                        let min = top_three.iter_mut().min().unwrap();
-                        if min.unwrap() < calories {
-                            *min = Some(calories);
-                        }
-
-                        Ok(top_three)
+                        Ok(heap)
                     })
             })
-            .expect("couldn't parse calories")
-            .map(|i| i.expect("not enough to get top three"));
+            .expect("couldn't parse calories");
+
+        let top_three: [u32; 3] = heap.heap.map(|i| i.expect("not enough to get top three"));
 
         let &max = top_three.iter().max().unwrap();
 
-        let top_three = top_three.iter().sum();
-
-        (max, top_three)
+        (max, top_three.iter().sum())
     }
 
     assert_eq!(solve(EXAMPLE), (24_000, 45_000));
