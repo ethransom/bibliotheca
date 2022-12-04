@@ -22,9 +22,39 @@ enum Throw {
 use Throw::*;
 
 fn solve(input: &str) -> (usize, usize) {
-    let total_score = parse(input).map(|(theirs, ours)| score(theirs, ours)).sum();
+    let part1 = parse(input)
+        .map(|(theirs, ours)| {
+            let ours = match ours {
+                "X" => Rock,
+                "Y" => Paper,
+                "Z" => Scissors,
+                _ => panic!(),
+            };
+            score(theirs, ours)
+        })
+        .sum();
 
-    (total_score, 0)
+    let part2 = parse(input)
+        .map(|(theirs, ours)| {
+            let ours = match ours {
+                "X" => match theirs {
+                    Rock => Scissors,
+                    Paper => Rock,
+                    Scissors => Paper,
+                },
+                "Y" => theirs,
+                "Z" => match theirs {
+                    Rock => Paper,
+                    Paper => Scissors,
+                    Scissors => Rock,
+                },
+                _ => panic!(),
+            };
+            score(theirs, ours)
+        })
+        .sum();
+
+    (part1, part2)
 }
 
 fn score(theirs: Throw, ours: Throw) -> usize {
@@ -39,13 +69,6 @@ fn score(theirs: Throw, ours: Throw) -> usize {
         None => 3,
         Some(true) => 6,
     };
-    // dbg!(
-    //     (ours, theirs),
-    //     shape_score,
-    //     outcome,
-    //     outcome_score,
-    //     shape_score + outcome_score
-    // );
     shape_score + outcome_score
 }
 
@@ -70,7 +93,7 @@ fn test_score() {
     assert_eq!(score(Scissors, Scissors), 6);
 }
 
-fn parse(input: &str) -> impl Iterator<Item = (Throw, Throw)> + '_ {
+fn parse(input: &str) -> impl Iterator<Item = (Throw, &str)> + '_ {
     input.lines().map(|line| {
         let (theirs, ours) = line.split_once(' ').unwrap();
 
@@ -81,12 +104,7 @@ fn parse(input: &str) -> impl Iterator<Item = (Throw, Throw)> + '_ {
                 "C" => Scissors,
                 _ => panic!(),
             },
-            match ours {
-                "X" => Rock,
-                "Y" => Paper,
-                "Z" => Scissors,
-                _ => panic!(),
-            },
+            ours,
         )
     })
 }
@@ -94,19 +112,19 @@ fn parse(input: &str) -> impl Iterator<Item = (Throw, Throw)> + '_ {
 #[test]
 fn test_parse() {
     let mut iter = parse("A X\nC Z");
-    assert_eq!(iter.next(), Some((Rock, Rock)));
-    assert_eq!(iter.next(), Some((Scissors, Scissors)));
+    assert_eq!(iter.next(), Some((Rock, "X")));
+    assert_eq!(iter.next(), Some((Scissors, "Z")));
     assert_eq!(iter.next(), None);
 }
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (15, 0));
+    assert_eq!(solve(EXAMPLE), (15, 12));
 }
 
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (14_264, 0));
+        assert_eq!(solve(INPUT), (14_264, 12_382));
     });
 }
