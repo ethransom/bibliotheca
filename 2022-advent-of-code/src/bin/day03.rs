@@ -23,17 +23,19 @@ fn solve(input: &str) -> (usize, usize) {
             ];
 
             HashSet::intersection(&items1, &items2)
-                .map(|&item| {
-                    1 + ('a'..='z')
-                        .chain('A'..='Z')
-                        .position(|c| c == item)
-                        .unwrap_or_else(|| panic!("unknown item type {item}"))
-                })
+                .map(|&item| item_priority(item))
                 .sum::<usize>()
         })
         .sum();
 
     (priorities_of_splits, 0)
+}
+
+fn item_priority(item: char) -> usize {
+    1 + ('a'..='z')
+        .chain('A'..='Z')
+        .position(|c| c == item)
+        .unwrap_or_else(|| panic!("unknown item type {item}"))
 }
 
 fn parse(input: &str) -> impl Iterator<Item = &str> {
