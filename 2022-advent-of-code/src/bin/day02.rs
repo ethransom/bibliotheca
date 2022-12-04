@@ -22,35 +22,31 @@ enum Throw {
 use Throw::*;
 
 fn solve(input: &str) -> (usize, usize) {
-    let total_score = parse(input)
-        .map(|(ours, theirs)| {
-            let shape_score = match ours {
-                Rock => 1,
-                Paper => 2,
-                Scissors => 3,
-            };
-
-            let outcome = outcome(ours, theirs);
-
-            let outcome_score = match outcome {
-                Some(false) => 0,
-                None => 3,
-                Some(true) => 6,
-            };
-
-            // dbg!(
-            //     (ours, theirs),
-            //     shape_score,
-            //     outcome,
-            //     outcome_score,
-            //     shape_score + outcome_score
-            // );
-
-            shape_score + outcome_score
-        })
-        .sum();
+    let total_score = parse(input).map(|(theirs, ours)| score(theirs, ours)).sum();
 
     (total_score, 0)
+}
+
+fn score(theirs: Throw, ours: Throw) -> usize {
+    let shape_score = match ours {
+        Rock => 1,
+        Paper => 2,
+        Scissors => 3,
+    };
+    let outcome = outcome(ours, theirs);
+    let outcome_score = match outcome {
+        Some(false) => 0,
+        None => 3,
+        Some(true) => 6,
+    };
+    // dbg!(
+    //     (ours, theirs),
+    //     shape_score,
+    //     outcome,
+    //     outcome_score,
+    //     shape_score + outcome_score
+    // );
+    shape_score + outcome_score
 }
 
 fn outcome(ours: Throw, theirs: Throw) -> Option<bool> {
@@ -67,18 +63,25 @@ fn outcome(ours: Throw, theirs: Throw) -> Option<bool> {
     }
 }
 
+#[test]
+fn test_score() {
+    assert_eq!(score(Rock, Paper), 8);
+    assert_eq!(score(Paper, Rock), 1);
+    assert_eq!(score(Scissors, Scissors), 6);
+}
+
 fn parse(input: &str) -> impl Iterator<Item = (Throw, Throw)> + '_ {
     input.lines().map(|line| {
-        let (ours, theirs) = line.split_once(' ').unwrap();
+        let (theirs, ours) = line.split_once(' ').unwrap();
 
         (
-            match ours {
+            match theirs {
                 "A" => Rock,
                 "B" => Paper,
                 "C" => Scissors,
                 _ => panic!(),
             },
-            match theirs {
+            match ours {
                 "X" => Rock,
                 "Y" => Paper,
                 "Z" => Scissors,
@@ -104,6 +107,6 @@ fn test_example() {
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (10801, 0));
+        assert_eq!(solve(INPUT), (14_264, 0));
     });
 }
