@@ -17,9 +17,11 @@ fn solve(input: &str) -> (usize, usize) {
 
     let priorities_of_splits = lines
         .map(|line| {
+            let (front, back) = line.split_at(line.len() / 2);
+
             let [items1, items2]: [HashSet<char>; 2] = [
-                line[..line.len() / 2].chars().collect::<HashSet<char>>(),
-                line[line.len() / 2..].chars().collect::<HashSet<char>>(),
+                front.chars().collect::<HashSet<char>>(),
+                back.chars().collect::<HashSet<char>>(),
             ];
 
             HashSet::intersection(&items1, &items2)
