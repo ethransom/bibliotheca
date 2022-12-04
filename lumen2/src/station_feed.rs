@@ -1,14 +1,22 @@
 use serde::Deserialize;
 use serde_xml_rs::from_str;
 
-impl AirQualityData {
-    pub fn parse(str: &str) -> std::result::Result<Vec<StationFeedDatapoint>, serde_xml_rs::Error> {
-        Ok(from_str::<AirQualityData>(str)?
-            .site
-            .data
-            .into_iter()
-            .map(StationFeedDatapoint::from)
-            .collect::<Vec<StationFeedDatapoint>>())
+pub struct StationFeed {
+    pub data: Vec<StationFeedDatapoint>,
+}
+
+impl std::convert::TryFrom<&str> for StationFeed {
+    type Error = serde_xml_rs::Error;
+
+    fn try_from(value: &str) -> std::result::Result<Self, Self::Error> {
+        Ok(StationFeed {
+            data: from_str::<AirQualityData>(value)?
+                .site
+                .data
+                .into_iter()
+                .map(StationFeedDatapoint::from)
+                .collect::<Vec<StationFeedDatapoint>>(),
+        })
     }
 }
 
@@ -45,20 +53,20 @@ struct ParseData {
 type Result<T> = std::result::Result<T, std::num::ParseFloatError>;
 
 pub struct StationFeedDatapoint {
-    date: String, // TODO: parse date?
-    ozone: Result<f64>,
-    ozone_8hr_avg: Result<f32>,
-    pm25: Result<f32>,
-    pm25_24hr_avg: Result<f32>,
-    nox: Result<f32>,
-    no2: Result<f32>,
-    temperature: Result<f32>,
-    relative_humidity: Result<f32>,
-    wind_speed: Result<f32>,
-    wind_direction: Result<f32>,
-    co: Result<f32>,
-    solar_radiation: Result<f32>,
-    so2: Result<f32>,
+    pub date: String, // TODO: parse date?
+    pub ozone: Result<f64>,
+    pub ozone_8hr_avg: Result<f32>,
+    pub pm25: Result<f32>,
+    pub pm25_24hr_avg: Result<f32>,
+    pub nox: Result<f32>,
+    pub no2: Result<f32>,
+    pub temperature: Result<f32>,
+    pub relative_humidity: Result<f32>,
+    pub wind_speed: Result<f32>,
+    pub wind_direction: Result<f32>,
+    pub co: Result<f32>,
+    pub solar_radiation: Result<f32>,
+    pub so2: Result<f32>,
 }
 
 impl std::convert::From<ParseData> for StationFeedDatapoint {
@@ -86,11 +94,8 @@ impl std::convert::From<ParseData> for StationFeedDatapoint {
 fn test_station_feed_deserialization() {
     let fixture = include_str!("roseParkStationFeedResponse.xml");
 
-    let data = match AirQualityData::parse(fixture) {
-        Err(e) => panic!("{e:?}"),
-        Ok(d) => d,
-    };
+    let feed = StationFeed::try_from(fixture).unwrap();
 
-    assert_eq!(data.len(), 239);
-    assert_eq!(data.first().unwrap().date, "12/04/2022 12:00:00");
+    assert_eq!(feed.data.len(), 239);
+    assert_eq!(feed.data.first().unwrap().date, "12/04/2022 12:00:00");
 }
