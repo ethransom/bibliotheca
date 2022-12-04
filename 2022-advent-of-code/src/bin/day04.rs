@@ -1,5 +1,7 @@
 #![feature(test)]
 
+use std::ops::RangeInclusive;
+
 extern crate test;
 
 const EXAMPLE: &str = include_str!("example04.txt");
@@ -26,15 +28,15 @@ fn solve(input: &str) -> (usize, usize) {
     (full_overlaps, overlaps)
 }
 
-fn is_fully_contained(range1: &(u32, u32), range2: &(u32, u32)) -> bool {
-    range1.0 <= range2.0 && range1.1 >= range2.1
+fn is_fully_contained(range1: &RangeInclusive<u32>, range2: &RangeInclusive<u32>) -> bool {
+    range1.start() <= range2.start() && range1.end() >= range2.end()
 }
 
-fn is_contained(range1: &(u32, u32), range2: &(u32, u32)) -> bool {
-    (range2.0..=range2.1).contains(&range1.0) || (range1.0..=range1.1).contains(&range2.0)
+fn is_contained(range1: &RangeInclusive<u32>, range2: &RangeInclusive<u32>) -> bool {
+    range2.contains(range1.start()) || range1.contains(range2.start())
 }
 
-fn parse(input: &str) -> Vec<((u32, u32), (u32, u32))> {
+fn parse(input: &str) -> Vec<(RangeInclusive<u32>, RangeInclusive<u32>)> {
     input
         .lines()
         .map(|line| {
@@ -46,8 +48,8 @@ fn parse(input: &str) -> Vec<((u32, u32), (u32, u32))> {
             );
 
             (
-                (a.parse().unwrap(), b.parse().unwrap()),
-                (c.parse().unwrap(), d.parse().unwrap()),
+                (a.parse().unwrap()..=b.parse().unwrap()),
+                (c.parse().unwrap()..=d.parse().unwrap()),
             )
         })
         .collect()
