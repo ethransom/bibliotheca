@@ -17,7 +17,7 @@ fn solve(input: &str) -> (usize, usize) {
 
     let full_overlaps = assignments
         .iter()
-        .filter(|(a, b)| is_fully_contained(a, b) || is_fully_contained(b, a))
+        .filter(|(a, b)| is_fully_contained(a, b))
         .count();
 
     let overlaps = assignments
@@ -28,12 +28,12 @@ fn solve(input: &str) -> (usize, usize) {
     (full_overlaps, overlaps)
 }
 
-fn is_fully_contained(range1: &RangeInclusive<u32>, range2: &RangeInclusive<u32>) -> bool {
-    range1.start() <= range2.start() && range1.end() >= range2.end()
+fn is_fully_contained(a: &RangeInclusive<u32>, b: &RangeInclusive<u32>) -> bool {
+    (a.start() <= b.start() && a.end() >= b.end()) || (b.start() <= a.start() && b.end() >= a.end())
 }
 
-fn is_contained(range1: &RangeInclusive<u32>, range2: &RangeInclusive<u32>) -> bool {
-    range2.contains(range1.start()) || range1.contains(range2.start())
+fn is_contained(a: &RangeInclusive<u32>, b: &RangeInclusive<u32>) -> bool {
+    b.contains(a.start()) || a.contains(b.start())
 }
 
 fn parse(input: &str) -> Vec<(RangeInclusive<u32>, RangeInclusive<u32>)> {
