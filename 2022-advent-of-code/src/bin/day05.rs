@@ -28,8 +28,8 @@ fn solve(input: &str) -> (String, String) {
     )
 }
 
-fn rearrange(stacks: &Vec<Stack>, procedures: &Vec<(u8, u8, u8)>, move_bulk: bool) -> Vec<Stack> {
-    let mut stacks = stacks.clone();
+fn rearrange(stacks: &[Stack], procedures: &Vec<(u8, u8, u8)>, move_bulk: bool) -> Vec<Stack> {
+    let mut stacks = stacks.to_owned();
 
     for &(count, from, to) in procedures {
         let mut moved = vec![];
