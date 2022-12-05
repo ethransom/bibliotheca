@@ -1,4 +1,5 @@
 #![feature(test)]
+#![feature(iter_collect_into)]
 
 use itertools::Itertools;
 
@@ -12,10 +13,22 @@ fn main() {
     dbg!(solve(INPUT));
 }
 
-fn solve(input: &str) -> (usize, usize) {
-    let _blocks = parse(input);
+fn solve(input: &str) -> (String, usize) {
+    let (mut stacks, procedures) = parse(input);
 
-    (0, 0)
+    for (count, from, to) in procedures {
+        for _ in 0..count {
+            let moved = stacks[from as usize - 1]
+                .pop()
+                .expect("can't move from empty stack");
+
+            stacks[to as usize - 1].push(moved);
+        }
+    }
+
+    let tops = stacks.iter().flat_map(|stack| stack.last()).collect();
+
+    (tops, 0)
 }
 
 // TODO: structs? 😮‍💨
@@ -56,12 +69,12 @@ fn parse(input: &str) -> (Vec<Stack>, Vec<Procedure>) {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (0, 0));
+    assert_eq!(solve(EXAMPLE), ("CMZ".into(), 0));
 }
 
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (0, 0));
+        assert_eq!(solve(INPUT), ("TLFGBZHCN".into(), 0));
     });
 }
