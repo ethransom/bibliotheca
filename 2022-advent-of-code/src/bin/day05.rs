@@ -13,22 +13,42 @@ fn main() {
     dbg!(solve(INPUT));
 }
 
-fn solve(input: &str) -> (String, usize) {
-    let (mut stacks, procedures) = parse(input);
+fn solve(input: &str) -> (String, String) {
+    let (stacks, procedures) = parse(input);
 
-    for (count, from, to) in procedures {
+    (
+        rearrange(&stacks, &procedures, false)
+            .iter()
+            .flat_map(|stack| stack.last())
+            .collect(),
+        rearrange(&stacks, &procedures, true)
+            .iter()
+            .flat_map(|stack| stack.last())
+            .collect(),
+    )
+}
+
+fn rearrange(stacks: &Vec<Stack>, procedures: &Vec<(u8, u8, u8)>, move_bulk: bool) -> Vec<Stack> {
+    let mut stacks = stacks.clone();
+
+    for &(count, from, to) in procedures {
+        let mut moved = vec![];
+
         for _ in 0..count {
-            let moved = stacks[from as usize - 1]
-                .pop()
-                .expect("can't move from empty stack");
-
-            stacks[to as usize - 1].push(moved);
+            moved.push(
+                stacks[from as usize - 1]
+                    .pop()
+                    .expect("can't move from empty stack"),
+            );
         }
+
+        if move_bulk {
+            moved.reverse();
+        }
+
+        stacks[to as usize - 1].append(&mut moved);
     }
-
-    let tops = stacks.iter().flat_map(|stack| stack.last()).collect();
-
-    (tops, 0)
+    stacks
 }
 
 // TODO: structs? 😮‍💨
@@ -69,12 +89,12 @@ fn parse(input: &str) -> (Vec<Stack>, Vec<Procedure>) {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), ("CMZ".into(), 0));
+    assert_eq!(solve(EXAMPLE), ("CMZ".into(), "MCD".into()));
 }
 
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), ("TLFGBZHCN".into(), 0));
+        assert_eq!(solve(INPUT), ("TLFGBZHCN".into(), "QRQFHFWCL".into()));
     });
 }
