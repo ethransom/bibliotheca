@@ -93,6 +93,11 @@ fn test_example() {
 }
 
 #[bench]
+fn bench_parse(b: &mut test::Bencher) {
+    b.iter(|| parse(INPUT));
+}
+
+#[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
         assert_eq!(solve(INPUT), ("TLFGBZHCN".into(), "QRQFHFWCL".into()));
