@@ -54,7 +54,7 @@ fn bench_solve_01_onealloc(b: &mut test::Bencher) {
             .split("\n\n")
             .map(|line| {
                 line.lines().try_fold(0, |sum, item| {
-                    str::parse::<u32>(item).and_then(|i| Ok(sum + i))
+                    str::parse::<u32>(item).map(|i| sum + i)
                 })
             })
             .collect::<Result<Vec<u32>, ParseIntError>>()
@@ -108,12 +108,12 @@ fn bench_solve_02_noalloc(b: &mut test::Bencher) {
             .try_fold(StaticMaxHeap::new(), |mut heap, line| {
                 line.lines()
                     .try_fold(0, |sum, item| {
-                        str::parse::<u32>(item).and_then(|i| Ok(sum + i))
+                        str::parse::<u32>(item).map(|i| sum + i)
                     })
-                    .and_then(|calories| {
+                    .map(|calories| {
                         heap.add(calories);
 
-                        Ok(heap)
+                        heap
                     })
             })
             .expect("couldn't parse calories");
