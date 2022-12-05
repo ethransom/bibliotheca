@@ -13,9 +13,7 @@ fn main() {
 }
 
 fn solve(input: &str) -> (usize, usize) {
-    let blocks = parse(input);
-
-    dbg!(blocks);
+    let _blocks = parse(input);
 
     (0, 0)
 }
@@ -29,7 +27,6 @@ fn parse(input: &str) -> (Vec<Stack>, Vec<Procedure>) {
 
     let mut crates = storage.lines().collect::<Vec<&str>>();
     let stack_count = crates.pop().unwrap().split_whitespace().count();
-    dbg!(&stack_count);
     let stacks = (0..stack_count)
         .map(|stack| {
             crates
@@ -37,7 +34,7 @@ fn parse(input: &str) -> (Vec<Stack>, Vec<Procedure>) {
                 .rev()
                 .flat_map(|row| {
                     row.chars()
-                        .nth(dbg!(stack * 4 + 1))
+                        .nth(stack * 4 + 1)
                         .filter(|c| ('A'..='Z').contains(c))
                 })
                 .collect()
