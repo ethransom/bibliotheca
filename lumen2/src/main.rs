@@ -5,46 +5,46 @@ const SLC_LAT_LON: (f32, f32) = (40.76388, -111.89228);
 fn main() {
     let openweathermap_token =
         std::env::var("OPENWEATHERMAP_TOKEN").expect("OPENWEATHERMAP_TOKEN env var must be set");
+    let lifx_token = std::env::var("LIFX_TOKEN").expect("TOKEN env var must be set");
 
-    let (lat, lon) = SLC_LAT_LON;
-
-    // fetch aqi from openweathermap.org
-    let resp = reqwest::blocking::get(format!("http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={openweathermap_token}"))
-        .expect("couldn't fetch aqi");
-
-    println!("{:?}", resp);
-
-    // read body of request
-    let body = resp.text().expect("couldn't read body");
-
-    println!("{:?}", body);
-
-    let caqi = parse_openweathermap_aqi_response(&body);
+    let caqi = openweathermap_fetch_caqi(&openweathermap_token);
 
     let color = CAQI::try_from(caqi).expect("couldn't parse caqi").to_rgb();
 
     println!("AIR QUALITY IN SLC UTAH {:?}", caqi);
 
-    let lifx_token = std::env::var("LIFX_TOKEN").expect("TOKEN env var must be set");
+    lifx_put_light_color(&lifx_token, color);
+}
 
+fn lifx_put_light_color(api_token: &str, color: &str) {
     let resp = reqwest::blocking::Client::new()
         .put(format!(
             "https://api.lifx.com/v1/lights/id:{LIGHT_ID}/state",
         ))
-        .bearer_auth(lifx_token)
+        .bearer_auth(api_token)
         .form(&[("power", "on"), ("color", color)])
         .send()
         .expect("couldn't send request");
-
     if !resp.status().is_success() {
         panic!("request failed: {:?}", resp);
     }
 }
 
-fn parse_openweathermap_aqi_response(body: &str) -> u64 {
-    let json: serde_json::Value = serde_json::from_str(body).expect("couldn't parse json");
+fn openweathermap_fetch_caqi(api_token: &str) -> u64 {
+    let (lat, lon) = SLC_LAT_LON;
+    // fetch aqi from openweathermap.org
+    let resp = reqwest::blocking::get(format!("http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={api_token}"))
+        .expect("couldn't fetch aqi");
+    println!("{:?}", resp);
+    // read body of request
+    let body = resp.text().expect("couldn't read body");
+    println!("{:?}", body);
 
-    
+    openweathermap_parse_aqi_response(&body)
+}
+
+fn openweathermap_parse_aqi_response(body: &str) -> u64 {
+    let json: serde_json::Value = serde_json::from_str(body).expect("couldn't parse json");
 
     json["list"][0]["main"]["aqi"]
         .as_u64()
@@ -55,7 +55,7 @@ fn parse_openweathermap_aqi_response(body: &str) -> u64 {
 fn test_parse_openweathermap_aqi_response() {
     let body = "{\"coord\":{\"lon\":-111.8923,\"lat\":40.7639},\"list\":[{\"main\":{\"aqi\":3},\"components\":{\"co\":620.84,\"no\":27.27,\"no2\":64.43,\"o3\":0.01,\"so2\":5.54,\"pm2_5\":23.75,\"pm10\":35.68,\"nh3\":5.64},\"dt\":1670307748}]}";
 
-    let aqi = parse_openweathermap_aqi_response(body);
+    let aqi = openweathermap_parse_aqi_response(body);
 
     assert_eq!(aqi, 3);
 }
