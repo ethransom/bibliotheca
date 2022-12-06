@@ -1,23 +1,8 @@
-mod station_feed;
-
 const LIGHT_ID: &str = "d073d559d839";
 
 const SLC_LAT_LON: (f32, f32) = (40.76388, -111.892286);
 
 fn main() {
-    // let feed = StationFeed::try_from(include_str!("roseParkStationFeedResponse.xml"))
-    //     .expect("couldn't parse feed");
-
-    // let ozone_data = feed
-    //     .data
-    //     .into_iter()
-    //     .flat_map(|data| data.ozone.map(|o| (data.date, o)))
-    //     .next()
-    //     .unwrap();
-
-    // println!("{ozone_data:?}");
-
-    // get OPENWEATHERMAP_TOKEN from os env
     let openweathermap_token =
         std::env::var("OPENWEATHERMAP_TOKEN").expect("OPENWEATHERMAP_TOKEN env var must be set");
 
