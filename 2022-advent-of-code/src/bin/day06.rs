@@ -1,5 +1,4 @@
 #![feature(test)]
-#![feature(iterator_try_collect)]
 
 use itertools::Itertools;
 
