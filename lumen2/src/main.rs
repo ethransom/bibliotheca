@@ -7,9 +7,11 @@ fn main() {
         std::env::var("OPENWEATHERMAP_TOKEN").expect("OPENWEATHERMAP_TOKEN env var must be set");
     let lifx_token = std::env::var("LIFX_TOKEN").expect("TOKEN env var must be set");
 
-    let caqi = openweathermap_fetch_caqi(&openweathermap_token);
+    let caqi: CAQI = openweathermap_fetch_caqi(&openweathermap_token)
+        .try_into()
+        .expect("couldn't parse caqi");
 
-    let color = CAQI::try_from(caqi).expect("couldn't parse caqi").to_rgb();
+    let color = caqi.to_rgb();
 
     println!("AIR QUALITY IN SLC UTAH {:?}", caqi);
 
