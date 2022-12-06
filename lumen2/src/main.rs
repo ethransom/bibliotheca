@@ -92,11 +92,11 @@ impl TryFrom<u64> for CAQI {
 impl CAQI {
     fn to_rgb(&self) -> &'static str {
         match self {
-            CAQI::VeryLow => "#79bc6a",
-            CAQI::Low => "#bbcf4c",
-            CAQI::Medium => "#eec20b",
-            CAQI::High => "#f29305",
-            CAQI::VeryHigh => "#e8416f",
+            CAQI::VeryLow => "#79bc6a",  // olive
+            CAQI::Low => "#bbcf4c",      // lime
+            CAQI::Medium => "#eec20b",   // yellow
+            CAQI::High => "#f29305",     // orange
+            CAQI::VeryHigh => "#e8416f", // red
         }
     }
 }
