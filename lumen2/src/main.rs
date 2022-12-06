@@ -1,6 +1,6 @@
 const LIGHT_ID: &str = "d073d559d839";
 
-const SLC_LAT_LON: (f32, f32) = (40.76388, -111.892286);
+const SLC_LAT_LON: (f32, f32) = (40.76388, -111.89228);
 
 fn main() {
     let openweathermap_token =
@@ -32,7 +32,7 @@ fn main() {
             "https://api.lifx.com/v1/lights/id:{LIGHT_ID}/state",
         ))
         .bearer_auth(lifx_token)
-        .form(&[("power", "on"), ("color", &color)])
+        .form(&[("power", "on"), ("color", color)])
         .send()
         .expect("couldn't send request");
 
@@ -44,11 +44,11 @@ fn main() {
 fn parse_openweathermap_aqi_response(body: &str) -> u64 {
     let json: serde_json::Value = serde_json::from_str(body).expect("couldn't parse json");
 
-    let aqi = json["list"][0]["main"]["aqi"]
-        .as_u64()
-        .expect("couldn't parse aqi");
+    
 
-    aqi
+    json["list"][0]["main"]["aqi"]
+        .as_u64()
+        .expect("couldn't parse aqi")
 }
 
 #[test]
