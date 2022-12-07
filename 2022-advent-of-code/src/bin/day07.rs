@@ -8,20 +8,17 @@ const INPUT: &str = include_str!("input07.txt");
 
 fn main() {
     dbg!(solve(EXAMPLE));
-    // dbg!(solve(INPUT));
+    dbg!(solve(INPUT));
 }
 
 fn solve(input: &str) -> (usize, usize) {
     let root = parse(input);
-
-    dbg!(&root);
 
     let mut small_sizes = 0;
 
     root.visit(&mut |node| {
         if let Node::File { size } = node {
             if *size <= 100_000 {
-                dbg!(size);
                 small_sizes += size;
             }
         }
@@ -42,9 +39,9 @@ impl Node {
         F: FnMut(&Node),
     {
         match self {
-            Node::File { size } => f(self),
+            Node::File { size: _size } => f(self),
             Node::Directory { children } => {
-                for (name, child) in children {
+                for (_name, child) in children {
                     child.visit(f);
                 }
             }
@@ -57,8 +54,7 @@ fn parse(input: &str) -> Node {
         cmd.split_once('\n')
             .map(|(cmd, output)| {
                 let output = output.trim_end();
-                if cmd.starts_with("cd ") {
-                    let dir = &cmd["cd ".len()..];
+                if let Some(dir) = cmd.strip_prefix("cd ") {
                     assert!(output.is_empty());
                     Command::Cd {
                         dir: dir.to_string(),
