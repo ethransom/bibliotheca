@@ -333,7 +333,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "lumen2"
+name = "lumen"
 version = "0.1.0"
 dependencies = [
  "reqwest",
