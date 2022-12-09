@@ -33,26 +33,29 @@ fn solve(input: &str) -> Result<(usize, usize)> {
             head.0 += delta.0;
             head.1 += delta.1;
 
-            // chase the head with the tail
-            if tail.0 < head.0 - 1 {
-                tail.0 += 1;
-                tail.1 = head.1;
-            } else if tail.0 > head.0 + 1 {
-                tail.0 -= 1;
-                tail.1 = head.1;
-            } else if tail.1 < head.1 - 1 {
-                tail.1 += 1;
-                tail.0 = head.0;
-            } else if tail.1 > head.1 + 1 {
-                tail.1 -= 1;
-                tail.0 = head.0;
-            }
+            chase(&mut tail, head);
 
             tail_positions.insert(tail);
         }
     }
 
     Ok((tail_positions.len(), 0))
+}
+
+fn chase(tail: &mut (i64, i64), head: (i64, i64)) {
+    if tail.0 < head.0 - 1 {
+        tail.0 += 1;
+        tail.1 = head.1;
+    } else if tail.0 > head.0 + 1 {
+        tail.0 -= 1;
+        tail.1 = head.1;
+    } else if tail.1 < head.1 - 1 {
+        tail.1 += 1;
+        tail.0 = head.0;
+    } else if tail.1 > head.1 + 1 {
+        tail.1 -= 1;
+        tail.0 = head.0;
+    }
 }
 
 fn parse(input: &str) -> Result<Vec<(Direction, i64)>> {
