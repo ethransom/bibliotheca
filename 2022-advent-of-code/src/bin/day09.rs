@@ -19,7 +19,7 @@ fn main() -> Result<()> {
 fn solve(input: &str) -> Result<(usize, usize)> {
     let [mut head, mut tail]: [(i64, i64); 2] = [(0, 0); 2];
 
-    let mut tail_positions = HashSet::<(i64, i64)>::new();
+    let mut tail_positions = HashSet::new();
 
     for (direction, amount) in parse(input)? {
         for _ in 0..amount {
