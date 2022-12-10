@@ -111,21 +111,38 @@ fn print_states<const LENGTH: usize>(states: Vec<[(i64, i64); LENGTH]>) {
 }
 
 fn chase(head: (i64, i64), mut tail: (i64, i64)) -> (i64, i64) {
-    if tail.0 < head.0 - 1 {
-        tail.0 += 1;
-        tail.1 = head.1;
-    } else if tail.0 > head.0 + 1 {
-        tail.0 -= 1;
-        tail.1 = head.1;
-    } else if tail.1 < head.1 - 1 {
-        tail.1 += 1;
-        tail.0 = head.0;
-    } else if tail.1 > head.1 + 1 {
-        tail.1 -= 1;
-        tail.0 = head.0;
+    let mut diff = (head.0 - tail.0, head.1 - tail.1);
+    if diff.0.abs() > 1 || diff.1.abs() > 1 {
+        diff.0 = diff.0.clamp(-1, 1);
+        diff.1 = diff.1.clamp(-1, 1);
+        tail.0 += diff.0;
+        tail.1 += diff.1;
     }
 
     tail
+}
+
+#[test]
+fn test_chase() {
+    assert_eq!(chase((0, 0), (0, 0)), (0, 0));
+    assert_eq!(chase((0, 0), (1, 0)), (1, 0));
+    assert_eq!(chase((0, 0), (0, 1)), (0, 1));
+    assert_eq!(chase((0, 0), (-1, 0)), (-1, 0));
+    assert_eq!(chase((0, 0), (0, -1)), (0, -1));
+    assert_eq!(chase((0, 0), (1, 1)), (1, 1));
+    assert_eq!(chase((0, 0), (-1, -1)), (-1, -1));
+    assert_eq!(chase((0, 0), (1, -1)), (1, -1));
+    assert_eq!(chase((0, 0), (-1, 1)), (-1, 1));
+
+    assert_eq!(chase((2, 0), (0, 0)), (1, 0));
+    assert_eq!(chase((0, -2), (0, 0)), (0, -1));
+    assert_eq!(chase((0, -2), (0, 0)), (0, -1));
+
+    assert_eq!(chase((2, 3), (1, 1)), (2, 2));
+    assert_eq!(chase((3, 2), (1, 1)), (2, 2));
+
+    // the bedeviled case
+    assert_eq!(chase((3, 3), (1, 1)), (2, 2));
 }
 
 fn parse(input: &str) -> Result<Vec<(Direction, i64)>> {
@@ -180,6 +197,6 @@ fn test_larger_example() {
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve::<false>(INPUT).unwrap(), (6_266, 2_424));
+        assert_eq!(solve::<false>(INPUT).unwrap(), (6_266, 2_369));
     });
 }
