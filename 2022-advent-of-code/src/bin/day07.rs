@@ -11,6 +11,9 @@ fn main() {
     dbg!(solve(INPUT));
 }
 
+const FILESYSTEM_SIZE: usize = 70_000_000;
+const UPDATE_SIZE: usize = 30_000_000;
+
 fn solve(input: &str) -> (usize, usize) {
     let root = parse(input);
 
@@ -32,11 +35,18 @@ fn solve(input: &str) -> (usize, usize) {
 
     let mut dir_sizes = vec![];
 
-    size(&root, &mut dir_sizes);
+    let total_size = size(&root, &mut dir_sizes);
 
     let small_sizes = dir_sizes.iter().filter(|&&size| size <= 100_000).sum();
 
-    (small_sizes, 0)
+    dir_sizes.sort_unstable();
+
+    let &to_delete = dir_sizes
+        .iter()
+        .find(|&&size| FILESYSTEM_SIZE - (total_size - size) >= UPDATE_SIZE)
+        .unwrap();
+
+    (small_sizes, to_delete)
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -144,13 +154,13 @@ enum Command {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (95_437, 0));
+    assert_eq!(solve(EXAMPLE), (95_437, 24_933_642));
 }
 
 #[bench]
 fn bench_solve_00_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (1_423_358, 0));
+        assert_eq!(solve(INPUT), (1_423_358, 545_729));
     });
 }
 
