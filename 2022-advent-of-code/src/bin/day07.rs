@@ -14,15 +14,27 @@ fn main() {
 fn solve(input: &str) -> (usize, usize) {
     let root = parse(input);
 
-    let mut small_sizes = 0;
+    fn size(node: &Node, dir_sizes: &mut Vec<usize>) -> usize {
+        match node {
+            Node::File { size } => *size,
+            Node::Directory { children } => {
+                let size = children
+                    .iter()
+                    .map(|(_name, child)| size(child, dir_sizes))
+                    .sum();
 
-    root.visit(&mut |node| {
-        if let Node::File { size } = node {
-            if *size <= 100_000 {
-                small_sizes += size;
+                dir_sizes.push(size);
+
+                size
             }
         }
-    });
+    }
+
+    let mut dir_sizes = vec![];
+
+    size(&root, &mut dir_sizes);
+
+    let small_sizes = dir_sizes.iter().filter(|&&size| size <= 100_000).sum();
 
     (small_sizes, 0)
 }
@@ -31,22 +43,6 @@ fn solve(input: &str) -> (usize, usize) {
 enum Node {
     File { size: usize },
     Directory { children: Vec<(String, Box<Node>)> },
-}
-
-impl Node {
-    fn visit<F>(&self, f: &mut F)
-    where
-        F: FnMut(&Node),
-    {
-        match self {
-            Node::File { size: _size } => f(self),
-            Node::Directory { children } => {
-                for (_name, child) in children {
-                    child.visit(f);
-                }
-            }
-        }
-    }
 }
 
 fn parse(input: &str) -> Node {
@@ -148,13 +144,13 @@ enum Command {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (94853, 0));
+    assert_eq!(solve(EXAMPLE), (95_437, 0));
 }
 
 #[bench]
 fn bench_solve_00_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (5245713, 0));
+        assert_eq!(solve(INPUT), (1_423_358, 0));
     });
 }
 
