@@ -39,7 +39,7 @@ fn solve(input: &str) -> (usize, usize) {
                             }
                         }
 
-                        return true;
+                        true
                     })
                 })
                 .count()
