@@ -169,39 +169,42 @@ fn bench_solve_01_less_indirection(b: &mut test::Bencher) {
     fn solve(input: &str) -> (usize, usize) {
         let root = parse(input);
 
-        let mut small_sizes = 0;
+        fn size(node: &Node, dir_sizes: &mut Vec<usize>) -> usize {
+            match node {
+                Node::File { size } => *size,
+                Node::Directory { children } => {
+                    let size = children
+                        .iter()
+                        .map(|(_name, child)| size(child, dir_sizes))
+                        .sum();
 
-        root.visit(&mut |node| {
-            if let Node::File { size } = node {
-                if *size <= 100_000 {
-                    small_sizes += size;
+                    dir_sizes.push(size);
+
+                    size
                 }
             }
-        });
+        }
 
-        (small_sizes, 0)
+        let mut dir_sizes = vec![];
+
+        let total_size = size(&root, &mut dir_sizes);
+
+        let small_sizes = dir_sizes.iter().filter(|&&size| size <= 100_000).sum();
+
+        dir_sizes.sort_unstable();
+
+        let &to_delete = dir_sizes
+            .iter()
+            .find(|&&size| FILESYSTEM_SIZE - (total_size - size) >= UPDATE_SIZE)
+            .unwrap();
+
+        (small_sizes, to_delete)
     }
 
     #[derive(Debug, PartialEq, Eq)]
     enum Node {
         File { size: usize },
         Directory { children: Vec<(String, Node)> },
-    }
-
-    impl Node {
-        fn visit<F>(&self, f: &mut F)
-        where
-            F: FnMut(&Node),
-        {
-            match self {
-                Node::File { size: _size } => f(self),
-                Node::Directory { children } => {
-                    for (_name, child) in children {
-                        child.visit(f);
-                    }
-                }
-            }
-        }
     }
 
     fn parse(input: &str) -> Node {
@@ -291,7 +294,9 @@ fn bench_solve_01_less_indirection(b: &mut test::Bencher) {
         root
     }
 
+    assert_eq!(solve(EXAMPLE), (95_437, 24_933_642));
+
     b.iter(|| {
-        assert_eq!(solve(INPUT), (5245713, 0));
+        assert_eq!(solve(INPUT), (1_423_358, 545_729));
     });
 }
