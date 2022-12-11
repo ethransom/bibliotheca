@@ -104,7 +104,7 @@ impl TryFrom<&str> for Operation {
     type Error = ();
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let mut parts = value.split(" ");
+        let mut parts = value.split(' ');
 
         let left = OperationExpr::try_from(parts.next().unwrap())?;
         let op = OperationOp::try_from(parts.next().unwrap())?;
