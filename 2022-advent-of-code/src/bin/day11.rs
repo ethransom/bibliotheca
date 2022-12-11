@@ -15,16 +15,16 @@ fn main() {
 fn solve(input: &str) -> (usize, usize) {
     let monkeys = parse(input);
 
-    let monkey_business = monkey_business(monkeys);
+    let monkey_business = monkey_business(monkeys, 20);
 
     (monkey_business, 0)
 }
 
-fn monkey_business(monkeys: Vec<Monkey>) -> usize {
+fn monkey_business(monkeys: Vec<Monkey>, rounds: usize) -> usize {
     let mut monkeys = monkeys;
 
     let mut inspections = vec![0; monkeys.len()];
-    for _round in 0..20 {
+    for round in 1..=rounds {
         for i in 0..monkeys.len() {
             let (operation, test, if_true, if_false) = (
                 monkeys[i].operation,
@@ -47,9 +47,11 @@ fn monkey_business(monkeys: Vec<Monkey>) -> usize {
                 monkeys[monkey].items.push(worry);
             }
         }
-    }
-    for (i, v) in inspections.iter().enumerate() {
-        println!("Monkey {i} inspected items {v} times");
+        if round == 20 {
+            for (i, v) in inspections.iter().enumerate() {
+                println!("Monkey {i} inspected items {v} times");
+            }
+        }
     }
     inspections.sort();
     let monkey_business = inspections.iter().rev().take(2).product();
