@@ -30,46 +30,15 @@ fn solve(input: &str) -> (usize, usize) {
 
             inspections[i] += items.len();
 
-            println!("Monkey {i}:");
             for worry in items {
-                println!("  Monkey inspects an item with a worry level of {worry}.");
-
                 let worry = operation.apply(worry);
-                println!(
-                    "    Worry level is {operation:?} to {new_worry}.",
-                    operation = match operation.op {
-                        OperationOp::Add => "increases",
-                        OperationOp::Mul => "is multiplied",
-                    },
-                    new_worry = worry
-                );
 
                 let worry = worry / 3;
-                println!(
-                    "    Monkey gets bored with item. Worry level is divided by 3 to {worry}."
-                );
 
-                let monkey = if worry % test == 0 {
-                    println!("    Current worry level is divisible by {test}.");
-                    if_true
-                } else {
-                    println!("    Current worry level is not divisible by {test}.");
-                    if_false
-                };
+                let monkey = if worry % test == 0 { if_true } else { if_false };
 
-                println!("    Item with worry level {worry} is thrown to monkey {monkey}.");
                 monkeys[monkey].items.push(worry);
             }
-        }
-
-        for (i, monkey) in monkeys.iter().enumerate() {
-            let items = monkey
-                .items
-                .iter()
-                .map(|i| i.to_string())
-                .collect::<Vec<_>>()
-                .join(", ");
-            println!("Monkey {i}: {items}");
         }
     }
 
