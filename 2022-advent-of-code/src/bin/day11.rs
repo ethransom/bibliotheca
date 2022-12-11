@@ -13,10 +13,17 @@ fn main() {
 }
 
 fn solve(input: &str) -> (usize, usize) {
-    let mut monkeys = parse(input);
+    let monkeys = parse(input);
+
+    let monkey_business = monkey_business(monkeys);
+
+    (monkey_business, 0)
+}
+
+fn monkey_business(monkeys: Vec<Monkey>) -> usize {
+    let mut monkeys = monkeys;
 
     let mut inspections = vec![0; monkeys.len()];
-
     for _round in 0..20 {
         for i in 0..monkeys.len() {
             let (operation, test, if_true, if_false) = (
@@ -41,19 +48,15 @@ fn solve(input: &str) -> (usize, usize) {
             }
         }
     }
-
     for (i, v) in inspections.iter().enumerate() {
         println!("Monkey {i} inspected items {v} times");
     }
-
     inspections.sort();
-
     let monkey_business = inspections.iter().rev().take(2).product();
-
-    (monkey_business, 0)
+    monkey_business
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Monkey {
     items: Vec<usize>,
     operation: Operation,
