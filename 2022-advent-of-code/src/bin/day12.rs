@@ -8,16 +8,18 @@ const EXAMPLE: &str = include_str!("example12.txt");
 const INPUT: &str = include_str!("input12.txt");
 
 fn main() {
-    dbg!(solve(EXAMPLE));
-    dbg!(solve(INPUT));
+    dbg!(solve(EXAMPLE, true));
+    dbg!(solve(INPUT, true));
 }
 
-fn solve(input: &str) -> (usize, usize) {
+fn solve(input: &str, print: bool) -> (usize, usize) {
     let (heightmap, start, end) = parse(input);
 
     let distances = find_path(&heightmap, end, start);
 
-    print_grid(&distances);
+    if print {
+        print_grid(&distances);
+    }
 
     let best_path = distances[start.1][start.0].expect("no path found");
 
@@ -127,8 +129,6 @@ fn find_path(
         }
     }
 
-    print_grid(&distances);
-
     distances
 }
 
@@ -199,7 +199,7 @@ fn print_grid(distances: &Vec<Vec<Option<usize>>>) {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (31, 29));
+    assert_eq!(solve(EXAMPLE, false), (31, 29));
 }
 
 /// Original solution, solves `start -> end` and `any a -> end`.
@@ -295,6 +295,6 @@ fn bench_solve_00_original(b: &mut test::Bencher) {
 #[bench]
 fn bench_solve_01_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (472, 465));
+        assert_eq!(solve(INPUT, false), (472, 465));
     });
 }
