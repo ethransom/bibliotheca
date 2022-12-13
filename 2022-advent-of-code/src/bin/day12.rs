@@ -24,9 +24,22 @@ fn solve(input: &str) -> (usize, usize) {
     //     end
     // );
 
-    let best_path = find_path(&heightmap, start, end);
+    let best_path = find_path(&heightmap, start, end).expect("no path found");
 
-    (best_path, 0)
+    let best_path_any_a = heightmap
+        .iter()
+        .enumerate()
+        .flat_map(|(y, row)| {
+            row.iter()
+                .enumerate()
+                .filter(|(_x, &h)| h == 0)
+                .flat_map(|(x, _h)| find_path(&heightmap, (x, y), end))
+                .min()
+        })
+        .min()
+        .expect("no path found");
+
+    (best_path, best_path_any_a)
 }
 
 fn parse(input: &str) -> (Vec<Vec<u8>>, (usize, usize), (usize, usize)) {
@@ -62,7 +75,11 @@ fn parse(input: &str) -> (Vec<Vec<u8>>, (usize, usize), (usize, usize)) {
     (heightmap, start.unwrap(), end.unwrap())
 }
 
-fn find_path(heightmap: &Vec<Vec<u8>>, start: (usize, usize), end: (usize, usize)) -> usize {
+fn find_path(
+    heightmap: &Vec<Vec<u8>>,
+    start: (usize, usize),
+    end: (usize, usize),
+) -> Option<usize> {
     let mut distances: Vec<Vec<Option<usize>>> =
         heightmap.iter().map(|row| vec![None; row.len()]).collect();
 
@@ -117,7 +134,7 @@ fn find_path(heightmap: &Vec<Vec<u8>>, start: (usize, usize), end: (usize, usize
 
     print_grid(&distances);
 
-    distances[end.1][end.0].expect("no path found")
+    distances[end.1][end.0]
 }
 
 fn print_grid(distances: &Vec<Vec<Option<usize>>>) {
@@ -187,7 +204,7 @@ fn print_grid(distances: &Vec<Vec<Option<usize>>>) {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (31, 0));
+    assert_eq!(solve(EXAMPLE), (31, 29));
 }
 
 #[bench]
