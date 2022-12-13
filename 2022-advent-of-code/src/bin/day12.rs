@@ -15,15 +15,6 @@ fn main() {
 fn solve(input: &str) -> (usize, usize) {
     let (heightmap, start, end) = parse(input);
 
-    // dbg!(
-    //     heightmap
-    //         .iter()
-    //         .map(|row| row.iter().join(", "))
-    //         .collect::<Vec<_>>(),
-    //     start,
-    //     end
-    // );
-
     let best_path = find_path(&heightmap, start, end).expect("no path found");
 
     let best_path_any_a = heightmap
@@ -210,6 +201,6 @@ fn test_example() {
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (472, 0));
+        assert_eq!(solve(INPUT), (472, 465));
     });
 }
