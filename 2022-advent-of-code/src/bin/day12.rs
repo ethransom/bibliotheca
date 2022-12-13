@@ -76,12 +76,7 @@ fn find_path(heightmap: &Vec<Vec<u8>>, start: (usize, usize), end: (usize, usize
     while let Some(node) = queue.pop_front() {
         let dist = distances[node.1][node.0].unwrap();
 
-        // println!("VISIT: {:?} distance {}", node, dist);
-
         if node == end {
-            // println!("FOUND END: {:?} distance {}", node, dist);
-            // return dist;
-            // return Some(dist);
             break; // is this just an optimization? Or does it matter for correctness?
         }
 
@@ -98,32 +93,23 @@ fn find_path(heightmap: &Vec<Vec<u8>>, start: (usize, usize), end: (usize, usize
             let x = x as usize;
             let y = y as usize;
 
-            // println!("examining neighbor {:?}", (x, y));
-
             // TODO: do we need this?????
             if visited[y][x] {
-                // println!("already visited");
                 // already visited
                 continue;
             }
 
             if distances[y][x].is_some() {
-                // println!("already queued");
                 // already queued
                 continue;
             }
 
             let (height, neighbor_height) = (heightmap[node.1][node.0], heightmap[y][x]);
             if neighbor_height > height + 1 {
-                // println!(
-                //     "was unreachable {} vs {}",
-                //     heightmap[y][x], heightmap[node.1][node.0]
-                // );
                 // unreachable, can only climb 1 unit at a time
                 continue;
             }
 
-            // println!("distance to {:?} is {}", (x, y), dist + 1,);
             distances[y][x] = Some(dist + 1);
             queue.push_back((x, y));
         }
