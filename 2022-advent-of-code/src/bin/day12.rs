@@ -113,10 +113,8 @@ fn find_path(heightmap: &Vec<Vec<u8>>, start: (usize, usize), end: (usize, usize
                 continue;
             }
 
-            if heightmap[y][x]
-                .checked_sub(heightmap[node.1][node.0])
-                .map_or(true, |diff| diff > 1)
-            {
+            let (height, neighbor_height) = (heightmap[node.1][node.0], heightmap[y][x]);
+            if neighbor_height > height + 1 {
                 // println!(
                 //     "was unreachable {} vs {}",
                 //     heightmap[y][x], heightmap[node.1][node.0]
@@ -209,6 +207,6 @@ fn test_example() {
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (0, 0));
+        assert_eq!(solve(INPUT), (472, 0));
     });
 }
