@@ -75,7 +75,7 @@ fn parse(input: &str) -> Result<Vec<(Packet, Packet)>> {
         .split("\n\n")
         .map(|pair| {
             let (a, b) = pair
-                .split_once("\n")
+                .split_once('\n')
                 .context("requires two packets per block")?;
 
             Ok((
@@ -152,10 +152,8 @@ impl Iterator for Lexer<'_> {
         } else if let Some(input) = self.input.strip_prefix(b",") {
             self.input = input;
             Some(Token::Comma)
-        } else if let Some(int) = parse_int(&mut self.input) {
-            Some(Token::Int(int))
         } else {
-            None
+            parse_int(&mut self.input).map(Token::Int)
         }
     }
 }
