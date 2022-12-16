@@ -1,6 +1,6 @@
 #![feature(test)]
 
-use std::collections::HashSet;
+use fxhash::FxHashSet as HashSet;
 
 use itertools::Itertools;
 
@@ -23,7 +23,7 @@ fn main() {
 fn solve<const PRINT: bool>(input: &str) -> (usize, usize) {
     let lines = parse(input).expect("couldn't parse input");
 
-    let mut rocks = HashSet::<Point>::new();
+    let mut rocks: HashSet<Point> = HashSet::default();
     for line in &lines {
         for (start, end) in line.iter().tuple_windows() {
             match (start.0.cmp(&end.0), start.1.cmp(&end.1)) {
@@ -55,7 +55,7 @@ fn solve<const PRINT: bool>(input: &str) -> (usize, usize) {
 
     let floor = rocks.iter().map(|&(_, y)| y).max().unwrap() + 2;
 
-    let mut sand = HashSet::<Point>::new();
+    let mut sand: HashSet<Point> = HashSet::default();
 
     place_all(floor, &rocks, &mut sand);
 
@@ -182,7 +182,101 @@ fn test_example() {
 }
 
 #[bench]
-fn bench_solve_00_current(b: &mut test::Bencher) {
+fn bench_solve_00_original(b: &mut test::Bencher) {
+    use std::collections::HashSet;
+
+    fn solve<const PRINT: bool>(input: &str) -> (usize, usize) {
+        let lines = parse(input).expect("couldn't parse input");
+
+        let mut rocks = HashSet::<Point>::default();
+        for line in &lines {
+            for (start, end) in line.iter().tuple_windows() {
+                match (start.0.cmp(&end.0), start.1.cmp(&end.1)) {
+                    (std::cmp::Ordering::Equal, std::cmp::Ordering::Equal) => {}
+                    (std::cmp::Ordering::Equal, std::cmp::Ordering::Greater) => {
+                        for y in end.1..=start.1 {
+                            rocks.insert((start.0, y));
+                        }
+                    }
+                    (std::cmp::Ordering::Equal, std::cmp::Ordering::Less) => {
+                        for y in start.1..=end.1 {
+                            rocks.insert((start.0, y));
+                        }
+                    }
+                    (std::cmp::Ordering::Greater, std::cmp::Ordering::Equal) => {
+                        for x in end.0..=start.0 {
+                            rocks.insert((x, start.1));
+                        }
+                    }
+                    (std::cmp::Ordering::Less, std::cmp::Ordering::Equal) => {
+                        for x in start.0..=end.0 {
+                            rocks.insert((x, start.1));
+                        }
+                    }
+                    _ => panic!("invalid line"),
+                }
+            }
+        }
+
+        let floor = rocks.iter().map(|&(_, y)| y).max().unwrap() + 2;
+
+        let mut sand = HashSet::<Point>::default();
+
+        place_all(floor, &rocks, &mut sand);
+
+        let sand_count_pre_floor = sand.len();
+
+        // oops all floors
+        for x in -floor..=floor {
+            rocks.insert((SOURCE.0 + x, floor));
+        }
+
+        place_all(floor, &rocks, &mut sand);
+
+        let sand_count_post_floor = sand.len();
+
+        (sand_count_pre_floor, sand_count_post_floor)
+    }
+
+    fn place_all(floor: i32, rocks: &HashSet<(i32, i32)>, sand: &mut HashSet<(i32, i32)>) {
+        'place_all: loop {
+            let mut pos = SOURCE;
+            'place_one: loop {
+                if pos.1 > floor {
+                    // do not place
+                    break 'place_all;
+                }
+                let moves = [
+                    (pos.0, pos.1 + 1),
+                    (pos.0 - 1, pos.1 + 1),
+                    (pos.0 + 1, pos.1 + 1),
+                ];
+                for m in moves {
+                    if !rocks.contains(&m) && !sand.contains(&m) {
+                        pos = m;
+                        continue 'place_one;
+                    }
+                }
+                // could not move block
+                break 'place_one;
+            }
+            sand.insert(pos);
+
+            if pos == SOURCE {
+                break 'place_all;
+            }
+        }
+    }
+
+    assert_eq!(solve::<false>(EXAMPLE), (24, 93));
+
+    b.iter(|| {
+        assert_eq!(solve::<false>(INPUT), (1_003, 25_771));
+    });
+}
+
+#[bench]
+fn bench_solve_01_current(b: &mut test::Bencher) {
     b.iter(|| {
         assert_eq!(solve::<false>(INPUT), (1_003, 25_771));
     });
