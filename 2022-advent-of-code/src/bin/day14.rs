@@ -81,11 +81,54 @@ fn solve<const PRINT: bool>(input: &str) -> (usize, usize) {
         sand.insert(pos);
     }
 
+    let sand_count_pre_floor = sand.len();
+
     if PRINT {
         print(SOURCE, &rocks, &sand);
     }
 
-    (sand.len(), 0)
+    // oops all floors
+    let floor = void_y + 2;
+    for x in -floor..=floor {
+        rocks.insert((SOURCE.0 + x, floor));
+    }
+
+    if PRINT {
+        print(SOURCE, &rocks, &sand);
+    }
+
+    // return (sand_count_pre_floor, 0); // DEBUG
+
+    'place_all: loop {
+        let mut pos = SOURCE;
+        'place_one: loop {
+            let moves = [
+                (pos.0, pos.1 + 1),
+                (pos.0 - 1, pos.1 + 1),
+                (pos.0 + 1, pos.1 + 1),
+            ];
+            for m in moves {
+                if !rocks.contains(&m) && !sand.contains(&m) {
+                    pos = m;
+                    continue 'place_one;
+                }
+            }
+            // could not move block
+            break 'place_one;
+        }
+        sand.insert(pos);
+        if pos == SOURCE {
+            break 'place_all;
+        }
+    }
+
+    if PRINT {
+        print(SOURCE, &rocks, &sand);
+    }
+
+    let sand_count_post_floor = sand.len();
+
+    (sand_count_pre_floor, sand_count_post_floor)
 }
 
 fn parse(input: &str) -> Result<Vec<Vec<Point>>> {
@@ -151,12 +194,12 @@ fn print(source: Point, rocks: &HashSet<Point>, sand: &HashSet<Point>) {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve::<true>(EXAMPLE), (24, 0));
+    assert_eq!(solve::<true>(EXAMPLE), (24, 93));
 }
 
 #[bench]
 fn bench_solve_00_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve::<false>(INPUT), (1_003, 0));
+        assert_eq!(solve::<false>(INPUT), (1_003, 25_771));
     });
 }
