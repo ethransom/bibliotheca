@@ -15,11 +15,59 @@ fn main() {
 }
 
 fn solve(input: &str) -> (usize, usize) {
-    let pairs = parse(input);
+    let pairs = parse(input).expect("could not parse input");
 
-    dbg!(pairs);
+    (
+        pairs
+            .iter()
+            .enumerate()
+            .map(|(index, (left, right))| {
+                if left.partial_cmp(right).unwrap() == std::cmp::Ordering::Less {
+                    index + 1
+                } else {
+                    0
+                }
+            })
+            .sum(),
+        0,
+    )
+}
 
-    (0, 0)
+#[derive(Debug, PartialEq)]
+enum Packet {
+    Int(u8),
+    List(Vec<Packet>),
+}
+
+impl PartialOrd for Packet {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self, other) {
+            (Packet::Int(a), Packet::Int(b)) => a.partial_cmp(b),
+            (Packet::List(a), Packet::List(b)) => {
+                let mut a = a.iter();
+                let mut b = b.iter();
+
+                loop {
+                    match (a.next(), b.next()) {
+                        (Some(a), Some(b)) => match a.partial_cmp(b) {
+                            Some(std::cmp::Ordering::Equal) => continue,
+                            Some(ordering) => return Some(ordering),
+                            None => return None, // ???
+                        },
+                        (Some(_), None) => return Some(std::cmp::Ordering::Greater),
+                        (None, Some(_)) => return Some(std::cmp::Ordering::Less),
+                        (None, None) => return Some(std::cmp::Ordering::Equal),
+                    }
+                }
+            }
+            (Packet::Int(int), list /* must be list */) => {
+                Packet::List(vec![Packet::Int(*int)]).partial_cmp(list)
+            }
+            (list /* must be list */, Packet::Int(int)) => {
+                list.partial_cmp(&Packet::List(vec![Packet::Int(*int)]))
+            }
+        }
+    }
 }
 
 fn parse(input: &str) -> Result<Vec<(Packet, Packet)>> {
@@ -128,20 +176,14 @@ fn parse_int(input: &mut &[u8]) -> Option<u8> {
     Some(int)
 }
 
-#[derive(Debug, PartialEq)]
-enum Packet {
-    Int(u8),
-    List(Vec<Packet>),
-}
-
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (0, 0));
+    assert_eq!(solve(EXAMPLE), (13, 0));
 }
 
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (0, 0));
+        assert_eq!(solve(INPUT), (6_656, 0));
     });
 }
