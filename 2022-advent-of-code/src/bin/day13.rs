@@ -56,7 +56,7 @@ fn solve(input: &str) -> (usize, usize) {
     (indexes_of_ordered, decoder_key)
 }
 
-#[derive(Debug, PartialEq, Ord, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 enum Packet {
     Int(u8),
     List(Vec<Packet>),
@@ -78,34 +78,39 @@ impl ToString for Packet {
     }
 }
 
-impl PartialOrd for Packet {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+impl Ord for Packet {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         match (self, other) {
-            (Packet::Int(a), Packet::Int(b)) => a.partial_cmp(b),
+            (Packet::Int(a), Packet::Int(b)) => a.cmp(b),
             (Packet::List(a), Packet::List(b)) => {
                 let mut a = a.iter();
                 let mut b = b.iter();
 
                 loop {
                     match (a.next(), b.next()) {
-                        (Some(a), Some(b)) => match a.partial_cmp(b) {
-                            Some(std::cmp::Ordering::Equal) => continue,
-                            Some(ordering) => return Some(ordering),
-                            None => return None, // ???
+                        (Some(a), Some(b)) => match a.cmp(b) {
+                            std::cmp::Ordering::Equal => continue,
+                            ordering => return ordering,
                         },
-                        (Some(_), None) => return Some(std::cmp::Ordering::Greater),
-                        (None, Some(_)) => return Some(std::cmp::Ordering::Less),
-                        (None, None) => return Some(std::cmp::Ordering::Equal),
+                        (Some(_), None) => return std::cmp::Ordering::Greater,
+                        (None, Some(_)) => return std::cmp::Ordering::Less,
+                        (None, None) => return std::cmp::Ordering::Equal,
                     }
                 }
             }
             (Packet::Int(int), list /* must be list */) => {
-                Packet::List(vec![Packet::Int(*int)]).partial_cmp(list)
+                Packet::List(vec![Packet::Int(*int)]).cmp(list)
             }
             (list /* must be list */, Packet::Int(int)) => {
-                list.partial_cmp(&Packet::List(vec![Packet::Int(*int)]))
+                list.cmp(&Packet::List(vec![Packet::Int(*int)]))
             }
         }
+    }
+}
+
+impl PartialOrd for Packet {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
     }
 }
 
