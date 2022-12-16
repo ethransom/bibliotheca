@@ -17,26 +17,65 @@ fn main() {
 fn solve(input: &str) -> (usize, usize) {
     let pairs = parse(input).expect("could not parse input");
 
-    (
-        pairs
-            .iter()
-            .enumerate()
-            .map(|(index, (left, right))| {
-                if left.partial_cmp(right).unwrap() == std::cmp::Ordering::Less {
-                    index + 1
-                } else {
-                    0
-                }
-            })
-            .sum(),
-        0,
-    )
+    let indexes_of_ordered = pairs
+        .iter()
+        .enumerate()
+        .map(|(index, (left, right))| {
+            if left.partial_cmp(right).unwrap() == std::cmp::Ordering::Less {
+                index + 1
+            } else {
+                0
+            }
+        })
+        .sum();
+
+    let divider_packets = vec![
+        Packet::List(vec![Packet::List(vec![Packet::Int(2)])]),
+        Packet::List(vec![Packet::List(vec![Packet::Int(6)])]),
+    ];
+
+    let mut all_packets = pairs
+        .iter()
+        .flat_map(|(left, right)| vec![left, right])
+        .chain(divider_packets.iter())
+        .collect::<Vec<_>>();
+
+    all_packets.sort();
+
+    for packet in all_packets.iter() {
+        println!("{}", packet.to_string());
+    }
+
+    let decoder_key = all_packets
+        .iter()
+        .enumerate()
+        .filter(|(_, packet)| divider_packets.contains(packet))
+        .map(|(index, _)| index + 1)
+        .product();
+
+    (indexes_of_ordered, decoder_key)
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Ord, Eq)]
 enum Packet {
     Int(u8),
     List(Vec<Packet>),
+}
+
+impl ToString for Packet {
+    fn to_string(&self) -> String {
+        match self {
+            Packet::Int(int) => int.to_string(),
+            Packet::List(list) => {
+                let inner = list
+                    .iter()
+                    .map(|packet| packet.to_string())
+                    .collect::<Vec<_>>()
+                    .join(",");
+                format!("[{}]", inner)
+            }
+        }
+    }
 }
 
 impl PartialOrd for Packet {
@@ -176,12 +215,12 @@ fn parse_int(input: &mut &[u8]) -> Option<u8> {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (13, 0));
+    assert_eq!(solve(EXAMPLE), (13, 140));
 }
 
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (6_656, 0));
+        assert_eq!(solve(INPUT), (6_656, 19_716));
     });
 }
