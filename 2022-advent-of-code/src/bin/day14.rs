@@ -53,14 +53,43 @@ fn solve<const PRINT: bool>(input: &str) -> (usize, usize) {
         }
     }
 
-    let void_y = rocks.iter().map(|&(_, y)| y).max().unwrap();
+    let floor = rocks.iter().map(|&(_, y)| y).max().unwrap() + 2;
 
     let mut sand = HashSet::<Point>::new();
 
+    place_all(floor, &rocks, &mut sand);
+
+    let sand_count_pre_floor = sand.len();
+
+    if PRINT {
+        print(SOURCE, &rocks, &sand);
+    }
+
+    // oops all floors
+    for x in -floor..=floor {
+        rocks.insert((SOURCE.0 + x, floor));
+    }
+
+    if PRINT {
+        print(SOURCE, &rocks, &sand);
+    }
+
+    place_all(floor, &rocks, &mut sand);
+
+    if PRINT {
+        print(SOURCE, &rocks, &sand);
+    }
+
+    let sand_count_post_floor = sand.len();
+
+    (sand_count_pre_floor, sand_count_post_floor)
+}
+
+fn place_all(floor: i32, rocks: &HashSet<(i32, i32)>, sand: &mut HashSet<(i32, i32)>) {
     'place_all: loop {
         let mut pos = SOURCE;
         'place_one: loop {
-            if pos.1 > void_y {
+            if pos.1 > floor {
                 // do not place
                 break 'place_all;
             }
@@ -79,56 +108,11 @@ fn solve<const PRINT: bool>(input: &str) -> (usize, usize) {
             break 'place_one;
         }
         sand.insert(pos);
-    }
 
-    let sand_count_pre_floor = sand.len();
-
-    if PRINT {
-        print(SOURCE, &rocks, &sand);
-    }
-
-    // oops all floors
-    let floor = void_y + 2;
-    for x in -floor..=floor {
-        rocks.insert((SOURCE.0 + x, floor));
-    }
-
-    if PRINT {
-        print(SOURCE, &rocks, &sand);
-    }
-
-    // return (sand_count_pre_floor, 0); // DEBUG
-
-    'place_all: loop {
-        let mut pos = SOURCE;
-        'place_one: loop {
-            let moves = [
-                (pos.0, pos.1 + 1),
-                (pos.0 - 1, pos.1 + 1),
-                (pos.0 + 1, pos.1 + 1),
-            ];
-            for m in moves {
-                if !rocks.contains(&m) && !sand.contains(&m) {
-                    pos = m;
-                    continue 'place_one;
-                }
-            }
-            // could not move block
-            break 'place_one;
-        }
-        sand.insert(pos);
         if pos == SOURCE {
             break 'place_all;
         }
     }
-
-    if PRINT {
-        print(SOURCE, &rocks, &sand);
-    }
-
-    let sand_count_post_floor = sand.len();
-
-    (sand_count_pre_floor, sand_count_post_floor)
 }
 
 fn parse(input: &str) -> Result<Vec<Vec<Point>>> {
