@@ -16,11 +16,11 @@ type Point = (i32, i32);
 const SOURCE: Point = (500, 0);
 
 fn main() {
-    dbg!(solve(EXAMPLE));
-    dbg!(solve(INPUT));
+    dbg!(solve::<true>(EXAMPLE));
+    dbg!(solve::<true>(INPUT));
 }
 
-fn solve(input: &str) -> (usize, usize) {
+fn solve<const PRINT: bool>(input: &str) -> (usize, usize) {
     let lines = parse(input).expect("couldn't parse input");
 
     let mut rocks = HashSet::<Point>::new();
@@ -81,7 +81,9 @@ fn solve(input: &str) -> (usize, usize) {
         sand.insert(pos);
     }
 
-    print(SOURCE, &rocks, &sand);
+    if PRINT {
+        print(SOURCE, &rocks, &sand);
+    }
 
     (sand.len(), 0)
 }
@@ -149,12 +151,12 @@ fn print(source: Point, rocks: &HashSet<Point>, sand: &HashSet<Point>) {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (24, 0));
+    assert_eq!(solve::<true>(EXAMPLE), (24, 0));
 }
 
 #[bench]
-fn bench_solve_current(b: &mut test::Bencher) {
+fn bench_solve_00_current(b: &mut test::Bencher) {
     b.iter(|| {
-        assert_eq!(solve(INPUT), (1_003, 0));
+        assert_eq!(solve::<false>(INPUT), (1_003, 0));
     });
 }
