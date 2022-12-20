@@ -1,3 +1,4 @@
+use anyhow::bail;
 use worker::*;
 
 mod lifx;
@@ -16,7 +17,30 @@ fn log_request(req: &Request) {
 
 #[event(scheduled)]
 pub async fn main(_worker: ScheduledEvent, _env: worker::Env, _ctx: worker::ScheduleContext) {
-    console_log!("test");
+    if let Err(error) = try_scheduled_main(_env).await {
+        console_error!("ERROR: {:?}", error);
+    }
+}
+
+async fn try_scheduled_main(env: worker::Env) -> anyhow::Result<(), anyhow::Error> {
+    let openweathermap_token = if let Ok(token) = env.var("LIFX_TOKEN") {
+        token.to_string()
+    } else {
+        bail!("LIFX_TOKEN was not set");
+    };
+    let lifx_token = if let Ok(token) = env.var("OPENWEATHERMAP_TOKEN") {
+        token.to_string()
+    } else {
+        bail!("OPENWEATHERMAP_TOKEN was not set");
+    };
+    console_log!("FETCHING AIR QUALITY INDEX (CAQI) FOR SLC UTAH...");
+    let caqi = openweathermap::fetch_caqi(&openweathermap_token).await?;
+    console_log!("AIR QUALITY IS: {:?}", caqi);
+    let color = caqi.to_rgb();
+    console_log!("SETTING LIGHTS TO {color}...");
+    lifx::put_light_color(&lifx_token, color).await?;
+    console_log!("LIGHTS SET");
+    Ok(())
 }
 
 #[event(fetch)]
