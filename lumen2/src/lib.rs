@@ -17,18 +17,18 @@ fn log_request(req: &Request) {
 
 #[event(scheduled)]
 pub async fn main(_worker: ScheduledEvent, _env: worker::Env, _ctx: worker::ScheduleContext) {
-    if let Err(error) = try_scheduled_main(_env).await {
-        console_error!("ERROR: {:?}", error);
-    }
+    try_scheduled_main(_env)
+        .await
+        .expect("scheduled main failed");
 }
 
 async fn try_scheduled_main(env: worker::Env) -> anyhow::Result<(), anyhow::Error> {
-    let openweathermap_token = if let Ok(token) = env.var("LIFX_TOKEN") {
+    let lifx_token = if let Ok(token) = env.var("LIFX_TOKEN") {
         token.to_string()
     } else {
         bail!("LIFX_TOKEN was not set");
     };
-    let lifx_token = if let Ok(token) = env.var("OPENWEATHERMAP_TOKEN") {
+    let openweathermap_token = if let Ok(token) = env.var("OPENWEATHERMAP_TOKEN") {
         token.to_string()
     } else {
         bail!("OPENWEATHERMAP_TOKEN was not set");
