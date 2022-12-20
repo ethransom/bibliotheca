@@ -1,6 +1,6 @@
 const SLC_LAT_LON: (f32, f32) = (40.76388, -111.89228);
 
-pub async fn fetch_caqi(api_token: &str) -> u64 {
+pub async fn fetch_caqi(api_token: &str) -> CAQI {
     let (lat, lon) = SLC_LAT_LON;
     // fetch aqi from openweathermap.org
     let resp = reqwest::get(format!("http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={api_token}"))
@@ -10,6 +10,8 @@ pub async fn fetch_caqi(api_token: &str) -> u64 {
     let body = resp.text().await.expect("couldn't read body");
 
     parse_aqi_response(&body)
+        .try_into()
+        .expect("couldn't parse caqi")
 }
 
 fn parse_aqi_response(body: &str) -> u64 {

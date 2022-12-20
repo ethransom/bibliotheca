@@ -9,10 +9,7 @@ async fn main() {
 
     println!("FETCHING AIR QUALITY INDEX (CAQI) FOR SLC UTAH...");
 
-    let caqi: openweathermap::CAQI = openweathermap::fetch_caqi(&openweathermap_token)
-        .await
-        .try_into()
-        .expect("couldn't parse caqi");
+    let caqi: openweathermap::CAQI = openweathermap::fetch_caqi(&openweathermap_token).await;
 
     let color = caqi.to_rgb();
 
