@@ -1,5 +1,6 @@
 use worker::*;
 
+mod lifx;
 mod utils;
 
 fn log_request(req: &Request) {
@@ -40,6 +41,16 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
             } else {
                 return Response::error("Bad Request", 400);
             };
+
+            let api_token = if let Ok(token) = ctx.env.var("LIFX_TOKEN") {
+                token.to_string()
+            } else {
+                return Response::error("Internal Server Error", 500);
+            };
+
+            if let Err(err) = lifx::put_light_color(&api_token, color).await {
+                return Response::error(err.to_string(), 500);
+            }
 
             Response::from_html(format!("Light set to <em>{color}</em>"))
         })
