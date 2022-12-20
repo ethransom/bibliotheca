@@ -16,7 +16,9 @@ fn log_request(req: &Request) {
 }
 
 #[event(scheduled)]
-pub async fn main(_worker: ScheduledEvent, _env: worker::Env, _ctx: worker::ScheduleContext) {
+pub async fn main(worker: ScheduledEvent, _env: worker::Env, _ctx: worker::ScheduleContext) {
+    console_log!("SCHEDULED EVENT: {:?}", worker);
+
     try_scheduled_main(_env)
         .await
         .expect("scheduled main failed");
