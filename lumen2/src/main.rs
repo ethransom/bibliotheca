@@ -9,7 +9,13 @@ async fn main() {
 
     println!("FETCHING AIR QUALITY INDEX (CAQI) FOR SLC UTAH...");
 
-    let caqi: openweathermap::CAQI = openweathermap::fetch_caqi(&openweathermap_token).await;
+    let caqi = match openweathermap::fetch_caqi(&openweathermap_token).await {
+        Ok(caqi) => caqi,
+        Err(err) => {
+            eprintln!("error fetching CAQI: {:?}", err);
+            return;
+        }
+    };
 
     let color = caqi.to_rgb();
 
@@ -19,6 +25,7 @@ async fn main() {
 
     if let Err(err) = lifx::put_light_color(&lifx_token, color).await {
         eprintln!("error setting light color: {:?}", err);
+        return;
     }
 
     println!("LIGHTS SET");

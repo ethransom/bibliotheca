@@ -1,6 +1,8 @@
+use anyhow::{bail, Context, Result};
+
 const SLC_LAT_LON: (f32, f32) = (40.76388, -111.89228);
 
-pub async fn fetch_caqi(api_token: &str) -> CAQI {
+pub async fn fetch_caqi(api_token: &str) -> Result<CAQI> {
     let (lat, lon) = SLC_LAT_LON;
     // fetch aqi from openweathermap.org
     let resp = reqwest::get(format!("http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={api_token}"))
@@ -9,17 +11,22 @@ pub async fn fetch_caqi(api_token: &str) -> CAQI {
     // read body of request
     let body = resp.text().await.expect("couldn't read body");
 
-    parse_aqi_response(&body)
-        .try_into()
-        .expect("couldn't parse caqi")
+    let aqi = parse_aqi_response(&body)?;
+
+    Ok(aqi)
 }
 
-fn parse_aqi_response(body: &str) -> u64 {
-    let json: serde_json::Value = serde_json::from_str(body).expect("couldn't parse json");
+fn parse_aqi_response(body: &str) -> Result<CAQI> {
+    let json: serde_json::Value =
+        serde_json::from_str(body).with_context(|| format!("couldn't parse json: {body:?}"))?;
 
-    json["list"][0]["main"]["aqi"]
+    let caqi = json["list"][0]["main"]["aqi"]
         .as_u64()
-        .expect("couldn't parse aqi")
+        .context("response didn't have aqi")?;
+
+    Ok(caqi
+        .try_into()
+        .with_context(|| "can't convert {caqi} to CAQI")?)
 }
 
 #[test]
@@ -28,7 +35,11 @@ fn test_parse_openweathermap_aqi_response() {
 
     let aqi = parse_aqi_response(body);
 
-    assert_eq!(aqi, 3);
+    assert_eq!(aqi.unwrap(), CAQI::Medium);
+
+    let body = "{\"list\": []}";
+
+    assert!(parse_aqi_response(body).is_err());
 }
 
 /// Evidently this is the air quality scale used by openweathermap.org
@@ -44,7 +55,7 @@ pub enum CAQI {
 }
 
 impl TryFrom<u64> for CAQI {
-    type Error = String;
+    type Error = anyhow::Error;
 
     fn try_from(value: u64) -> Result<Self, Self::Error> {
         match value {
@@ -53,7 +64,7 @@ impl TryFrom<u64> for CAQI {
             3 => Ok(CAQI::Medium),
             4 => Ok(CAQI::High),
             5 => Ok(CAQI::VeryHigh),
-            _ => Err("index too high".to_owned()),
+            _ => bail!("index too high"),
         }
     }
 }
