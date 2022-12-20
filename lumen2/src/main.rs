@@ -1,12 +1,14 @@
 mod lifx;
 mod openweathermap;
 
-fn main() {
+#[tokio::main(flavor = "current_thread")]
+async fn main() {
     let openweathermap_token =
         std::env::var("OPENWEATHERMAP_TOKEN").expect("OPENWEATHERMAP_TOKEN env var must be set");
     let lifx_token = std::env::var("LIFX_TOKEN").expect("TOKEN env var must be set");
 
     let caqi: openweathermap::CAQI = openweathermap::fetch_caqi(&openweathermap_token)
+        .await
         .try_into()
         .expect("couldn't parse caqi");
 
@@ -14,5 +16,7 @@ fn main() {
 
     println!("AIR QUALITY IN SLC UTAH {:?}", caqi);
 
-    lifx::put_light_color(&lifx_token, color);
+    lifx::put_light_color(&lifx_token, color).await;
+
+    println!("LIGHTS SET TO {color}");
 }
