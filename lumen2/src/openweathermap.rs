@@ -8,6 +8,10 @@ pub async fn fetch_caqi(api_token: &str) -> Result<CAQI> {
     let resp = reqwest::get(format!("http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={api_token}"))
         .await.expect("couldn't fetch aqi");
 
+    if !resp.status().is_success() {
+        bail!("request returned non-200: {:?}", resp);
+    }
+
     // read body of request
     let body = resp.text().await.expect("couldn't read body");
 
