@@ -1,0 +1,18 @@
+name = "lumen2"
+workers_dev = true
+compatibility_date = "2022-12-20"
+
+main = "build/worker/shim.mjs"
+
+[triggers]
+crons = [ "1 * * * *" ]
+
+[vars]
+WORKERS_RS_VERSION = "0.0.9"
+
+[build]
+command = "cargo install -q worker-build && worker-build --release" # required
+
+[[rules]]
+globs = ["**/*.wasm"]
+type = "CompiledWasm"
