@@ -16,7 +16,9 @@ async fn main() {
 
     println!("AIR QUALITY IN SLC UTAH {:?}", caqi);
 
-    lifx::put_light_color(&lifx_token, color).await;
+    if let Err(err) = lifx::put_light_color(&lifx_token, color).await {
+        eprintln!("error setting light color: {:?}", err);
+    }
 
     println!("LIGHTS SET TO {color}");
 }
