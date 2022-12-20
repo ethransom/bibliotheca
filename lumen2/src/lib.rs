@@ -13,6 +13,11 @@ fn log_request(req: &Request) {
     );
 }
 
+#[event(scheduled)]
+pub async fn main(_worker: ScheduledEvent, _env: worker::Env, _ctx: worker::ScheduleContext) {
+    console_log!("test");
+}
+
 #[event(fetch)]
 pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Response> {
     log_request(&req);
