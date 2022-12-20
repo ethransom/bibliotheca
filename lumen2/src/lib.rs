@@ -1,6 +1,7 @@
 use worker::*;
 
 mod lifx;
+mod openweathermap;
 mod utils;
 
 fn log_request(req: &Request) {
@@ -57,6 +58,18 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
         .get("/worker-version", |_, ctx| {
             let version = ctx.var("WORKERS_RS_VERSION")?.to_string();
             Response::ok(version)
+        })
+        .get_async("/aqi", |_, ctx| async move {
+            let api_token = if let Ok(token) = ctx.env.var("OPENWEATHERMAP_TOKEN") {
+                token.to_string()
+            } else {
+                return Response::error("Internal Server Error", 500);
+            };
+
+            match openweathermap::fetch_caqi(&api_token).await {
+                Ok(caqi) => Response::from_html(format!("Air quality is: <em>{caqi:?}</em>")),
+                Err(err) => Response::error(err.to_string(), 500),
+            }
         })
         .run(req, env)
         .await
