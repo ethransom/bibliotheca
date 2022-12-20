@@ -1,4 +1,4 @@
-const LIGHT_ID: &str = "d073d559d839";
+mod lifx;
 
 const SLC_LAT_LON: (f32, f32) = (40.76388, -111.89228);
 
@@ -15,21 +15,7 @@ fn main() {
 
     println!("AIR QUALITY IN SLC UTAH {:?}", caqi);
 
-    lifx_put_light_color(&lifx_token, color);
-}
-
-fn lifx_put_light_color(api_token: &str, color: &str) {
-    let resp = reqwest::blocking::Client::new()
-        .put(format!(
-            "https://api.lifx.com/v1/lights/id:{LIGHT_ID}/state",
-        ))
-        .bearer_auth(api_token)
-        .form(&[("power", "on"), ("color", color)])
-        .send()
-        .expect("couldn't send request");
-    if !resp.status().is_success() {
-        panic!("request failed: {:?}", resp);
-    }
+    lifx::put_light_color(&lifx_token, color);
 }
 
 fn openweathermap_fetch_caqi(api_token: &str) -> u64 {
