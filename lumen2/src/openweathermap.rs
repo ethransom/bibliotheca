@@ -5,10 +5,9 @@ pub async fn fetch_caqi(api_token: &str) -> u64 {
     // fetch aqi from openweathermap.org
     let resp = reqwest::get(format!("http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={api_token}"))
         .await.expect("couldn't fetch aqi");
-    println!("{:?}", resp);
+
     // read body of request
     let body = resp.text().await.expect("couldn't read body");
-    println!("{:?}", body);
 
     parse_aqi_response(&body)
 }
