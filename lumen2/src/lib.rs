@@ -60,6 +60,10 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
     // Environment bindings like KV Stores, Durable Objects, Secrets, and Variables.
     router
         .get("/", |_, _| Response::ok("Hello from Workers!"))
+        .get("/worker-version", |_, ctx| {
+            let version = ctx.var("WORKERS_RS_VERSION")?.to_string();
+            Response::ok(version)
+        })
         .post_async("/light/:color", |_req, ctx| async move {
             let color = if let Some(color) = ctx.param("color") {
                 color
@@ -79,10 +83,6 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
 
             Response::from_html(format!("Light set to <em>{color}</em>"))
         })
-        .get("/worker-version", |_, ctx| {
-            let version = ctx.var("WORKERS_RS_VERSION")?.to_string();
-            Response::ok(version)
-        })
         .get_async("/aqi", |_, ctx| async move {
             let api_token = if let Ok(token) = ctx.env.var("OPENWEATHERMAP_TOKEN") {
                 token.to_string()
@@ -92,6 +92,12 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
 
             match openweathermap::fetch_caqi(&api_token).await {
                 Ok(caqi) => Response::from_html(format!("Air quality is: <em>{caqi:?}</em>")),
+                Err(err) => Response::error(err.to_string(), 500),
+            }
+        })
+        .get_async("/refresh", |_, ctx| async move {
+            match try_scheduled_main(ctx.env).await {
+                Ok(()) => Response::from_html("Set light"),
                 Err(err) => Response::error(err.to_string(), 500),
             }
         })
