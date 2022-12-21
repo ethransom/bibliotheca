@@ -57,16 +57,16 @@ async fn set_to_current_aqi() -> Result<(), Error> {
 async fn cycle_colors() -> Result<()> {
     let lifx_token = lifx_token()?;
 
-    loop {
-        for caqi in openweathermap::CAQI::iter() {
-            let color = caqi.to_rgb();
-            println!("Air Quality {:?} is color {:?}", caqi, color);
-            lifx::put_light_color(&lifx_token, color)
-                .await
-                .context("error setting light color")?;
-            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-        }
+    for caqi in openweathermap::CAQI::iter().cycle() {
+        let color = caqi.to_rgb();
+        println!("Air Quality {:?} is color {:?}", caqi, color);
+        lifx::put_light_color(&lifx_token, color)
+            .await
+            .context("error setting light color")?;
+        tokio::time::sleep(std::time::Duration::from_secs(3)).await;
     }
+
+    unreachable!();
 }
 
 fn openweathermap_token() -> Result<String> {
