@@ -1,4 +1,5 @@
 use anyhow::{bail, Context, Result};
+use strum_macros::EnumIter;
 
 const SLC_LAT_LON: (f32, f32) = (40.76388, -111.89228);
 
@@ -49,7 +50,7 @@ fn test_parse_openweathermap_aqi_response() {
 /// Evidently this is the air quality scale used by openweathermap.org
 /// https://en.wikipedia.org/wiki/Air_quality_index#CAQI
 /// https://openweathermap.org/api/air-pollution
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, EnumIter)]
 pub enum CAQI {
     VeryLow,
     Low,
