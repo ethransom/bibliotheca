@@ -13,18 +13,17 @@ async fn main() {
 }
 
 async fn try_main() -> Result<(), Error> {
+    // TODO: Surely we can do better
     let args = std::env::args().collect::<Vec<_>>();
-    if args.len() == 1 {
-        return set_to_current_aqi()
+    match args.len() {
+        1 => set_to_current_aqi()
             .await
-            .context("could not set light to current AQI");
-    } else if args.len() == 2 {
-        match args[1].as_str() {
+            .context("could not set light to current AQI"),
+        2 => match args[1].as_str() {
             "cycle" => cycle_colors().await.context("couldn't cycle colors"),
             arg => bail!("unknown argument: {}", arg),
-        }
-    } else {
-        bail!("too many arguments");
+        },
+        _ => bail!("too many arguments"),
     }
 }
 
