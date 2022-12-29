@@ -26,13 +26,23 @@ fn blocks() -> impl Iterator<Item = Vec<Point>> {
     .cycle()
 }
 
-fn solve(input: &str) -> (i32, i32) {
-    let mut jets = parse(input).into_iter().cycle();
+fn solve(input: &str) -> (usize, usize) {
+    let jets = parse(input);
+
+    (
+        simulate(&jets, 2022),
+        // simulate(jets, 1_000_000_000_000),
+        0,
+    )
+}
+
+fn simulate(jets: &[Jet], steps: usize) -> usize {
+    let mut jets = jets.iter().cycle();
 
     let mut chamber: HashSet<Point> = HashSet::new();
 
     for (i, shape) in blocks().enumerate() {
-        if i + 1 > 2022 {
+        if i + 1 > steps {
             break;
         }
 
@@ -101,7 +111,7 @@ fn solve(input: &str) -> (i32, i32) {
         // print(&chamber, &pos, &shape);
     }
 
-    (chamber.iter().fold(0, |m, &(_x, y)| m.max(y + 1)), 0)
+    chamber.iter().fold(0, |m, &(_x, y)| m.max(y as usize + 1))
 }
 
 #[derive(Clone)]
@@ -148,6 +158,14 @@ fn parse(input: &str) -> Vec<Jet> {
 #[test]
 fn test_example() {
     assert_eq!(solve(EXAMPLE), (3_068, 0));
+}
+
+#[bench]
+fn bench_part_1(b: &mut test::Bencher) {
+    let jets = parse(INPUT);
+    b.iter(|| {
+        assert_eq!(simulate(&jets, 2022), 3_177);
+    });
 }
 
 #[bench]
