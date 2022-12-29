@@ -43,6 +43,8 @@ fn simulate(jets: &[Jet], steps: usize) -> usize {
 
     let mut chamber: HashSet<Point> = HashSet::default();
 
+    let mut lane_heights = [-1; 7];
+
     for (i, shape) in blocks().enumerate() {
         if i + 1 > steps {
             break;
@@ -50,7 +52,8 @@ fn simulate(jets: &[Jet], steps: usize) -> usize {
 
         // println!("block {}", i + 1);
 
-        let mut pos = (2, chamber.iter().fold(-1, |m, &(_x, y)| m.max(y)).add(4));
+        // let mut pos = (2, chamber.iter().fold(-1, |m, &(_x, y)| m.max(y)).add(4));
+        let mut pos = (2, lane_heights.iter().fold(-1, |m, &y| m.max(y)).add(4));
 
         // println!("first rock");
         // print(&chamber, &pos, &shape);
@@ -107,6 +110,9 @@ fn simulate(jets: &[Jet], steps: usize) -> usize {
 
         for p in shape.iter().map(|p| (p.0.add(pos.0), p.1.add(pos.1))) {
             chamber.insert(p);
+            if p.1 > lane_heights[p.0 as usize] {
+                lane_heights[p.0 as usize] = p.1;
+            }
         }
 
         // println!("after placement");
