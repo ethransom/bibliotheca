@@ -1,6 +1,8 @@
 #![feature(test)]
 
-use std::{collections::HashSet, ops::Add};
+use fxhash::FxHashSet as HashSet;
+
+use std::ops::Add;
 
 extern crate test;
 
@@ -39,7 +41,7 @@ fn solve(input: &str) -> (usize, usize) {
 fn simulate(jets: &[Jet], steps: usize) -> usize {
     let mut jets = jets.iter().cycle();
 
-    let mut chamber: HashSet<Point> = HashSet::new();
+    let mut chamber: HashSet<Point> = HashSet::default();
 
     for (i, shape) in blocks().enumerate() {
         if i + 1 > steps {
