@@ -32,7 +32,7 @@ fn solve(input: &str) -> (i32, usize) {
     (message, 0)
 }
 
-fn shift_by(nums: &mut [(usize, i32)], mut pos: usize, val: i32) {
+fn shift_by<E>(nums: &mut [E], mut pos: usize, val: i32) {
     // dbg!(nums.iter().map(|p| p.1).join(", "), pos, val);
     if val > 0 {
         // RIGHT
@@ -126,57 +126,44 @@ fn parse(input: &str) -> Result<Vec<i32>, std::num::ParseIntError> {
 
 #[test]
 fn test_example() {
-    fn cmp(a: &[(usize, i32)], b: &[i32]) {
-        assert_eq!(a.iter().map(|p| p.1).collect::<Vec<i32>>(), b);
-    }
-
-    let mut nums: Vec<(usize, i32)> = vec![1, 2, -3, 3, -2, 0, 4]
-        .into_iter()
-        .enumerate()
-        .collect();
+    let mut nums: Vec<i32> = vec![1, 2, -3, 3, -2, 0, 4];
 
     // 1 moves between 2 and -3:
     shift_by(&mut nums, 0, 1);
-    cmp(&nums, &vec![2, 1, -3, 3, -2, 0, 4]);
+    assert_eq!(&nums, &vec![2, 1, -3, 3, -2, 0, 4]);
 
     // 2 moves between -3 and 3:
     shift_by(&mut nums, 0, 2);
-    cmp(&nums, &vec![1, -3, 2, 3, -2, 0, 4]);
+    assert_eq!(&nums, &vec![1, -3, 2, 3, -2, 0, 4]);
 
     // -3 moves between -2 and 0:
     shift_by(&mut nums, 1, -3);
-    cmp(&nums, &vec![1, 2, 3, -2, -3, 0, 4]);
+    assert_eq!(&nums, &vec![1, 2, 3, -2, -3, 0, 4]);
 
     // 3 moves between 0 and 4:
     shift_by(&mut nums, 2, 3);
-    cmp(&nums, &vec![1, 2, -2, -3, 0, 3, 4]);
+    assert_eq!(&nums, &vec![1, 2, -2, -3, 0, 3, 4]);
 
     // -2 moves between 4 and 1:
     shift_by(&mut nums, 2, -2);
-    cmp(&nums, &vec![1, 2, -3, 0, 3, 4, -2]);
+    assert_eq!(&nums, &vec![1, 2, -3, 0, 3, 4, -2]);
 
     // 0 does not move:
     shift_by(&mut nums, 3, 0);
-    cmp(&nums, &vec![1, 2, -3, 0, 3, 4, -2]);
+    assert_eq!(&nums, &vec![1, 2, -3, 0, 3, 4, -2]);
 
     // 4 moves between -3 and 0:
     shift_by(&mut nums, 5, 4);
-    cmp(&nums, &vec![1, 2, -3, 4, 0, 3, -2]);
+    assert_eq!(&nums, &vec![1, 2, -3, 4, 0, 3, -2]);
 
     assert_eq!(solve(EXAMPLE), (3, 0));
 }
 
 #[test]
 fn test_double_wrap() {
-    let mut nums: Vec<(usize, i32)> = vec![1, 2, -3, 0, 3, 4, -2]
-        .into_iter()
-        .enumerate()
-        .collect();
+    let mut nums = vec![1, 2, -3, 0, 3, 4, -2];
     shift_by(&mut nums, 5, 8);
-    assert_eq!(
-        &nums.iter().map(|p| p.1).collect::<Vec<i32>>(),
-        &vec![1, 4, 2, -3, 0, 3, -2]
-    );
+    assert_eq!(&nums, &vec![1, 4, 2, -3, 0, 3, -2]);
 }
 
 #[bench]
