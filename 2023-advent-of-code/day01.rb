@@ -1,3 +1,9 @@
-
-file_path = '/Users/ethanransom/bibliotheca/2023-advent-of-code/day01.rb'
-lines = File.readlines(file_path)
+["example01.txt", "input01.txt"].each do |file|
+    File.readlines(file).each do |line|
+        [line.chars, line.chars.reverse].each { |line|
+            line.chars.find { |c| c.isDigit? }
+        }
+        .join
+        .to_i
+    end
+end
