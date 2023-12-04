@@ -36,10 +36,10 @@ const NUMBER_WORDS: [(&str, usize); 18] = [
 fn find_patterns(mut input: &str, patterns: &[(&str, usize)]) -> Vec<usize> {
     let mut result = Vec::new();
 
-    while input.len() != 0 {
+    while !input.is_empty() {
         for (word, value) in patterns {
             if input.starts_with(word) {
-                result.push(value.clone());
+                result.push(*value);
             }
         }
 
@@ -89,7 +89,7 @@ fn sum_calibrations(lines: Vec<&str>, patterns: &[(&str, usize)]) -> usize {
     lines
         .iter()
         .map(|line| {
-            let patterns = find_patterns(&line, patterns);
+            let patterns = find_patterns(line, patterns);
 
             let first = patterns.first().unwrap_or(&0);
             let second = patterns.last().unwrap_or(&0);
