@@ -12,7 +12,7 @@ fn main() {
     dbg!(solve(INPUT));
 }
 
-const NUMBER_WORDS: [(&str, usize); 18] = [
+const NUMBER_WORDS: [(&str, usize); 9] = [
     ("one", 1),
     ("two", 2),
     ("three", 3),
@@ -22,6 +22,9 @@ const NUMBER_WORDS: [(&str, usize); 18] = [
     ("seven", 7),
     ("eight", 8),
     ("nine", 9),
+];
+
+const NUMBER_DIGITS: [(&str, usize); 9] = [
     ("1", 1),
     ("2", 2),
     ("3", 3),
@@ -51,41 +54,30 @@ fn find_patterns(mut input: &str, patterns: &[(&str, usize)]) -> Vec<usize> {
 
 #[test]
 fn test_find_first_pattern() {
-    assert_eq!(find_patterns("two", &NUMBER_WORDS), vec![2]);
-    assert_eq!(find_patterns("onetwothree", &NUMBER_WORDS), vec![1, 2, 3]);
-    assert_eq!(find_patterns("asdflajef", &NUMBER_WORDS), vec![]);
-    assert_eq!(find_patterns("twotwo", &NUMBER_WORDS), vec![2, 2]);
+    let patterns = (NUMBER_WORDS.into_iter().chain(NUMBER_DIGITS.into_iter())).collect::<Vec<_>>();
+
+    assert_eq!(find_patterns("two", &patterns), vec![2]);
+    assert_eq!(find_patterns("onetwothree", &patterns), vec![1, 2, 3]);
+    assert_eq!(find_patterns("asdflajef", &patterns), vec![]);
+    assert_eq!(find_patterns("twotwo", &patterns), vec![2, 2]);
 }
 
 fn solve(input: &str) -> (usize, usize) {
     let lines = parse(input);
 
     (
-        lines
-            .iter()
-            .map(|line| {
-                let first = line
-                    .chars()
-                    .find(|&c| c.is_ascii_digit())
-                    .unwrap_or('0')
-                    .to_string();
-                let last = line
-                    .chars()
-                    .rev()
-                    .find(|&c| c.is_ascii_digit())
-                    .unwrap_or('0')
-                    .to_string();
-
-                println!("{}:\t\t\t{} + {}", line, first, last);
-
-                (first + &last).parse::<usize>().unwrap()
-            })
-            .sum(),
-        sum_calibrations(lines, &NUMBER_WORDS),
+        sum_calibrations(&lines, &NUMBER_DIGITS),
+        sum_calibrations(
+            &lines,
+            &NUMBER_WORDS
+                .into_iter()
+                .chain(NUMBER_DIGITS.into_iter())
+                .collect::<Vec<_>>(),
+        ),
     )
 }
 
-fn sum_calibrations(lines: Vec<&str>, patterns: &[(&str, usize)]) -> usize {
+fn sum_calibrations(lines: &[&str], patterns: &[(&str, usize)]) -> usize {
     lines
         .iter()
         .map(|line| {
