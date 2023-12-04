@@ -21,19 +21,17 @@ fn solve(input: &str) -> (usize, usize) {
                     .chars()
                     .find(|&c| c.is_ascii_digit())
                     .expect("No digit found")
-                    .to_digit(10)
-                    .unwrap() as usize;
+                    .to_string();
                 let last = line
                     .chars()
                     .rev()
                     .find(|&c| c.is_ascii_digit())
                     .expect("No digit found")
-                    .to_digit(10)
-                    .unwrap() as usize;
+                    .to_string();
 
                 println!("{}:\t\t\t{} + {}", line, first, last);
 
-                first * 10 + last
+                (first + &last).parse::<usize>().unwrap()
             })
             .sum(),
         0,
