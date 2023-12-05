@@ -1,7 +1,5 @@
 // #![feature(test)]
 
-use std::collections::HashMap;
-
 // extern crate test;
 
 const EXAMPLE: &str = include_str!("example02.txt");
