@@ -54,7 +54,10 @@ fn find_patterns(mut input: &str, patterns: &[(&str, usize)]) -> Vec<usize> {
 
 #[test]
 fn test_find_first_pattern() {
-    let patterns = (NUMBER_WORDS.into_iter().chain(NUMBER_DIGITS.into_iter())).collect::<Vec<_>>();
+    let patterns = NUMBER_WORDS
+        .into_iter()
+        .chain(NUMBER_DIGITS)
+        .collect::<Vec<_>>();
 
     assert_eq!(find_patterns("two", &patterns), vec![2]);
     assert_eq!(find_patterns("onetwothree", &patterns), vec![1, 2, 3]);
@@ -71,7 +74,7 @@ fn solve(input: &str) -> (usize, usize) {
             &lines,
             &NUMBER_WORDS
                 .into_iter()
-                .chain(NUMBER_DIGITS.into_iter())
+                .chain(NUMBER_DIGITS)
                 .collect::<Vec<_>>(),
         ),
     )
