@@ -15,13 +15,13 @@ fn solve(input: &str) -> (usize, usize) {
 
     let mut part_nos = vec![];
 
-    let mut part_no = vec![];
+    let mut part_no = String::new();
     let mut touches_symbol = false;
     for (y, row) in schematic.iter().enumerate() {
         for (x, cell) in row.iter().enumerate() {
             match cell {
                 ('0'..='9') => {
-                    part_no.push(cell);
+                    part_no.push(*cell);
 
                     neighbors(x, y, row.len(), schematic.len()).for_each(|(nx, ny)| {
                         let neighbor = schematic[ny][nx];
@@ -32,7 +32,7 @@ fn solve(input: &str) -> (usize, usize) {
                 }
                 _ => {
                     if !part_no.is_empty() && touches_symbol {
-                        part_nos.push(part_no.drain(0..).collect::<String>().parse().unwrap())
+                        part_nos.push(part_no.parse().unwrap())
                     }
                     part_no.clear();
                     touches_symbol = false;
@@ -40,7 +40,7 @@ fn solve(input: &str) -> (usize, usize) {
             }
         }
         if !part_no.is_empty() && touches_symbol {
-            part_nos.push(part_no.drain(0..).collect::<String>().parse().unwrap())
+            part_nos.push(part_no.parse().unwrap())
         }
         part_no.clear();
         touches_symbol = false;
