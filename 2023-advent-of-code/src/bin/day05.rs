@@ -1,6 +1,7 @@
-// #![feature(test)]
+#![feature(test)]
+#![feature(array_chunks)]
 
-// extern crate test;
+extern crate test;
 
 const EXAMPLE: &str = include_str!("example05.txt");
 const INPUT: &str = include_str!("input05.txt");
@@ -13,9 +14,9 @@ fn main() {
 fn solve(input: &str) -> (u64, u64) {
     let (seeds, maps) = parse(input);
 
-    let mut min_location = u64::MAX;
+    let mut part1 = u64::MAX;
 
-    for seed in seeds {
+    for &seed in &seeds {
         let mut resource = "seed";
         let mut id = seed;
         while resource != "location" {
@@ -24,12 +25,33 @@ fn solve(input: &str) -> (u64, u64) {
             resource = map.dst;
         }
 
-        dbg!(format!("{} mapped to location: {}", seed, id));
+        #[cfg(debug_assertions)]
+        println!("{seed} mapped to location: {id}");
 
-        min_location = min_location.min(id);
+        part1 = part1.min(id);
     }
 
-    (min_location, 0)
+    let mut part2 = u64::MAX;
+    for (c, [start, size]) in seeds.array_chunks::<2>().enumerate() {
+        println!("chunk {c}: {start}..{end}", end = start + size);
+        for i in 0..=*size {
+            let seed = start + i;
+            let mut resource = "seed";
+            let mut id = seed;
+            while resource != "location" {
+                let map = maps.iter().find(|map| map.src == resource).unwrap();
+                id = map.map(id);
+                resource = map.dst;
+            }
+
+            #[cfg(debug_assertions)]
+            println!("{seed} mapped to location: {id}");
+
+            part2 = part2.min(id);
+        }
+    }
+
+    (part1, part2)
 }
 
 #[derive(Debug)]
@@ -117,17 +139,18 @@ fn parse(input: &str) -> (Vec<u64>, Vec<Map>) {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (35, 0));
+    assert_eq!(solve(EXAMPLE), (35, 46));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (318728750, 0));
+    // too slow lol
+    // assert_eq!(solve(INPUT), (318728750, 37384986));
 }
 
-// #[bench]
-// fn bench_solve_current(b: &mut test::Bencher) {
-//     b.iter(|| {
-//         assert_eq!(solve(INPUT), (0, 0));
-//     });
-// }
+#[bench]
+fn bench_solve_current(b: &mut test::Bencher) {
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (318728750, 37384986));
+    });
+}
