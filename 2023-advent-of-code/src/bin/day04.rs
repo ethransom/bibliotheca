@@ -1,5 +1,7 @@
 // #![feature(test)]
 
+use itertools::Itertools;
+
 // extern crate test;
 
 use std::collections::HashSet;
@@ -15,16 +17,28 @@ fn main() {
 fn solve(input: &str) -> (usize, usize) {
     let cards = parse(input);
 
-    (
-        cards
-            .iter()
-            .map(|(winning, have)| match (winning & have).len() {
-                0 => 0,
-                f => 2_usize.pow(f as u32 - 1),
-            })
-            .sum(),
-        0,
-    )
+    let power_score = cards
+        .iter()
+        .map(|(winning, have)| match (winning & have).len() {
+            0 => 0,
+            f => 2_usize.pow(f as u32 - 1),
+        })
+        .sum();
+
+    let mut counts = vec![1; cards.len()];
+
+    dbg!(counts.iter().join(", "));
+
+    for (i, card) in cards.iter().enumerate() {
+        let (have, winning) = card;
+        for j in 0..((have & winning).len()) {
+            counts[i + 1 + j] += counts[i];
+        }
+
+        dbg!(counts.iter().join(", "));
+    }
+
+    (power_score, counts.iter().sum())
 }
 
 fn parse(input: &str) -> Vec<(HashSet<u8>, HashSet<u8>)> {
@@ -52,12 +66,12 @@ fn parse(input: &str) -> Vec<(HashSet<u8>, HashSet<u8>)> {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (13, 0));
+    assert_eq!(solve(EXAMPLE), (13, 30));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (24706, 0));
+    assert_eq!(solve(INPUT), (24706, 13114317));
 }
 
 // #[bench]
