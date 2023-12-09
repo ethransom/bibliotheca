@@ -126,7 +126,7 @@ fn parse(input: &str) -> (Vec<u64>, Vec<Map>) {
                         .try_into()
                         .expect("expected three numbers");
 
-                    range.try_into().unwrap()
+                    range.into()
                 })
                 .collect();
 

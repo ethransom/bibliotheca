@@ -93,7 +93,7 @@ impl Schematic {
     }
 }
 
-fn collect_part_nos(schematic: &Vec<Vec<char>>) -> Vec<usize> {
+fn collect_part_nos(schematic: &[Vec<char>]) -> Vec<usize> {
     let mut part_nos = vec![];
 
     let mut part_no = String::new();
