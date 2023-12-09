@@ -10,7 +10,7 @@ const INPUT: &str = include_str!("input08.txt");
 
 fn main() {
     let (instructions, network) = parse(EXAMPLE);
-    let steps = simple_follow(&network, &instructions);
+    let steps = simple_follow(&network, &instructions, "AAA");
     dbg!(steps);
 
     let (instructions, network) = parse(EXAMPLE2);
@@ -18,44 +18,44 @@ fn main() {
     dbg!(all_steps);
 
     let (instructions, network) = parse(INPUT);
-    let steps = simple_follow(&network, &instructions);
+    let steps = simple_follow(&network, &instructions, "AAA");
     let all_steps = ghost_follow(&network, &instructions);
     dbg!((steps, all_steps));
 }
 
 fn ghost_follow(network: &HashMap<&str, (&str, &str)>, instructions: &[char]) -> usize {
-    let mut locations = network
+    // god, I love rust:
+    network
         .keys()
-        .cloned() // god, I love rust
+        .cloned()
         .filter(|&k| k.ends_with('A'))
-        .collect::<Vec<_>>();
-    let mut steps = 0;
-    let mut instructions = instructions.iter().cycle();
-    while locations.iter().any(|&l| !l.ends_with('Z')) {
-        let instruction = *instructions.next().unwrap();
-        for location in locations.iter_mut() {
-            let (left, right) = network.get(location).unwrap();
-
-            *location = if instruction == 'L' { left } else { right };
-        }
-
-        steps += 1;
-    }
-    steps
+        .inspect(|&k| println!("start: {}", k))
+        .map(|location| simple_follow(network, instructions, location))
+        .inspect(|&steps| println!("solved: {}", steps))
+        .reduce(lcm)
+        .expect("no solutions found")
 }
 
-fn simple_follow(network: &HashMap<&str, (&str, &str)>, instructions: &Vec<char>) -> usize {
-    let mut location = "AAA";
+fn simple_follow(
+    network: &HashMap<&str, (&str, &str)>,
+    instructions: &[char],
+    start: &str,
+) -> usize {
+    let mut location = start;
     let mut steps = 0;
     let mut instructions = instructions.iter().cycle();
-    while location != "ZZZ" {
+    while !location.ends_with('Z') {
         let (left, right) = network.get(location).unwrap();
 
-        location = if *instructions.next().unwrap() == 'L' {
+        let next = if *instructions.next().unwrap() == 'L' {
             left
         } else {
             right
         };
+
+        // println!("{steps}: {location} -> {next}");
+
+        location = next;
 
         steps += 1;
     }
@@ -81,11 +81,28 @@ fn parse(input: &str) -> (Vec<char>, HashMap<&str, (&str, &str)>) {
     (instructions, network)
 }
 
+fn lcm(a: usize, b: usize) -> usize {
+    a * b / gcd(a, b)
+}
+
+fn gcd(mut a: usize, mut b: usize) -> usize {
+    // for shame: copilot wrote this one
+    // TODO: we do have this already oxidixed example:
+    // https://en.wikipedia.org/wiki/Binary_GCD_algorithm#Implementation
+    while b != 0 {
+        let t = b;
+        b = a % b;
+        a = t;
+    }
+
+    a
+}
+
 #[test]
 fn test_example() {
     let (instructions, network) = parse(EXAMPLE);
 
-    let steps = simple_follow(&network, &instructions);
+    let steps = simple_follow(&network, &instructions, "AAA");
 
     assert_eq!(steps, 6);
 }
@@ -102,10 +119,10 @@ fn test_example2() {
 fn test_input() {
     let (instructions, network) = parse(INPUT);
 
-    let steps = simple_follow(&network, &instructions);
+    let steps = simple_follow(&network, &instructions, "AAA");
     let all_steps = ghost_follow(&network, &instructions);
 
-    assert_eq!((steps, all_steps), (18827, 0));
+    assert_eq!((steps, all_steps), (18827, 20220305520997));
 }
 
 // #[bench]
