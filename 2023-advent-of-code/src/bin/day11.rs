@@ -17,6 +17,42 @@ fn solve(input: &str) -> (usize, usize) {
 
     print(&image);
 
+    let expanded_1 = expand(&image, 2);
+
+    print(&expanded_1);
+
+    let expanded_1_000_000 = expand(&image, 1_000_000);
+
+    (
+        lengths_of_paths(&expanded_1),
+        lengths_of_paths(&expanded_1_000_000),
+    )
+}
+
+fn lengths_of_paths(image: &HashSet<(usize, usize)>) -> usize {
+    let image = image.iter().collect::<Vec<_>>();
+
+    let mut pairs = vec![];
+    let mut image = &image[..];
+    while image.len() > 1 {
+        let a = &image[0];
+        for b in &image[1..] {
+            pairs.push((a, b));
+        }
+        image = &image[1..];
+    }
+
+    let mut sum = 0;
+    for (a, b) in pairs {
+        let manhattan_dist =
+            (a.0 as i64 - b.0 as i64).unsigned_abs() + (a.1 as i64 - b.1 as i64).unsigned_abs();
+
+        sum += manhattan_dist as usize;
+    }
+    sum
+}
+
+fn expand(image: &HashSet<(usize, usize)>, expansion: usize) -> HashSet<(usize, usize)> {
     let ((x_min, x_max), (y_min, y_max)) = min_max(&image);
 
     let y_expansions = (y_min..=y_max)
@@ -34,36 +70,12 @@ fn solve(input: &str) -> (usize, usize) {
         .copied()
         .map(|(x, y)| {
             (
-                x + x_expansions.iter().filter(|&&x2| x >= x2).count(),
-                y + y_expansions.iter().filter(|&&y2| y >= y2).count(),
+                x + ((expansion - 1) * x_expansions.iter().filter(|&&x2| x >= x2).count()),
+                y + ((expansion - 1) * y_expansions.iter().filter(|&&y2| y >= y2).count()),
             )
         })
         .collect::<HashSet<_>>();
-
-    print(&image);
-
-    let image = image.into_iter().collect::<Vec<_>>();
-
-    let mut pairs = vec![];
-    let mut image = &image[..];
-    while image.len() > 1 {
-        let a = &image[0];
-        for b in &image[1..] {
-            println!("pair: {a:?} {b:?}");
-            pairs.push((a, b));
-        }
-        image = &image[1..];
-    }
-
-    let mut sum = 0;
-    for (a, b) in pairs {
-        let manhattan_dist =
-            (a.0 as i64 - b.0 as i64).unsigned_abs() + (a.1 as i64 - b.1 as i64).unsigned_abs();
-
-        sum += manhattan_dist as usize;
-    }
-
-    (sum, 0)
+    image
 }
 
 fn print(image: &HashSet<(usize, usize)>) {
@@ -105,12 +117,27 @@ fn parse(input: &str) -> HashSet<(usize, usize)> {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (374, 0));
+    assert_eq!(solve(EXAMPLE).0, 374);
+}
+
+#[test]
+fn test_more_expansions() {
+    let image = parse(EXAMPLE);
+
+    print(&image);
+
+    let expanded_10 = expand(&image, 10);
+    print(&expanded_10);
+    assert_eq!(lengths_of_paths(&expanded_10), 1030);
+
+    let expanded_100 = expand(&image, 100);
+    print(&expanded_100);
+    assert_eq!(lengths_of_paths(&expanded_100), 8410);
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (9563821, 0));
+    assert_eq!(solve(INPUT), (9563821, 827009909817));
 }
 
 // #[bench]
