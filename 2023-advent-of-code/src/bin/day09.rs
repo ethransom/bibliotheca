@@ -29,15 +29,16 @@ fn solve(input: &str) -> (i32, i32) {
                     .map(|pair| pair[1] - pair[0])
                     .collect::<Vec<_>>();
 
-                let brk = derivative
+                derivatives.push(derivative);
+
+                if derivatives
+                    .last()
+                    .unwrap()
                     .iter()
                     .as_slice()
                     .windows(2)
-                    .all(|w| w[0] == w[1]);
-
-                derivatives.push(derivative);
-
-                if brk {
+                    .all(|w| w[0] == w[1])
+                {
                     break;
                 }
             }
