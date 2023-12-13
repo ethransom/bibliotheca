@@ -13,10 +13,10 @@ fn main() {
 fn solve(input: &str) -> (i32, i32) {
     let histories = parse(input).expect("couldn't parse input");
 
-    let sum_next_values = histories
+    histories
         .clone()
         .into_iter()
-        .map(|history| {
+        .fold((0, 0), |(next, prev), history| {
             let mut derivatives = vec![history.clone()];
 
             loop {
@@ -46,28 +46,26 @@ fn solve(input: &str) -> (i32, i32) {
                 println!("{:?}", d);
             }
             println!(
-                "solved {history:?} after {steps} derivations\n",
+                "solved {history:?} after {steps} derivations",
                 steps = derivatives.len()
             );
 
-            // hallucinate last item
-            // for part 2 I assume we will need to store these off somewhere 🙈
-            derivatives
+            let new_next = derivatives
                 .iter()
                 .rev()
-                .fold(0, |delta, prev| delta + prev.last().unwrap())
+                .fold(0, |delta, prev| delta + prev.last().unwrap());
 
-            // let iter = derivatives.iter_mut().rev().last().unwrap();
-            // let c = *iter.last().unwrap();
-            // iter.push(c);
-            //
-            // for d in derivatives.iter_mut().windows(2) {
-            //     let prev = d.last().unwrap();
-            // }
+            let new_prev = derivatives
+                .iter()
+                .rev()
+                .fold(0, |delta, prev| prev.first().unwrap() - delta);
+
+            println!("previous value was {new_prev}, next value is {new_next}");
+
+            println!();
+
+            (next + new_next, prev + new_prev)
         })
-        .sum();
-
-    (sum_next_values, 0)
 }
 
 fn parse(input: &str) -> Option<Vec<Vec<i32>>> {
@@ -80,12 +78,12 @@ fn parse(input: &str) -> Option<Vec<Vec<i32>>> {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (114, 0));
+    assert_eq!(solve(EXAMPLE), (114, 2));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (1939607039, 0));
+    assert_eq!(solve(INPUT), (1939607039, 1041));
 }
 
 // #[bench]
