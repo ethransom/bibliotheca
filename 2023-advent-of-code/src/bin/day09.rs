@@ -1,6 +1,6 @@
-// #![feature(test)]
+#![feature(test)]
 
-// extern crate test;
+extern crate test;
 
 const EXAMPLE: &str = include_str!("example09.txt");
 const INPUT: &str = include_str!("input09.txt");
@@ -42,13 +42,16 @@ fn solve(input: &str) -> (i32, i32) {
                 }
             }
 
-            for d in &derivatives {
-                println!("{:?}", d);
+            #[cfg(debug_assertions)]
+            {
+                for d in &derivatives {
+                    println!("{:?}", d);
+                }
+                println!(
+                    "solved {history:?} after {steps} derivations",
+                    steps = derivatives.len()
+                );
             }
-            println!(
-                "solved {history:?} after {steps} derivations",
-                steps = derivatives.len()
-            );
 
             let new_next = derivatives
                 .iter()
@@ -60,9 +63,11 @@ fn solve(input: &str) -> (i32, i32) {
                 .rev()
                 .fold(0, |delta, prev| prev.first().unwrap() - delta);
 
-            println!("previous value was {new_prev}, next value is {new_next}");
-
-            println!();
+            #[cfg(debug_assertions)]
+            {
+                println!("previous value was {new_prev}, next value is {new_next}");
+                println!();
+            }
 
             (next + new_next, prev + new_prev)
         })
@@ -86,9 +91,9 @@ fn test_input() {
     assert_eq!(solve(INPUT), (1939607039, 1041));
 }
 
-// #[bench]
-// fn bench_solve_current(b: &mut test::Bencher) {
-//     b.iter(|| {
-//         assert_eq!(solve(INPUT), (0, 0));
-//     });
-// }
+#[bench]
+fn bench_solve_current(b: &mut test::Bencher) {
+    b.iter(|| {
+        test_input();
+    });
+}
