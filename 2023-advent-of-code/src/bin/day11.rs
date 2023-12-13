@@ -53,7 +53,7 @@ fn lengths_of_paths(image: &HashSet<(usize, usize)>) -> usize {
 }
 
 fn expand(image: &HashSet<(usize, usize)>, expansion: usize) -> HashSet<(usize, usize)> {
-    let ((x_min, x_max), (y_min, y_max)) = min_max(&image);
+    let ((x_min, x_max), (y_min, y_max)) = min_max(image);
 
     let y_expansions = (y_min..=y_max)
         .filter(|y| (x_min..=x_max).all(|x| !image.contains(&(x, *y))))
@@ -65,17 +65,15 @@ fn expand(image: &HashSet<(usize, usize)>, expansion: usize) -> HashSet<(usize, 
     println!("y_expansions: {:?}", y_expansions);
     println!("x_expansions: {:?}", x_expansions);
 
-    let image = image
+    image
         .iter()
-        .copied()
-        .map(|(x, y)| {
+        .map(|&(x, y)| {
             (
                 x + ((expansion - 1) * x_expansions.iter().filter(|&&x2| x >= x2).count()),
                 y + ((expansion - 1) * y_expansions.iter().filter(|&&y2| y >= y2).count()),
             )
         })
-        .collect::<HashSet<_>>();
-    image
+        .collect::<HashSet<_>>()
 }
 
 fn print(image: &HashSet<(usize, usize)>) {
