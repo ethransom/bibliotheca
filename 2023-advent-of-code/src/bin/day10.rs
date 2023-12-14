@@ -48,25 +48,6 @@ fn solve(input: &str) -> (i64, i64) {
             println!("{}\t\t{}", left, right);
         });
 
-    let mut buf = String::new();
-
-    let ((x_min, x_max), (y_min, y_max)) = map.bounds;
-    for y in y_min..=y_max {
-        if y != 0 {
-            buf.push('\n');
-        }
-        for x in x_min..=x_max {
-            let pos = (x, y);
-            if map.start == pos {
-                buf.push('S');
-            } else if let Some(dist) = visited.get(&pos) {
-                buf.push_str(&format!("{}", dist));
-            } else {
-                buf.push(' ');
-            }
-        }
-    }
-
     let &max = visited.values().max().expect("no pipes reachable");
 
     (max, 0)
