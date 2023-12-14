@@ -34,16 +34,6 @@ fn solve(input: &str) -> (i64, i64) {
         }
     }
 
-    let ((x_min, x_max), (y_min, y_max)) = map.edges.iter().fold(
-        ((0, 0), (0, 0)),
-        |((x_min, x_max), (y_min, y_max)), ((x, y), _)| {
-            (
-                (x_min.min(*x), x_max.max(*x)),
-                (y_min.min(*y), y_max.max(*y)),
-            )
-        },
-    );
-
     println!("nodes reachable: {}", visited.len());
 
     let (all_nodes, loop_nodes) = (
@@ -60,6 +50,7 @@ fn solve(input: &str) -> (i64, i64) {
 
     let mut buf = String::new();
 
+    let ((x_min, x_max), (y_min, y_max)) = map.bounds;
     for y in y_min..=y_max {
         if y != 0 {
             buf.push('\n');
@@ -85,6 +76,7 @@ fn solve(input: &str) -> (i64, i64) {
 struct Map {
     edges: HashSet<((i64, i64), (i64, i64))>,
     start: (i64, i64),
+    bounds: ((i64, i64), (i64, i64)),
 }
 
 impl Map {
@@ -115,18 +107,9 @@ impl Map {
     }
 
     fn serialize(&self) -> String {
-        let ((x_min, x_max), (y_min, y_max)) = self.edges.iter().fold(
-            ((0, 0), (0, 0)),
-            |((x_min, x_max), (y_min, y_max)), ((x, y), _)| {
-                (
-                    (x_min.min(*x), x_max.max(*x)),
-                    (y_min.min(*y), y_max.max(*y)),
-                )
-            },
-        );
-
         let mut buf = String::new();
 
+        let ((x_min, x_max), (y_min, y_max)) = self.bounds;
         for y in y_min..=y_max {
             if y != 0 {
                 buf.push('\n');
@@ -162,18 +145,9 @@ impl Map {
     }
 
     fn serialize_fancy(&self) -> String {
-        let ((x_min, x_max), (y_min, y_max)) = self.edges.iter().fold(
-            ((0, 0), (0, 0)),
-            |((x_min, x_max), (y_min, y_max)), ((x, y), _)| {
-                (
-                    (x_min.min(*x), x_max.max(*x)),
-                    (y_min.min(*y), y_max.max(*y)),
-                )
-            },
-        );
-
         let mut buf = String::new();
 
+        let ((x_min, x_max), (y_min, y_max)) = self.bounds;
         for y in y_min..=y_max {
             if y != 0 {
                 buf.push('\n');
@@ -212,18 +186,9 @@ impl Map {
         &self,
         main_loop: &std::collections::HashMap<(i64, i64), i64>,
     ) -> String {
-        let ((x_min, x_max), (y_min, y_max)) = self.edges.iter().fold(
-            ((0, 0), (0, 0)),
-            |((x_min, x_max), (y_min, y_max)), ((x, y), _)| {
-                (
-                    (x_min.min(*x), x_max.max(*x)),
-                    (y_min.min(*y), y_max.max(*y)),
-                )
-            },
-        );
-
         let mut buf = String::new();
 
+        let ((x_min, x_max), (y_min, y_max)) = self.bounds;
         for y in y_min..=y_max {
             if y != 0 {
                 buf.push('\n');
@@ -324,7 +289,21 @@ impl Map {
             edges.insert((start, neighbors));
         }
 
-        Map { edges, start }
+        let bounds = edges.iter().fold(
+            ((0, 0), (0, 0)),
+            |((x_min, x_max), (y_min, y_max)), ((x, y), _)| {
+                (
+                    (x_min.min(*x), x_max.max(*x)),
+                    (y_min.min(*y), y_max.max(*y)),
+                )
+            },
+        );
+
+        Map {
+            edges,
+            start,
+            bounds,
+        }
     }
 }
 
