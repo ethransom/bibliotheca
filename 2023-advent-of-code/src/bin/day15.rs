@@ -112,6 +112,7 @@ impl HolidayAsciiStringHelperManualArrangementProcedure {
     // }
 
     fn remove(&mut self, key: &str) {
+        // TODO: somewhat gross, I wonder if tinyvec could be better, bench it
         let mut parent = &mut self.boxes[holiday_ascii_string_helper(key)];
         loop {
             if let Some(child) = parent {
