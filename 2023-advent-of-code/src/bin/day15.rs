@@ -225,7 +225,7 @@ fn test_example() {
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (516469, 0));
+    assert_eq!(solve(INPUT), (516469, 221627));
 }
 
 // #[bench]
