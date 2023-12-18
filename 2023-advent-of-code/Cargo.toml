@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 itertools = "0.12.0"
+fxhash = { version = "0.2.1", features = [] }

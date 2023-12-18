@@ -1,16 +1,15 @@
-#![feature(let_chains)]
-// #![feature(test)]
+#![feature(test)]
 
-// extern crate test;
+extern crate test;
 
-use std::collections::HashSet;
+use fxhash::FxHashSet as HashSet;
 
 const EXAMPLE: &str = include_str!("example14.txt");
 const INPUT: &str = include_str!("input14.txt");
 
 fn main() {
     dbg!(solve(EXAMPLE));
-    dbg!(solve(INPUT));
+    // dbg!(solve(INPUT));
 }
 
 fn solve(input: &str) -> (usize, usize) {
@@ -76,7 +75,7 @@ impl Map {
     }
 
     fn tilt(&mut self, force: Tilts) {
-        let mut next = HashSet::new();
+        let mut next = HashSet::default();
 
         match force {
             Tilts::Down => {
@@ -171,8 +170,8 @@ impl Map {
     }
 
     fn parse(input: &str) -> Map {
-        let mut round = HashSet::<(usize, usize)>::new();
-        let mut cube = HashSet::<(usize, usize)>::new();
+        let mut round = HashSet::<(usize, usize)>::default();
+        let mut cube = HashSet::<(usize, usize)>::default();
         let (mut height, mut width) = (0, 0);
 
         for (y, line) in input.lines().enumerate() {
@@ -234,6 +233,15 @@ fn test_example() {
 #[test]
 fn test_input() {
     assert_eq!(solve(INPUT), (109939, 0));
+}
+
+/// Performance history:
+/// * 3288304 ns/iter (+/- 91758)   # Original (as of sha dbfb8e771515be22c39abc8b85a25a3cf51ad94d)
+/// *  823238 ns/iter (+/- 44570)    # Use FxHashSet instead of default hash
+#[bench]
+fn bench_spin_cycle(b: &mut test::Bencher) {
+    let mut map = Map::parse(INPUT);
+    b.iter(|| map.spin_cycle());
 }
 
 // #[bench]
