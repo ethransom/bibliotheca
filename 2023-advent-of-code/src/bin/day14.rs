@@ -43,30 +43,34 @@ impl Map {
         let mut next = HashSet::new();
         for y in 0..self.height {
             for x in 0..self.width {
-                if !self.round.contains(&(x, y)) {
-                    continue;
-                }
-                let (mut x, mut y) = (x as i64, y as i64);
-                loop {
-                    let (new_x, new_y) = (x + dx, y + dy);
-                    if new_x < 0 || new_y < 0 {
-                        break;
-                    }
-                    if new_x >= self.width as i64 || new_y >= self.height as i64 {
-                        break;
-                    }
-                    if self.cube.contains(&(new_x as usize, new_y as usize)) {
-                        break;
-                    }
-                    if next.contains(&(new_x as usize, new_y as usize)) {
-                        break;
-                    }
-                    (x, y) = (new_x, new_y);
-                }
-                next.insert((x as usize, y as usize));
+                self.shift(y, x, dx, dy, &mut next)
             }
         }
         self.round = next;
+    }
+
+    fn shift(&mut self, y: usize, x: usize, dx: i64, dy: i64, next: &mut HashSet<(usize, usize)>) {
+        if !self.round.contains(&(x, y)) {
+            return;
+        }
+        let (mut x, mut y) = (x as i64, y as i64);
+        loop {
+            let (new_x, new_y) = (x + dx, y + dy);
+            if new_x < 0 || new_y < 0 {
+                break;
+            }
+            if new_x >= self.width as i64 || new_y >= self.height as i64 {
+                break;
+            }
+            if self.cube.contains(&(new_x as usize, new_y as usize)) {
+                break;
+            }
+            if next.contains(&(new_x as usize, new_y as usize)) {
+                break;
+            }
+            (x, y) = (new_x, new_y);
+        }
+        next.insert((x as usize, y as usize));
     }
 
     fn total_load(&self) -> usize {
