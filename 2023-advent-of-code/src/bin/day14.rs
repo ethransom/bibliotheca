@@ -17,16 +17,36 @@ fn solve(input: &str) -> (usize, usize) {
     let mut map = Map::parse(input);
 
     println!("{}", map.print());
-    println!("{}", map.round.len());
 
-    let force = (0, -1);
+    let mut map2 = map.clone();
 
-    map.tilt(force);
+    map2.tilt(Tilts::Up);
+    println!("\n{}", map2.print());
 
+    let single_tilt_load = map2.total_load();
+
+    map.spin_cycle();
     println!("\n{}", map.print());
-    println!("{}", map.round.len());
+    println!("{}", map.total_load());
+    map.spin_cycle();
+    println!("\n{}", map.print());
+    println!("{}", map.total_load());
+    map.spin_cycle();
+    println!("\n{}", map.print());
+    println!("{}", map.total_load());
+    map.spin_cycle();
+    println!("{}", map.total_load());
+    map.spin_cycle();
+    println!("{}", map.total_load());
+    map.spin_cycle();
+    println!("{}", map.total_load());
+    map.spin_cycle();
+    println!("{}", map.total_load());
+    map.spin_cycle();
+    println!("{}", map.total_load());
 
-    (map.total_load(), 0)
+
+    (single_tilt_load, 0)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -37,15 +57,62 @@ struct Map {
     width: usize,
 }
 
+enum Tilts {
+    Up,
+    Right,
+    Down,
+    Left,
+}
+
 impl Map {
-    fn tilt(&mut self, force: (i64, i64)) {
-        let (dx, dy) = force;
+    fn spin_cycle(&mut self) {
+        self.tilt(Tilts::Up);
+
+        self.tilt(Tilts::Left);
+
+        self.tilt(Tilts::Down);
+
+        self.tilt(Tilts::Right);
+    }
+
+    fn tilt(&mut self, force: Tilts) {
         let mut next = HashSet::new();
-        for y in 0..self.height {
-            for x in 0..self.width {
-                self.shift(y, x, dx, dy, &mut next)
+
+        match force {
+            Tilts::Down => {
+                let (dx, dy) = (0, 1);
+                for y in (0..self.height).rev() {
+                    for x in 0..self.width {
+                        self.shift(y, x, dx, dy, &mut next)
+                    }
+                }
+            },
+            Tilts::Up => {
+                let (dx, dy) = (0, -1);
+                for y in 0..self.height {
+                    for x in 0..self.width {
+                        self.shift(y, x, dx, dy, &mut next)
+                    }
+                }
+            },
+            Tilts::Right => {
+                let (dx, dy) = (1, 0);
+                for x in (0..self.width).rev() {
+                    for y in 0..self.height {
+                        self.shift(y, x, dx, dy, &mut next)
+                    }
+                }
+            },
+            Tilts::Left => {
+                let (dx, dy) = (-1, 0);
+                for x in 0..self.width {
+                    for y in 0..self.height {
+                        self.shift(y, x, dx, dy, &mut next)
+                    }
+                }
             }
         }
+
         self.round = next;
     }
 
@@ -139,6 +206,24 @@ fn test_parse_print() {
     assert_eq!(Map::parse(EXAMPLE).print(), EXAMPLE);
 
     assert_eq!(Map::parse(INPUT).print(), INPUT);
+}
+
+#[test]
+fn test_spin_cycle() {
+    let mut map = Map::parse(EXAMPLE);
+
+    map.spin_cycle();
+
+    assert_eq!(map.print(), ".....#....
+....#...O#
+...OO##...
+.OO#......
+.....OOO#.
+.O#...O#.#
+....O#....
+......OOOO
+#...O###..
+#..OO#....");
 }
 
 #[test]
