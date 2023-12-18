@@ -9,7 +9,7 @@ const INPUT: &str = include_str!("input14.txt");
 
 fn main() {
     dbg!(solve(EXAMPLE));
-    // dbg!(solve(INPUT));
+    dbg!(solve(INPUT));
 }
 
 fn solve(input: &str) -> (usize, usize) {
@@ -33,17 +33,11 @@ fn solve(input: &str) -> (usize, usize) {
     map.spin_cycle();
     println!("\n{}", map.print());
     println!("{}", map.total_load());
-    map.spin_cycle();
-    println!("{}", map.total_load());
-    map.spin_cycle();
-    println!("{}", map.total_load());
-    map.spin_cycle();
-    println!("{}", map.total_load());
-    map.spin_cycle();
-    println!("{}", map.total_load());
-    map.spin_cycle();
-    println!("{}", map.total_load());
 
+    for i in 3..1_000_000 {
+        map.spin_cycle();
+        // println!("{}", map.total_load());
+    }
 
     (single_tilt_load, 0)
 }
@@ -238,6 +232,8 @@ fn test_input() {
 /// Performance history:
 /// * 3288304 ns/iter (+/- 91758)   # Original (as of sha dbfb8e771515be22c39abc8b85a25a3cf51ad94d)
 /// *  823238 ns/iter (+/- 44570)    # Use FxHashSet instead of default hash
+/// (823238 ns * 1 billion) to hours is 228.6772222222 hours :((((((((((
+/// (5 minutes / 1 billion) to nanoseconds is 300 ns # we have our target lmao
 #[bench]
 fn bench_spin_cycle(b: &mut test::Bencher) {
     let mut map = Map::parse(INPUT);
