@@ -19,33 +19,9 @@ fn solve(input: &str) -> (usize, usize) {
     println!("{}", map.print());
     println!("{}", map.round.len());
 
-    let mut next = HashSet::new();
-    for y in 0..map.height {
-        for x in 0..map.width {
-            if !map.round.contains(&(x, y)) {
-                continue;
-            }
-            let (mut y, mut x) = (y as i64, x as i64);
-            loop {
-                let (new_y, new_x) = (y - 1, x);
-                if new_y < 0 || new_x < 0 {
-                    break;
-                }
-                if new_y >= map.height as i64 || new_x >= map.width as i64 {
-                    break;
-                }
-                if map.cube.contains(&(new_x as usize, new_y as usize)) {
-                    break;
-                }
-                if next.contains(&(new_x as usize, new_y as usize)) {
-                    break;
-                }
-                (x, y) = (new_x, new_y);
-            }
-            next.insert((x as usize, y as usize));
-        }
-    }
-    map.round = next;
+    let force = (0, -1);
+
+    map.tilt(force);
 
     println!("\n{}", map.print());
     println!("{}", map.round.len());
@@ -62,6 +38,37 @@ struct Map {
 }
 
 impl Map {
+    fn tilt(&mut self, force: (i64, i64)) {
+        let (dx, dy) = force;
+        let mut next = HashSet::new();
+        for y in 0..self.height {
+            for x in 0..self.width {
+                if !self.round.contains(&(x, y)) {
+                    continue;
+                }
+                let (mut x, mut y) = (x as i64, y as i64);
+                loop {
+                    let (new_x, new_y) = (x + dx, y + dy);
+                    if new_x < 0 || new_y < 0 {
+                        break;
+                    }
+                    if new_x >= self.width as i64 || new_y >= self.height as i64 {
+                        break;
+                    }
+                    if self.cube.contains(&(new_x as usize, new_y as usize)) {
+                        break;
+                    }
+                    if next.contains(&(new_x as usize, new_y as usize)) {
+                        break;
+                    }
+                    (x, y) = (new_x, new_y);
+                }
+                next.insert((x as usize, y as usize));
+            }
+        }
+        self.round = next;
+    }
+
     fn total_load(&self) -> usize {
         let mut load = 0;
         for (_x, y) in &self.round {
@@ -69,6 +76,7 @@ impl Map {
         }
         load
     }
+
     fn print(&self) -> String {
         let mut output = String::new();
 
