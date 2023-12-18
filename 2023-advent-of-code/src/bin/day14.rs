@@ -1,3 +1,4 @@
+#![feature(let_chains)]
 // #![feature(test)]
 
 // extern crate test;
@@ -24,17 +25,24 @@ fn solve(input: &str) -> (usize, usize) {
             if !map.round.contains(&(x, y)) {
                 continue;
             }
-            let mut y = y;
-            while let Some(new_y) = y.checked_sub(1).and_then(|y| {
-                if map.cube.contains(&(x, y)) || next.contains(&(x, y)) {
-                    None
-                } else {
-                    Some(y)
+            let (mut y, mut x) = (y as i64, x as i64);
+            loop {
+                let (new_y, new_x) = (y - 1, x);
+                if new_y < 0 || new_x < 0 {
+                    break;
                 }
-            }) {
-                y = new_y;
+                if new_y >= map.height as i64 || new_x >= map.width as i64 {
+                    break;
+                }
+                if map.cube.contains(&(new_x as usize, new_y as usize)) {
+                    break;
+                }
+                if next.contains(&(new_x as usize, new_y as usize)) {
+                    break;
+                }
+                (x, y) = (new_x, new_y);
             }
-            next.insert((x, y));
+            next.insert((x as usize, y as usize));
         }
     }
     map.round = next;
