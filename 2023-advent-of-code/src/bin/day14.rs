@@ -9,7 +9,7 @@ const INPUT: &str = include_str!("input14.txt");
 
 fn main() {
     dbg!(solve(EXAMPLE));
-    dbg!(solve(INPUT));
+    // dbg!(solve(INPUT));
 }
 
 fn solve(input: &str) -> (usize, usize) {
@@ -34,7 +34,7 @@ fn solve(input: &str) -> (usize, usize) {
     println!("\n{}", map.print());
     println!("{}", map.total_load());
 
-    for _i in 3..1_000_000 {
+    for _i in 3..3 {
         map.spin_cycle();
         // println!("{}", map.total_load());
     }
@@ -47,11 +47,13 @@ type Point = (usize, usize);
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Map {
     round: HashSet<Point>,
+    round_alt: HashSet<Point>,
     cube: HashSet<Point>,
     height: usize,
     width: usize,
 }
 
+#[derive(Debug)]
 enum Tilts {
     Up,
     Right,
@@ -71,14 +73,12 @@ impl Map {
     }
 
     fn tilt(&mut self, force: Tilts) {
-        let mut next = HashSet::default();
-
         match force {
             Tilts::Down => {
                 let (dx, dy) = (0, 1);
                 for y in (0..self.height).rev() {
                     for x in 0..self.width {
-                        self.shift(y, x, dx, dy, &mut next)
+                        self.shift(y, x, dx, dy)
                     }
                 }
             },
@@ -86,7 +86,7 @@ impl Map {
                 let (dx, dy) = (0, -1);
                 for y in 0..self.height {
                     for x in 0..self.width {
-                        self.shift(y, x, dx, dy, &mut next)
+                        self.shift(y, x, dx, dy)
                     }
                 }
             },
@@ -94,7 +94,7 @@ impl Map {
                 let (dx, dy) = (1, 0);
                 for x in (0..self.width).rev() {
                     for y in 0..self.height {
-                        self.shift(y, x, dx, dy, &mut next)
+                        self.shift(y, x, dx, dy)
                     }
                 }
             },
@@ -102,16 +102,17 @@ impl Map {
                 let (dx, dy) = (-1, 0);
                 for x in 0..self.width {
                     for y in 0..self.height {
-                        self.shift(y, x, dx, dy, &mut next)
+                        self.shift(y, x, dx, dy)
                     }
                 }
             }
         }
 
-        self.round = next;
+        self.round.clear();
+        std::mem::swap(&mut self.round, &mut self.round_alt);
     }
 
-    fn shift(&mut self, y: usize, x: usize, dx: i64, dy: i64, next: &mut HashSet<Point>) {
+    fn shift(&mut self, y: usize, x: usize, dx: i64, dy: i64) {
         if !self.round.contains(&(x, y)) {
             return;
         }
@@ -127,12 +128,12 @@ impl Map {
             if self.cube.contains(&(new_x as usize, new_y as usize)) {
                 break;
             }
-            if next.contains(&(new_x as usize, new_y as usize)) {
+            if self.round_alt.contains(&(new_x as usize, new_y as usize)) {
                 break;
             }
             (x, y) = (new_x, new_y);
         }
-        next.insert((x as usize, y as usize));
+        self.round_alt.insert((x as usize, y as usize));
     }
 
     fn total_load(&self) -> usize {
@@ -189,6 +190,7 @@ impl Map {
 
         Map {
             round,
+            round_alt: HashSet::default(),
             cube,
             height: height + 1,
             width: width + 1,
@@ -234,8 +236,10 @@ fn test_input() {
 /// Performance history:
 /// * 3288304 ns/iter (+/- 91758)   # Original (as of sha dbfb8e771515be22c39abc8b85a25a3cf51ad94d)
 /// *  823238 ns/iter (+/- 44570)    # Use FxHashSet instead of default hash
-/// (823238 ns * 1 billion) to hours is 228.6772222222 hours :((((((((((
-/// (5 minutes / 1 billion) to nanoseconds is 300 ns # we have our target lmao
+///         Aside:
+///             (823238 ns * 1 billion) to hours is 228.6772222222 hours :((((((((((
+///             (5 minutes / 1 billion) to nanoseconds is 300 ns # we have our target lmao
+/// *  581606 ns/iter (+/- 8836)    # Main loop noalloc
 #[bench]
 fn bench_spin_cycle(b: &mut test::Bencher) {
     let mut map = Map::parse(INPUT);
