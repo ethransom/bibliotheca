@@ -34,7 +34,7 @@ fn solve(input: &str) -> (usize, usize) {
     println!("\n{}", map.print());
     println!("{}", map.total_load());
 
-    for i in 3..1_000_000 {
+    for _i in 3..1_000_000 {
         map.spin_cycle();
         // println!("{}", map.total_load());
     }
@@ -42,10 +42,12 @@ fn solve(input: &str) -> (usize, usize) {
     (single_tilt_load, 0)
 }
 
+type Point = (usize, usize);
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Map {
-    round: HashSet<(usize, usize)>,
-    cube: HashSet<(usize, usize)>,
+    round: HashSet<Point>,
+    cube: HashSet<Point>,
     height: usize,
     width: usize,
 }
@@ -109,7 +111,7 @@ impl Map {
         self.round = next;
     }
 
-    fn shift(&mut self, y: usize, x: usize, dx: i64, dy: i64, next: &mut HashSet<(usize, usize)>) {
+    fn shift(&mut self, y: usize, x: usize, dx: i64, dy: i64, next: &mut HashSet<Point>) {
         if !self.round.contains(&(x, y)) {
             return;
         }
@@ -164,8 +166,8 @@ impl Map {
     }
 
     fn parse(input: &str) -> Map {
-        let mut round = HashSet::<(usize, usize)>::default();
-        let mut cube = HashSet::<(usize, usize)>::default();
+        let mut round = HashSet::default();
+        let mut cube = HashSet::default();
         let (mut height, mut width) = (0, 0);
 
         for (y, line) in input.lines().enumerate() {
