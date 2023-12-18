@@ -113,15 +113,20 @@ impl HolidayAsciiStringHelperManualArrangementProcedure {
 
     fn remove(&mut self, key: &str) {
         let mut parent = &mut self.boxes[holiday_ascii_string_helper(key)];
-        if let Some(child) = parent {
-            if child.key == key {
-                let next = std::mem::replace(&mut child.next, None);
-                *parent = next; // also drops child?
+        loop {
+            if let Some(child) = parent {
+                if child.key == key {
+                    let next = std::mem::replace(&mut child.next, None);
+                    *parent = next; // also drops child?
+                    return;
+                }
+            }
+
+            if let Some(child) = parent {
+                parent = &mut child.next;
+            } else {
                 return;
             }
-        } else {
-            // None
-            return;
         }
     }
 }
@@ -208,11 +213,9 @@ fn test_hashmap() {
     // After "ot=7":
     map.insert("ot", 7);
     assert_eq!(format!("{map:?}"), "Box 0: [rn 1] [cm 2]\nBox 3: [ot 7] [ab 5] [pc 6]");
-    //
-    // // xtra
-    // map.remove("ab");
-    // assert_eq!(format!("{map:?}"), "Box 0: [rn 1] [cm 2]\nBox 3: [ot 7] [pc 6]");
 
+    map.remove("ab");
+    assert_eq!(format!("{map:?}"), "Box 0: [rn 1] [cm 2]\nBox 3: [ot 7] [pc 6]");
 }
 
 #[test]
