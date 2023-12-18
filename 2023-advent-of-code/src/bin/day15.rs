@@ -12,13 +12,13 @@ fn main() {
 
 fn solve(input: &str) -> (usize, usize) {
     let sum = parse(input)
-        .map(hash)
+        .map(holiday_ascii_string_helper)
         .sum();
 
     (sum, 0)
 }
 
-fn hash(input: &[u8]) -> usize {
+fn holiday_ascii_string_helper(input: &[u8]) -> usize {
     input.iter().fold(0, |acc, &val| {
         ((acc + val as usize) * 17) % 256
     })
