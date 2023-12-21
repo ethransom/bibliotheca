@@ -43,7 +43,7 @@ fn sum_possibilities(rows: &Vec<(String, Vec<usize>)>) -> usize {
 
     for (springs, actual_groups) in rows {
         let mut count = 0;
-        println!("{springs}:");
+        // println!("{springs}:");
         let ps = possibilities(springs);
         for p in &ps {
             let groups = get_groups(p);
@@ -52,7 +52,7 @@ fn sum_possibilities(rows: &Vec<(String, Vec<usize>)>) -> usize {
                 count += 1;
             }
         }
-        println!("  -> {count}");
+        // println!("  -> {count}");
         sum += count;
     }
     sum
@@ -133,9 +133,11 @@ fn test_input() {
     assert_eq!(solve(INPUT), (6958, 0));
 }
 
-// #[bench]
-// fn bench_solve_current(b: &mut test::Bencher) {
-//     b.iter(|| {
-//         assert_eq!(solve(INPUT), (0, 0));
-//     });
-// }
+#[bench]
+fn bench_solve_naive_example(b: &mut test::Bencher) {
+    // TODO idk could test different allocation strategies here
+    b.iter(|| {
+        let rows = parse(EXAMPLE);
+        assert_eq!(sum_possibilities(&rows), 21);
+    });
+}
