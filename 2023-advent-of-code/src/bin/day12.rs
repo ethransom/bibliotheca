@@ -1,6 +1,6 @@
-// #![feature(test)]
+#![feature(test)]
 
-// extern crate test;
+extern crate test;
 
 use itertools::Itertools;
 
@@ -21,9 +21,27 @@ fn solve(input: &str) -> (usize, usize) {
     //     println!("{groups:?}");
     // }
 
+    let sum = sum_possibilities(&rows);
+
+    // lmfaooooo unfold
+    let rows: Vec<_> = rows
+        .into_iter()
+        .map(|(springs, groups)| (springs.repeat(5), groups.repeat(5)))
+        .collect();
+
+    for row in &rows {
+        println!("{row:?}");
+    }
+
+    let sum_unfolded = sum_possibilities(&rows);
+
+    (sum, sum_unfolded)
+}
+
+fn sum_possibilities(rows: &Vec<(String, Vec<usize>)>) -> usize {
     let mut sum = 0;
 
-    for (springs, actual_groups) in &rows {
+    for (springs, actual_groups) in rows {
         let mut count = 0;
         println!("{springs}:");
         let ps = possibilities(springs);
@@ -37,8 +55,7 @@ fn solve(input: &str) -> (usize, usize) {
         println!("  -> {count}");
         sum += count;
     }
-
-    (sum, 0)
+    sum
 }
 
 fn possibilities(springs: &str) -> Vec<String> {
@@ -66,20 +83,17 @@ fn possibilities(springs: &str) -> Vec<String> {
                 }
             })
             .collect()
+    } else if ps.is_empty() {
+        ps.push(c.to_string());
+        ps
     } else {
-        // #[warn(clippy::collapsible_else_if)]
-        if ps.is_empty() {
-            ps.push(c.to_string());
-            ps
-        } else {
-            ps.into_iter()
-                // .inspect(|p| println!("\t-> {p}"))
-                .map(|mut p| {
-                    p.insert_str(0, c);
-                    p
-                })
-                .collect()
-        }
+        ps.into_iter()
+            // .inspect(|p| println!("\t-> {p}"))
+            .map(|mut p| {
+                p.insert_str(0, c);
+                p
+            })
+            .collect()
     }
 }
 
@@ -92,13 +106,13 @@ fn get_groups(springs: &str) -> Vec<usize> {
         .collect()
 }
 
-fn parse(input: &str) -> Vec<(&str, Vec<usize>)> {
+fn parse(input: &str) -> Vec<(String, Vec<usize>)> {
     input
         .lines()
         .map(|line| {
             let (springs, groups) = line.split_once(' ').unwrap();
             (
-                springs,
+                springs.to_string(),
                 groups
                     .split(',')
                     .map(str::parse)
@@ -111,7 +125,7 @@ fn parse(input: &str) -> Vec<(&str, Vec<usize>)> {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (21, 0));
+    assert_eq!(solve(EXAMPLE), (21, 525152));
 }
 
 #[test]
