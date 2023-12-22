@@ -15,68 +15,82 @@ fn solve(input: &str) -> (usize, usize) {
 
     let mut sum = 0;
 
-    'images: for image in &images {
+    for image in &images {
         let height = image.len();
         let width = image[0].len();
 
         // println!("trying vertically");
-        'vertical_mirror: for c in 1..width {
-            for r in 0..height {
-                let left = &image[r][0..c];
-                let right = &image[r][c..];
-
-                let mirreflect = left.chars().rev().zip(right.chars()).all(|(a, b)| a == b);
-                // println!("{left:?} {right:?} {}", mirreflect);
-                if !mirreflect {
-                    continue 'vertical_mirror;
-                }
-            }
-
-            // winner winner chicken dinner
-            // println!(
-            //     "did reflect top to bottom around line between {} {}",
-            //     (c - 1) + 1,
-            //     c + 1
-            // );
-
-            sum += (c - 1) + 1;
-
-            continue 'images;
+        if let Some(c) = reflects_vertically(image, height, width) {
+            sum += c;
+            continue;
         }
 
         // println!("\ntrying horizontally");
 
-        'horizontal_mirror: for r in 1..height {
-            for c in 0..width {
-                let top = (0..r).map(|r| image[r].as_bytes()[c]);
-                let bottom = (r..image.len()).map(|r| image[r].as_bytes()[c]);
-
-                // print!(
-                //     "{:?} {:?}",
-                //     top.clone().map(|c| c as char).collect::<String>(),
-                //     bottom.clone().map(|c| c as char).collect::<String>()
-                // );
-                let mirreflect = top.rev().zip(bottom).all(|(a, b)| a == b);
-                // println!("{mirreflect}");
-                if !mirreflect {
-                    continue 'horizontal_mirror;
-                }
-            }
-
-            // winner winner chicken dinner
-            // println!(
-            //     "did reflect left to right around line between {} {}",
-            //     (r - 1) + 1,
-            //     r + 1
-            // );
-
+        if let Some(r) = reflects_horizontally(image, height, width) {
             sum += r * 100;
-
-            continue 'images;
+            continue;
         }
     }
 
     (sum, 0)
+}
+
+fn reflects_horizontally(image: &[&str], height: usize, width: usize) -> Option<usize> {
+    'reflection: for r in 1..height {
+        for c in 0..width {
+            let top = (0..r).map(|r| image[r].as_bytes()[c]);
+            let bottom = (r..image.len()).map(|r| image[r].as_bytes()[c]);
+
+            // print!(
+            //     "{:?} {:?}",
+            //     top.clone().map(|c| c as char).collect::<String>(),
+            //     bottom.clone().map(|c| c as char).collect::<String>()
+            // );
+            let reflects = top.rev().zip(bottom).all(|(a, b)| a == b);
+            // println!("{mirreflect}");
+            if !reflects {
+                continue 'reflection;
+            }
+        }
+
+        // winner winner chicken dinner
+        // println!(
+        //     "did reflect left to right around line between {} {}",
+        //     (r - 1) + 1,
+        //     r + 1
+        // );
+
+        return Some(r);
+    }
+
+    None
+}
+
+fn reflects_vertically(image: &[&str], height: usize, width: usize) -> Option<usize> {
+    'reflection: for c in 1..width {
+        for r in 0..height {
+            let left = &image[r][0..c];
+            let right = &image[r][c..];
+
+            let reflects = left.chars().rev().zip(right.chars()).all(|(a, b)| a == b);
+            // println!("{left:?} {right:?} {}", mirreflect);
+            if !reflects {
+                continue 'reflection;
+            }
+        }
+
+        // winner winner chicken dinner
+        // println!(
+        //     "did reflect top to bottom around line between {} {}",
+        //     (c - 1) + 1,
+        //     c + 1
+        // );
+
+        return Some(c);
+    }
+
+    None
 }
 
 fn parse(input: &str) -> Vec<Vec<&str>> {
