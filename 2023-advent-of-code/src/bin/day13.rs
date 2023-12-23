@@ -1,3 +1,4 @@
+#![feature(let_chains)]
 // #![feature(test)]
 
 // extern crate test;
@@ -13,84 +14,150 @@ fn main() {
 fn solve(input: &str) -> (usize, usize) {
     let images = parse(input);
 
-    let mut sum = 0;
+    let mut reflection_sum = 0;
+    let mut smudge_sum = 0;
 
-    for image in &images {
+    for (i, image) in images.iter().enumerate() {
+        println!("image {i}");
+
         let height = image.len();
         let width = image[0].len();
 
         // println!("trying vertically");
-        if let Some(c) = reflects_vertically(image, height, width) {
-            sum += c;
+        let (vertical, smudges) = vertical_axis_reflections(image, height, width);
+        if let Some(c) = vertical {
+            reflection_sum += c;
+            let vertical_reflections: Vec<_> = smudges
+                .iter()
+                .enumerate()
+                .filter(|(_c, smudges)| smudges.len() == 0)
+                .collect();
+            assert_eq!(vertical_reflections.len(), 1);
+            assert_eq!(vertical_reflections[0].0, c - 1);
+            let (horizontal, row_smudges) = horizontal_axis_reflections(image, height, width);
+            let almost_reflections: Vec<_> = row_smudges
+                .iter()
+                .enumerate()
+                .map(|(r, s)| ((r + 1) * 100, s))
+                .chain(smudges.iter().enumerate().map(|(c, s)| (c + 1, s)))
+                .filter(|(_, smudges)| smudges.len() == 1)
+                .collect();
+            println!(
+                "image {i} flipped vertically, and horizontal smudges: {almost_reflections:?}"
+            );
+            assert_eq!(
+                almost_reflections.len(),
+                1,
+                "did not have almost-reflection"
+            );
+            smudge_sum += almost_reflections[0].0;
+
             continue;
         }
 
         // println!("\ntrying horizontally");
 
-        if let Some(r) = reflects_horizontally(image, height, width) {
-            sum += r * 100;
+        let (horizontal, smudges) = horizontal_axis_reflections(image, height, width);
+        if let Some(r) = horizontal {
+            reflection_sum += r * 100;
+            let vertical_reflections: Vec<_> = smudges
+                .iter()
+                .enumerate()
+                .filter(|(_r, smudges)| smudges.len() == 0)
+                .collect();
+            assert_eq!(vertical_reflections.len(), 1);
+            assert_eq!(vertical_reflections[0].0, r - 1);
+            let (vertical, column_smudges) = vertical_axis_reflections(image, height, width);
+            let almost_reflections: Vec<_> = column_smudges
+                .iter()
+                .enumerate()
+                .map(|(c, s)| (c + 1, s))
+                .chain(smudges.iter().enumerate().map(|(r, s)| ((r + 1) * 100, s)))
+                .filter(|(_, smudges)| smudges.len() == 1)
+                .collect();
+            println!("image {i} flipped horizontally, and almost smudges: {almost_reflections:?}");
+            assert_eq!(
+                almost_reflections.len(),
+                1,
+                "did not have almost-reflection"
+            );
+            smudge_sum += almost_reflections[0].0;
+
             continue;
         }
     }
 
-    (sum, 0)
+    (reflection_sum, smudge_sum)
 }
 
-fn reflects_horizontally(image: &[&str], height: usize, width: usize) -> Option<usize> {
-    'reflection: for r in 1..height {
+fn horizontal_axis_reflections(
+    image: &[&str],
+    height: usize,
+    width: usize,
+) -> (Option<usize>, Vec<Vec<(usize, usize)>>) {
+    let mut horizontal_reflection = None;
+    let mut row_mismatches = vec![];
+
+    for r in 1..height {
+        let mut mismatches = vec![];
         for c in 0..width {
-            let top = (0..r).map(|r| image[r].as_bytes()[c]);
-            let bottom = (r..image.len()).map(|r| image[r].as_bytes()[c]);
+            let top = (0..r).map(|r| (c, r));
+            let bottom = (r..height).map(|r| (c, r));
 
-            // print!(
-            //     "{:?} {:?}",
-            //     top.clone().map(|c| c as char).collect::<String>(),
-            //     bottom.clone().map(|c| c as char).collect::<String>()
-            // );
-            let reflects = top.rev().zip(bottom).all(|(a, b)| a == b);
-            // println!("{mirreflect}");
-            if !reflects {
-                continue 'reflection;
+            let pairs = top.rev().zip(bottom);
+            for ((x1, y1), (x2, y2)) in pairs {
+                if image[y1].as_bytes()[x1] != image[y2].as_bytes()[x2] {
+                    mismatches.push((x1, y1)); // don't think it matters if we choose 1 or 2
+                }
             }
         }
 
-        // winner winner chicken dinner
-        // println!(
-        //     "did reflect left to right around line between {} {}",
-        //     (r - 1) + 1,
-        //     r + 1
-        // );
+        if mismatches.is_empty() {
+            if horizontal_reflection.is_some() {
+                panic!("multiple horizontal reflections");
+            }
+            horizontal_reflection = Some(r);
+        }
 
-        return Some(r);
+        row_mismatches.push(mismatches);
     }
 
-    None
+    (horizontal_reflection, row_mismatches)
 }
 
-fn reflects_vertically(image: &[&str], height: usize, width: usize) -> Option<usize> {
-    'reflection: for c in 1..width {
-        for r in 0..height {
-            let left = &image[r][0..c];
-            let right = &image[r][c..];
+fn vertical_axis_reflections(
+    image: &[&str],
+    height: usize,
+    width: usize,
+) -> (Option<usize>, Vec<Vec<(usize, usize)>>) {
+    let mut vertical_reflection = None;
+    let mut column_mismatches = vec![];
 
-            let reflects = left.chars().rev().zip(right.chars()).all(|(a, b)| a == b);
-            // println!("{left:?} {right:?} {}", mirreflect);
-            if !reflects {
-                continue 'reflection;
+    for c in 1..width {
+        let mut mismatches = vec![];
+        for r in 0..height {
+            let left = (0..c).map(|c| (c, r));
+            let right = (c..width).map(|c| (c, r));
+
+            let pairs = left.rev().zip(right);
+            for ((x1, y1), (x2, y2)) in pairs {
+                if image[y1].as_bytes()[x1] != image[y2].as_bytes()[x2] {
+                    mismatches.push((x1, y1)); // don't think it matters if we choose 1 or 2
+                }
             }
         }
 
-        // winner winner chicken dinner
-        // println!(
-        //     "did reflect top to bottom around line between {} {}",
-        //     (c - 1) + 1,
-        //     c + 1
-        // );
+        if mismatches.is_empty() {
+            if vertical_reflection.is_some() {
+                panic!("multiple vertical reflections");
+            }
+            vertical_reflection = Some(c);
+        }
 
-        return Some(c);
+        column_mismatches.push(mismatches);
     }
 
-    None
+    (vertical_reflection, column_mismatches)
 }
 
 fn parse(input: &str) -> Vec<Vec<&str>> {
@@ -102,7 +169,7 @@ fn parse(input: &str) -> Vec<Vec<&str>> {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (405, 0));
+    assert_eq!(solve(EXAMPLE), (405, 400));
 }
 
 #[test]
