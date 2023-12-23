@@ -18,73 +18,46 @@ fn solve(input: &str) -> (usize, usize) {
     let mut smudge_sum = 0;
 
     for (i, image) in images.iter().enumerate() {
-        println!("image {i}");
-
         let height = image.len();
         let width = image[0].len();
 
-        // println!("trying vertically");
-        let (vertical, smudges) = vertical_axis_reflections(image, height, width);
-        if let Some(c) = vertical {
-            reflection_sum += c;
-            let vertical_reflections: Vec<_> = smudges
-                .iter()
-                .enumerate()
-                .filter(|(_c, smudges)| smudges.len() == 0)
-                .collect();
-            assert_eq!(vertical_reflections.len(), 1);
-            assert_eq!(vertical_reflections[0].0, c - 1);
-            let (horizontal, row_smudges) = horizontal_axis_reflections(image, height, width);
-            let almost_reflections: Vec<_> = row_smudges
-                .iter()
-                .enumerate()
-                .map(|(r, s)| ((r + 1) * 100, s))
-                .chain(smudges.iter().enumerate().map(|(c, s)| (c + 1, s)))
-                .filter(|(_, smudges)| smudges.len() == 1)
-                .collect();
-            println!(
-                "image {i} flipped vertically, and horizontal smudges: {almost_reflections:?}"
-            );
-            assert_eq!(
-                almost_reflections.len(),
-                1,
-                "did not have almost-reflection"
-            );
-            smudge_sum += almost_reflections[0].0;
+        let (vertical, vertical_reflections) = vertical_axis_reflections(image, height, width);
+        let vertical_reflections = vertical_reflections
+            .iter()
+            .enumerate()
+            .map(|(c, s)| (c + 1, s));
 
-            continue;
-        }
+        let (horizontal, horizontal_reflections) =
+            horizontal_axis_reflections(image, height, width);
+        let horizontal_reflections = horizontal_reflections
+            .iter()
+            .enumerate()
+            .map(|(r, s)| ((r + 1) * 100, s));
 
-        // println!("\ntrying horizontally");
+        let vertical_perfect_reflections: Vec<_> = vertical_reflections
+            .clone()
+            .filter(|(_c, smudges)| smudges.is_empty())
+            .collect();
+        let horizontal_perfect_reflections: Vec<_> = horizontal_reflections
+            .clone()
+            .filter(|(_r, smudges)| smudges.is_empty())
+            .collect();
 
-        let (horizontal, smudges) = horizontal_axis_reflections(image, height, width);
-        if let Some(r) = horizontal {
-            reflection_sum += r * 100;
-            let vertical_reflections: Vec<_> = smudges
-                .iter()
-                .enumerate()
-                .filter(|(_r, smudges)| smudges.len() == 0)
-                .collect();
-            assert_eq!(vertical_reflections.len(), 1);
-            assert_eq!(vertical_reflections[0].0, r - 1);
-            let (vertical, column_smudges) = vertical_axis_reflections(image, height, width);
-            let almost_reflections: Vec<_> = column_smudges
-                .iter()
-                .enumerate()
-                .map(|(c, s)| (c + 1, s))
-                .chain(smudges.iter().enumerate().map(|(r, s)| ((r + 1) * 100, s)))
-                .filter(|(_, smudges)| smudges.len() == 1)
-                .collect();
-            println!("image {i} flipped horizontally, and almost smudges: {almost_reflections:?}");
-            assert_eq!(
-                almost_reflections.len(),
-                1,
-                "did not have almost-reflection"
-            );
-            smudge_sum += almost_reflections[0].0;
+        let [(perfect_reflection, _empty)] = vertical_perfect_reflections
+            .iter()
+            .chain(horizontal_perfect_reflections.iter())
+            .collect::<Vec<_>>()
+            .try_into()
+            .expect("image had no perfect reflection");
+        reflection_sum += perfect_reflection;
 
-            continue;
-        }
+        let [(almost_reflection, _smudge)] = horizontal_reflections
+            .chain(vertical_reflections)
+            .filter(|(_, smudges)| smudges.len() == 1)
+            .collect::<Vec<_>>()
+            .try_into()
+            .expect("couldn't find a single-smudge reflection");
+        smudge_sum += almost_reflection;
     }
 
     (reflection_sum, smudge_sum)
@@ -174,7 +147,7 @@ fn test_example() {
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (35232, 0));
+    assert_eq!(solve(INPUT), (35232, 37982));
 }
 
 // #[bench]
