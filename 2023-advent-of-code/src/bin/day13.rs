@@ -1,4 +1,3 @@
-#![feature(let_chains)]
 // #![feature(test)]
 
 // extern crate test;
@@ -61,6 +60,7 @@ fn horizontal_axis_reflections(
 ) -> Vec<Vec<(usize, usize)>> {
     let mut row_mismatches = vec![];
 
+    // TODO could clean up code duplication here
     for r in 1..height {
         let mut mismatches = vec![];
         for c in 0..width {
@@ -88,6 +88,7 @@ fn vertical_axis_reflections(
 ) -> Vec<Vec<(usize, usize)>> {
     let mut column_mismatches = vec![];
 
+    // TODO could clean up code duplication here
     for c in 1..width {
         let mut mismatches = vec![];
         for r in 0..height {
