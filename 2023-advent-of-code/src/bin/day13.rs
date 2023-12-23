@@ -34,21 +34,13 @@ fn solve(input: &str) -> (usize, usize) {
             .enumerate()
             .map(|(r, s)| ((r + 1) * 100, s));
 
-        let vertical_perfect_reflections: Vec<_> = vertical_reflections
+        let [(perfect_reflection, _empty)] = vertical_reflections
             .clone()
+            .chain(horizontal_reflections.clone())
             .filter(|(_c, smudges)| smudges.is_empty())
-            .collect();
-        let horizontal_perfect_reflections: Vec<_> = horizontal_reflections
-            .clone()
-            .filter(|(_r, smudges)| smudges.is_empty())
-            .collect();
-
-        let [(perfect_reflection, _empty)] = vertical_perfect_reflections
-            .iter()
-            .chain(horizontal_perfect_reflections.iter())
             .collect::<Vec<_>>()
             .try_into()
-            .expect("image had no perfect reflection");
+            .expect("image did not have exactly one perfect reflection");
         reflection_sum += perfect_reflection;
 
         let [(almost_reflection, _smudge)] = horizontal_reflections
@@ -56,7 +48,7 @@ fn solve(input: &str) -> (usize, usize) {
             .filter(|(_, smudges)| smudges.len() == 1)
             .collect::<Vec<_>>()
             .try_into()
-            .expect("couldn't find a single-smudge reflection");
+            .expect("image did not have exactly one single-smudge reflection");
         smudge_sum += almost_reflection;
     }
 
