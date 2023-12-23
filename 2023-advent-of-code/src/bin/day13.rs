@@ -17,18 +17,17 @@ fn solve(input: &str) -> (usize, usize) {
     let mut reflection_sum = 0;
     let mut smudge_sum = 0;
 
-    for (i, image) in images.iter().enumerate() {
+    for image in &images {
         let height = image.len();
         let width = image[0].len();
 
-        let (vertical, vertical_reflections) = vertical_axis_reflections(image, height, width);
+        let vertical_reflections = vertical_axis_reflections(image, height, width);
         let vertical_reflections = vertical_reflections
             .iter()
             .enumerate()
             .map(|(c, s)| (c + 1, s));
 
-        let (horizontal, horizontal_reflections) =
-            horizontal_axis_reflections(image, height, width);
+        let horizontal_reflections = horizontal_axis_reflections(image, height, width);
         let horizontal_reflections = horizontal_reflections
             .iter()
             .enumerate()
@@ -59,8 +58,7 @@ fn horizontal_axis_reflections(
     image: &[&str],
     height: usize,
     width: usize,
-) -> (Option<usize>, Vec<Vec<(usize, usize)>>) {
-    let mut horizontal_reflection = None;
+) -> Vec<Vec<(usize, usize)>> {
     let mut row_mismatches = vec![];
 
     for r in 1..height {
@@ -77,25 +75,17 @@ fn horizontal_axis_reflections(
             }
         }
 
-        if mismatches.is_empty() {
-            if horizontal_reflection.is_some() {
-                panic!("multiple horizontal reflections");
-            }
-            horizontal_reflection = Some(r);
-        }
-
         row_mismatches.push(mismatches);
     }
 
-    (horizontal_reflection, row_mismatches)
+    row_mismatches
 }
 
 fn vertical_axis_reflections(
     image: &[&str],
     height: usize,
     width: usize,
-) -> (Option<usize>, Vec<Vec<(usize, usize)>>) {
-    let mut vertical_reflection = None;
+) -> Vec<Vec<(usize, usize)>> {
     let mut column_mismatches = vec![];
 
     for c in 1..width {
@@ -112,17 +102,10 @@ fn vertical_axis_reflections(
             }
         }
 
-        if mismatches.is_empty() {
-            if vertical_reflection.is_some() {
-                panic!("multiple vertical reflections");
-            }
-            vertical_reflection = Some(c);
-        }
-
         column_mismatches.push(mismatches);
     }
 
-    (vertical_reflection, column_mismatches)
+    column_mismatches
 }
 
 fn parse(input: &str) -> Vec<Vec<&str>> {
