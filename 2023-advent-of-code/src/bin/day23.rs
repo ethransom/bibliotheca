@@ -4,6 +4,9 @@
 
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter};
+use std::thread;
+
+const STACK_SIZE: usize = 4 * 1024 * 1024;
 
 const EXAMPLE: &str = include_str!("example23.txt");
 const INPUT: &str = include_str!("input23.txt");
@@ -25,12 +28,18 @@ fn solve(input: &str) -> (usize, usize) {
     assert_eq!(map.tiles[&start], '.');
     assert_eq!(map.tiles[&end], '.');
 
-    let longest = map.longest_path(&start, &end);
+    // Spawn thread with explicit stack size
+    let longest = thread::Builder::new()
+        .stack_size(STACK_SIZE)
+        .spawn(move || map.longest_path(&start, &end))
+        .expect("couldn't spawn big boi thread")
+        .join()
+        .expect("child thread couldn't compute longest path");
 
     (longest, 0)
 }
 
-#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash, Ord, PartialOrd)]
 struct Point {
     x: usize,
     y: usize,
@@ -95,7 +104,7 @@ impl Map {
 
         neighbors.retain(|n| !visited.contains(n));
 
-        dbg!(pos, &neighbors);
+        // dbg!(pos, &neighbors);
 
         if neighbors.is_empty() {
             return 0;
@@ -168,7 +177,7 @@ fn test_example() {
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (0, 0));
+    assert_eq!(solve(INPUT), (2306, 0));
 }
 
 // #[bench]
