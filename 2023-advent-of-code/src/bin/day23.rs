@@ -6,7 +6,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter};
 use std::thread;
 
-const STACK_SIZE: usize = 4 * 1024 * 1024;
+const STACK_SIZE: usize = 8 * 1024 * 1024;
 
 const EXAMPLE: &str = include_str!("example23.txt");
 const INPUT: &str = include_str!("input23.txt");
@@ -29,14 +29,19 @@ fn solve(input: &str) -> (usize, usize) {
     assert_eq!(map.tiles[&end], '.');
 
     // Spawn thread with explicit stack size
-    let longest = thread::Builder::new()
+    thread::Builder::new()
         .stack_size(STACK_SIZE)
-        .spawn(move || map.longest_path(&start, &end))
+        .spawn(move || {
+            (
+                map.longest_path(&start, &end, false)
+                    .expect("no longest downhill path"),
+                map.longest_path(&start, &end, true)
+                    .expect("no longest uphill/downhill path"),
+            )
+        })
         .expect("couldn't spawn big boi thread")
         .join()
-        .expect("child thread couldn't compute longest path");
-
-    (longest, 0)
+        .expect("child thread couldn't compute longest path")
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Hash, Ord, PartialOrd)]
@@ -53,13 +58,23 @@ struct Map {
 }
 
 impl Map {
-    fn longest_path(&self, start: &Point, end: &Point) -> usize {
-        dbg!(self.longest_path_2(&mut Default::default(), start, end))
+    fn longest_path(&self, start: &Point, end: &Point, allow_uphill: bool) -> Option<usize> {
+        dbg!(self.longest_path_2(&mut Default::default(), start, end, allow_uphill))
     }
-    fn longest_path_2(&self, visited: &mut HashSet<Point>, start: &Point, end: &Point) -> usize {
+    fn longest_path_2(
+        &self,
+        visited: &mut HashSet<Point>,
+        start: &Point,
+        end: &Point,
+        allow_uphill: bool,
+    ) -> Option<usize> {
         let pos = start;
 
         visited.insert(*pos);
+
+        if pos == end {
+            return Some(0);
+        }
 
         let mut neighbors = vec![];
         // UP
@@ -70,7 +85,10 @@ impl Map {
                 y: pos.y - 1,
             };
             let v = self.tiles.get(&n).unwrap_or(&'#');
-            if v == &'.' || v == &'^' {
+            if v == &'.'
+                || v == &'^'
+                || (allow_uphill && (v == &'^' || v == &'>' || v == &'v' || v == &'<'))
+            {
                 neighbors.push(n);
             }
         }
@@ -80,7 +98,10 @@ impl Map {
             y: pos.y,
         };
         let v = self.tiles.get(&n).unwrap_or(&'#');
-        if v == &'.' || v == &'>' {
+        if v == &'.'
+            || v == &'>'
+            || (allow_uphill && (v == &'^' || v == &'>' || v == &'v' || v == &'<'))
+        {
             neighbors.push(n);
         }
         // DOWN
@@ -89,7 +110,10 @@ impl Map {
             y: pos.y + 1,
         };
         let v = self.tiles.get(&n).unwrap_or(&'#');
-        if v == &'.' || v == &'v' {
+        if v == &'.'
+            || v == &'v'
+            || (allow_uphill && (v == &'^' || v == &'>' || v == &'v' || v == &'<'))
+        {
             neighbors.push(n);
         }
         // LEFT
@@ -98,7 +122,10 @@ impl Map {
             y: pos.y,
         };
         let v = self.tiles.get(&n).unwrap_or(&'#');
-        if v == &'.' || v == &'<' {
+        if v == &'.'
+            || v == &'<'
+            || (allow_uphill && (v == &'^' || v == &'>' || v == &'v' || v == &'<'))
+        {
             neighbors.push(n);
         }
 
@@ -107,18 +134,22 @@ impl Map {
         // dbg!(pos, &neighbors);
 
         if neighbors.is_empty() {
-            return 0;
+            return None;
         }
 
         if neighbors.len() > 1 {
             return neighbors
                 .iter()
-                .map(|neighbor| self.longest_path_2(&mut visited.clone(), neighbor, end) + 1)
+                .map(|neighbor| {
+                    self.longest_path_2(&mut visited.clone(), neighbor, end, allow_uphill)
+                        .map(|d| d + 1)
+                })
                 .max()
                 .unwrap();
         }
 
-        self.longest_path_2(visited, &neighbors[0], end) + 1
+        self.longest_path_2(visited, &neighbors[0], end, allow_uphill)
+            .map(|d| d + 1)
     }
 }
 
@@ -172,7 +203,7 @@ fn test_parse_display() {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (94, 0));
+    assert_eq!(solve(EXAMPLE), (94, 154));
 }
 
 #[test]
