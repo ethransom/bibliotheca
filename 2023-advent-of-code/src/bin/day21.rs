@@ -16,6 +16,8 @@ fn main() {
 fn solve(input: &str) -> (usize, usize) {
     let map = parse(input);
 
+    println!("{:?}", map);
+
     (0, 0)
 }
 
@@ -27,26 +29,30 @@ struct Point {
 
 struct Map {
     tiles: HashMap<Point, char>,
+    start: Point,
     height: usize,
     width: usize,
 }
 
 fn parse(input: &str) -> Map {
-    let tiles: HashMap<_, _> = input
-        .lines()
-        .enumerate()
-        .flat_map(|(y, line)| {
-            line.chars().enumerate().map(move |(x, char)| {
-                (
-                    Point {
-                        x: x as isize,
-                        y: y as isize,
-                    },
-                    char,
-                )
-            })
-        })
-        .collect();
+    let mut start = None;
+    let mut tiles = HashMap::new();
+
+    for (y, line) in input.lines().enumerate() {
+        for (x, mut char) in line.chars().enumerate() {
+            let point = Point {
+                x: x as isize,
+                y: y as isize,
+            };
+            if char == 'S' {
+                start = Some(point);
+                char = '.'
+            }
+            tiles.insert(point, char);
+        }
+    }
+
+    let start = start.expect("map did not have start marked");
 
     let (max_x, max_y) = tiles
         .iter()
@@ -60,6 +66,8 @@ fn parse(input: &str) -> Map {
         tiles,
         width,
 
+        start,
+
         height,
     }
 }
@@ -71,14 +79,16 @@ impl Debug for Map {
                 writeln!(f)?;
             }
             for x in 0..self.width {
-                write!(
-                    f,
-                    "{}",
-                    self.tiles[&Point {
-                        x: x as isize,
-                        y: y as isize
-                    }]
-                )?;
+                let point = Point {
+                    x: x as isize,
+                    y: y as isize,
+                };
+                let c = if self.start == point {
+                    'S'
+                } else {
+                    self.tiles[&point]
+                };
+                write!(f, "{}", c)?;
             }
         }
 
