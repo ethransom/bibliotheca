@@ -14,19 +14,23 @@ fn main() {
 fn solve(input: &str) -> (usize, usize) {
     let mut hands = parse(input);
 
-    // one word per hand! incredible. what could go wrong?! certainly not u16
-    // dbg!(std::mem::size_of::<([u8; 5], u16)>()); => 8
+    sort_hands(&mut hands, false);
 
-    sort_hands(&mut hands);
+    let winnings = hands
+        .iter()
+        .enumerate()
+        .map(|(i, (_cards, bid))| (i + 1) * *bid as usize)
+        .sum();
 
-    (
-        hands
-            .iter()
-            .enumerate()
-            .map(|(i, (_cards, bid))| (i + 1) * *bid as usize)
-            .sum(),
-        0,
-    )
+    sort_hands(&mut hands, true);
+
+    let joker_rule_winnings = hands
+        .iter()
+        .enumerate()
+        .map(|(i, (_cards, bid))| (i + 1) * *bid as usize)
+        .sum();
+
+    (winnings, joker_rule_winnings)
 }
 
 use Card::*;
@@ -87,21 +91,88 @@ impl From<u8> for Card {
     }
 }
 
-fn sort_hands(hands: &mut [([Card; 5], u16)]) {
-    hands.sort_by_key(|(cards, _bid)| {
-        (
-            hand_type(cards),
-            cards[0],
-            cards[1],
-            cards[2],
-            cards[3],
-            cards[4],
-        )
-    });
+fn sort_hands(hands: &mut [([Card; 5], u16)], joker_rule: bool) {
+    if joker_rule {
+        hands.sort_by_cached_key(|(cards, _bid)| {
+            let all_hands = all_joker_hands(cards);
+            let best_hand_type = all_hands.iter().map(|hand| hand_type(hand)).max().unwrap();
+            fn joker_sort_order(card: Card) -> u8 {
+                match card {
+                    Jack => 0,
+                    Two => 1,
+                    Three => 2,
+                    Four => 3,
+                    Five => 4,
+                    Six => 5,
+                    Seven => 6,
+                    Eight => 7,
+                    Nine => 8,
+                    Ten => 9,
+                    Queen => 10,
+                    King => 11,
+                    Ace => 12,
+                }
+            }
+            (
+                best_hand_type,
+                joker_sort_order(cards[0]),
+                joker_sort_order(cards[1]),
+                joker_sort_order(cards[2]),
+                joker_sort_order(cards[3]),
+                joker_sort_order(cards[4]),
+            )
+        });
+    } else {
+        hands.sort_by_key(|(cards, _bid)| {
+            (
+                hand_type(cards),
+                cards[0],
+                cards[1],
+                cards[2],
+                cards[3],
+                cards[4],
+            )
+        });
+    }
 }
 
-fn hand_type(cards: &[Card; 5]) -> Type {
-    let mut cards = *cards;
+fn all_joker_hands(cards: &[Card; 5]) -> Vec<Vec<Card>> {
+    let mut all_hands: Vec<Vec<Card>> = vec![];
+    for i in 0..cards.len() {
+        let mut next = vec![];
+        if cards[i] == Jack {
+            for card in [
+                Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Queen, King, Ace,
+            ] {
+                if all_hands.is_empty() {
+                    next.push(vec![card]);
+                } else {
+                    for hand in all_hands.iter() {
+                        let mut hand = hand.clone();
+                        hand.push(card);
+                        next.push(hand);
+                    }
+                }
+            }
+        } else {
+            #[warn(clippy::collapsible_else_if)]
+            if all_hands.is_empty() {
+                next.push(vec![cards[i]]);
+            } else {
+                for hand in all_hands.iter() {
+                    let mut hand = hand.clone();
+                    hand.push(cards[i]);
+                    next.push(hand);
+                }
+            }
+        }
+        all_hands = next;
+    }
+    all_hands
+}
+
+fn hand_type(cards: &[Card]) -> Type {
+    let mut cards = cards.to_vec();
     cards.sort();
     let mut groups: Vec<usize> = cards.group_by(Card::eq).map(|group| group.len()).collect();
     groups.sort_by(|a, b| b.cmp(a)); // descending order
@@ -118,6 +189,8 @@ fn hand_type(cards: &[Card; 5]) -> Type {
     }
 }
 
+// one word per hand! incredible. what could go wrong?! certainly not u16
+// dbg!(std::mem::size_of::<([u8; 5], u16)>()); => 8
 fn parse(input: &str) -> Vec<([Card; 5], u16)> {
     input
         .lines()
@@ -155,13 +228,13 @@ fn test_sort_hands_same_type() {
     );
 
     let mut hands = parse("KK677 1\nKTJJT 1");
-    sort_hands(&mut hands);
+    sort_hands(&mut hands, false);
     assert_eq!(hands, parse("KTJJT 1\nKK677 1"));
 
     // T55J5 and QQQJA are both three of a kind. QQQJA has a stronger first
     // card, so it gets rank 5 and T55J5 gets rank 4.
     let mut hands = parse("T55J5 1\nQQQJA 1");
-    sort_hands(&mut hands);
+    sort_hands(&mut hands, false);
     assert_eq!(hands, parse("T55J5 1\nQQQJA 1"));
 }
 
@@ -186,21 +259,28 @@ fn test_hand_type() {
 #[test]
 fn test_sort_hands() {
     let mut hands = parse("32T3K 765\nT55J5 684\nKK677 28\nKTJJT 220\nQQQJA 483\n");
-    sort_hands(&mut hands);
+
+    sort_hands(&mut hands, false);
     assert_eq!(
         hands,
         parse("32T3K 765\nKTJJT 220\nKK677 28\nT55J5 684\nQQQJA 483\n")
+    );
+
+    sort_hands(&mut hands, true);
+    assert_eq!(
+        hands,
+        parse("32T3K 765\nKK677 28\nT55J5 684\nQQQJA 483\nKTJJT 220\n")
     );
 }
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (6440, 0));
+    assert_eq!(solve(EXAMPLE), (6440, 5905));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (252052080, 0));
+    assert_eq!(solve(INPUT), (252052080, 252898370));
 }
 
 // #[bench]
