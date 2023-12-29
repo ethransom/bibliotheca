@@ -13,21 +13,39 @@ fn main() {
 fn solve(input: &str) -> (usize, usize) {
     let races = parse(input);
 
+    dbg!(&races);
+
     let ways_to_win_product = races
         .iter()
-        .map(|(time, distance)| {
-            let mut count = 0;
-            for t in 0..=*time {
-                let alt_distance = (time - t) * t;
-                if alt_distance > *distance {
-                    count += 1;
-                }
-            }
-            count
-        })
+        .map(|(time, distance)| ways_to_win(time, distance))
         .product();
 
-    (ways_to_win_product, 0)
+    let races = races
+        .into_iter()
+        .reduce(|(time, distance), (t, d)| {
+            (
+                time * 10usize.pow(t.to_string().len() as u32) + t,
+                distance * 10usize.pow(d.to_string().len() as u32) + d,
+            )
+        })
+        .unwrap();
+
+    dbg!(&races);
+
+    let full_ways_to_win = ways_to_win(&races.0, &races.1);
+
+    (ways_to_win_product, full_ways_to_win)
+}
+
+fn ways_to_win(time: &usize, distance: &usize) -> usize {
+    let mut count = 0;
+    for t in 0..=*time {
+        let alt_distance = (time - t) * t;
+        if alt_distance > *distance {
+            count += 1;
+        }
+    }
+    count
 }
 
 fn parse(input: &str) -> Vec<(usize, usize)> {
@@ -47,12 +65,12 @@ fn parse(input: &str) -> Vec<(usize, usize)> {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (288, 0));
+    assert_eq!(solve(EXAMPLE), (288, 71503));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (293046, 0));
+    assert_eq!(solve(INPUT), (293046, 35150181));
 }
 
 // #[bench]
