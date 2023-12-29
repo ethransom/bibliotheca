@@ -2,7 +2,6 @@
 
 // extern crate test;
 
-use itertools::Itertools;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 const EXAMPLE: &str = include_str!("example20.txt");
@@ -17,7 +16,7 @@ fn main() {
 
 #[derive(Eq, PartialEq, Debug)]
 enum ModuleType<'a> {
-    Output,
+    Output { activated_on: Option<usize> },
     Broadcaster,
     FlipFlop { state: bool },
     Conjunction { memory: HashMap<&'a str, bool> }, // conjunction function, what's your compunction
@@ -45,60 +44,98 @@ fn solve(input: &str, presses: usize) -> (usize, usize) {
 
     let [mut high_pulses, mut low_pulses] = [0; 2];
 
-    for press in 0..presses {
-        if press != 0 {
+    for press in 1..=presses {
+        if press != 1 {
             // println!();
         }
-        let mut queue = VecDeque::<(&str, bool, &str)>::new();
-        queue.push_back(("broadcaster", false, "button"));
-        while let Some((name, pulse, from)) = queue.pop_front() {
-            if pulse {
-                high_pulses += 1;
-            } else {
-                low_pulses += 1;
+        handle_press(&mut modules, press, &mut high_pulses, &mut low_pulses);
+    }
+
+    let mut min_for_output = 0;
+    for press in (presses + 1).. {
+        if press % 10_000 == 0 {
+            println!("{press}");
+        }
+        if let Some(output_module) = modules.get("rx") {
+            if let ModuleType::Output {
+                activated_on: Some(activated_on),
+            } = output_module.kind
+            {
+                min_for_output = activated_on;
+                break;
             }
-            // println!(
-            //     "{from} {pulse}-> {name}",
-            //     pulse = if pulse { "-high" } else { "-low" }
-            // );
-            let module = modules.get_mut(name).unwrap();
-            match module.kind {
-                ModuleType::Output => {}
-                ModuleType::Broadcaster => {
-                    // When it receives a pulse, it sends the same pulse to all of its destination modules.
-                    for dest in &module.destinations {
-                        queue.push_back((dest, pulse, name));
-                    }
+        } else {
+            break;
+        }
+        handle_press(&mut modules, press, &mut high_pulses, &mut low_pulses);
+    }
+
+    (high_pulses * low_pulses, min_for_output)
+}
+
+fn handle_press(
+    modules: &mut HashMap<&str, Module>,
+    press: usize,
+    high_pulses: &mut usize,
+    low_pulses: &mut usize,
+) {
+    let mut queue = VecDeque::<(&str, bool, &str)>::new();
+    queue.push_back(("broadcaster", false, "button"));
+    while let Some((name, pulse, from)) = queue.pop_front() {
+        if pulse {
+            *high_pulses += 1;
+        } else {
+            *low_pulses += 1;
+        }
+        // println!(
+        //     "{from} {pulse}-> {name}",
+        //     pulse = if pulse { "-high" } else { "-low" }
+        // );
+        let module = modules.get_mut(name).unwrap();
+        match module.kind {
+            ModuleType::Output {
+                ref mut activated_on,
+            } => {
+                // println!(
+                //     "{name} (Output) received {pulse}",
+                //     pulse = if pulse { "-high" } else { "-low" }
+                // );
+                if !pulse {
+                    *activated_on = Some(press);
                 }
-                ModuleType::Conjunction { ref mut memory } => {
-                    // remember the type of the most recent pulse received from each of their connected input
-                    // modules; they initially default to remembering a low pulse for each input. When a pulse
-                    // is received, the conjunction module first updates its memory for that input. Then, if it
-                    // remembers high pulses for all inputs, it sends a low pulse; otherwise, it sends a high pulse.
-                    memory.insert(from, pulse);
-                    // println!("\tmemory: {memory:?}");
-                    let out = !memory.values().all(|&v| v);
-                    for dest in &module.destinations {
-                        queue.push_back((dest, out, name));
-                    }
+            }
+            ModuleType::Broadcaster => {
+                // When it receives a pulse, it sends the same pulse to all of its destination modules.
+                for dest in &module.destinations {
+                    queue.push_back((dest, pulse, name));
                 }
-                ModuleType::FlipFlop { ref mut state } => {
-                    // are either on or off; they are initially off. If a flip-flop module receives a high pulse,
-                    // it is ignored and nothing happens. However, if a flip-flop module receives a low pulse, it
-                    // flips between on and off. If it was off, it turns on and sends a high pulse. If it was on,
-                    // it turns off and sends a low pulse.
-                    if !pulse {
-                        *state = !*state;
-                        for dest in &module.destinations {
-                            queue.push_back((dest, *state, name));
-                        }
+            }
+            ModuleType::Conjunction { ref mut memory } => {
+                // remember the type of the most recent pulse received from each of their connected input
+                // modules; they initially default to remembering a low pulse for each input. When a pulse
+                // is received, the conjunction module first updates its memory for that input. Then, if it
+                // remembers high pulses for all inputs, it sends a low pulse; otherwise, it sends a high pulse.
+                memory.insert(from, pulse);
+                // println!("\tmemory: {memory:?}");
+                let out = !memory.values().all(|&v| v);
+                for dest in &module.destinations {
+                    queue.push_back((dest, out, name));
+                }
+            }
+            ModuleType::FlipFlop { ref mut state } => {
+                // are either on or off; they are initially off. If a flip-flop module receives a high pulse,
+                // it is ignored and nothing happens. However, if a flip-flop module receives a low pulse, it
+                // flips between on and off. If it was off, it turns on and sends a high pulse. If it was on,
+                // it turns off and sends a low pulse.
+                if !pulse {
+                    *state = !*state;
+                    for dest in &module.destinations {
+                        queue.push_back((dest, *state, name));
                     }
                 }
             }
         }
     }
-
-    (high_pulses * low_pulses, 0)
 }
 
 fn parse(input: &str) -> HashMap<&str, Module> {
@@ -145,7 +182,7 @@ fn parse(input: &str) -> HashMap<&str, Module> {
         modules.insert(
             i,
             Module {
-                kind: ModuleType::Output,
+                kind: ModuleType::Output { activated_on: None },
                 destinations: Default::default(),
             },
         );
