@@ -1,7 +1,7 @@
 #![feature(slice_group_by)]
-// #![feature(test)]
+#![feature(test)]
 
-// extern crate test;
+extern crate test;
 
 const EXAMPLE: &str = include_str!("example07.txt");
 const INPUT: &str = include_str!("input07.txt");
@@ -123,7 +123,7 @@ fn sort_hands(hands: &mut [([Card; 5], u16)], joker_rule: bool) {
             )
         });
     } else {
-        hands.sort_by_key(|(cards, _bid)| {
+        hands.sort_by_cached_key(|(cards, _bid)| {
             (
                 hand_type(cards),
                 cards[0],
@@ -283,9 +283,7 @@ fn test_input() {
     assert_eq!(solve(INPUT), (252052080, 252898370));
 }
 
-// #[bench]
-// fn bench_solve_current(b: &mut test::Bencher) {
-//     b.iter(|| {
-//         assert_eq!(solve(INPUT), (0, 0));
-//     });
-// }
+#[bench]
+fn bench_solve_current(b: &mut test::Bencher) {
+    b.iter(test_input);
+}
