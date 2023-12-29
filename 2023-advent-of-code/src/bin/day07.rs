@@ -140,28 +140,20 @@ fn all_joker_hands(cards: &[Card; 5]) -> Vec<Vec<Card>> {
     let mut all_hands: Vec<Vec<Card>> = vec![];
     for i in 0..cards.len() {
         let mut next = vec![];
-        if cards[i] == Jack {
-            for card in [
+        let possibilities: &[Card] = if cards[i] == Jack {
+            &[
                 Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Queen, King, Ace,
-            ] {
-                if all_hands.is_empty() {
-                    next.push(vec![card]);
-                } else {
-                    for hand in all_hands.iter() {
-                        let mut hand = hand.clone();
-                        hand.push(card);
-                        next.push(hand);
-                    }
-                }
-            }
+            ]
         } else {
-            #[warn(clippy::collapsible_else_if)]
+            &cards[i..=i]
+        };
+        for &card in possibilities {
             if all_hands.is_empty() {
-                next.push(vec![cards[i]]);
+                next.push(vec![card]);
             } else {
                 for hand in all_hands.iter() {
                     let mut hand = hand.clone();
-                    hand.push(cards[i]);
+                    hand.push(card);
                     next.push(hand);
                 }
             }
