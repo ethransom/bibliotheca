@@ -94,8 +94,7 @@ impl From<u8> for Card {
 fn sort_hands(hands: &mut [([Card; 5], u16)], joker_rule: bool) {
     if joker_rule {
         hands.sort_by_cached_key(|(cards, _bid)| {
-            let all_hands = all_joker_hands(cards);
-            let best_hand_type = all_hands.iter().map(|hand| hand_type(hand)).max().unwrap();
+            let best_hand_type = best_joker_hand(cards);
             fn joker_sort_order(card: Card) -> u8 {
                 match card {
                     Jack => 0,
@@ -136,31 +135,51 @@ fn sort_hands(hands: &mut [([Card; 5], u16)], joker_rule: bool) {
     }
 }
 
-fn all_joker_hands(cards: &[Card; 5]) -> Vec<Vec<Card>> {
-    let mut all_hands: Vec<Vec<Card>> = vec![];
-    for i in 0..cards.len() {
-        let mut next = vec![];
-        let possibilities: &[Card] = if cards[i] == Jack {
-            &[
-                Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Queen, King, Ace,
-            ]
+const NON_JOKERS: [Card; 12] = [
+    Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Queen, King, Ace,
+];
+
+fn best_joker_hand(cards: &[Card]) -> Type {
+    let mut best_hand = None;
+    for &card0 in if cards[0] == Jack {
+        &NON_JOKERS
+    } else {
+        &cards[0..=0]
+    } {
+        for &card1 in if cards[1] == Jack {
+            &NON_JOKERS
         } else {
-            &cards[i..=i]
-        };
-        for &card in possibilities {
-            if all_hands.is_empty() {
-                next.push(vec![card]);
+            &cards[1..=1]
+        } {
+            for &card2 in if cards[2] == Jack {
+                &NON_JOKERS
             } else {
-                for hand in all_hands.iter() {
-                    let mut hand = hand.clone();
-                    hand.push(card);
-                    next.push(hand);
+                &cards[2..=2]
+            } {
+                for &card3 in if cards[3] == Jack {
+                    &NON_JOKERS
+                } else {
+                    &cards[3..=3]
+                } {
+                    for &card4 in if cards[4] == Jack {
+                        &NON_JOKERS
+                    } else {
+                        &cards[4..=4]
+                    } {
+                        let t = hand_type(&[card0, card1, card2, card3, card4]);
+                        if let Some(best_hand) = best_hand {
+                            if best_hand > t {
+                                continue;
+                            }
+                        }
+                        best_hand = Some(t);
+                    }
                 }
             }
         }
-        all_hands = next;
     }
-    all_hands
+
+    best_hand.unwrap()
 }
 
 fn hand_type(cards: &[Card]) -> Type {
