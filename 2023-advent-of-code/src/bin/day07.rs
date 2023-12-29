@@ -87,7 +87,7 @@ impl From<u8> for Card {
     }
 }
 
-fn sort_hands(hands: &mut Vec<([Card; 5], u16)>) {
+fn sort_hands(hands: &mut [([Card; 5], u16)]) {
     hands.sort_by_key(|(cards, _bid)| {
         (
             hand_type(cards),
@@ -101,7 +101,7 @@ fn sort_hands(hands: &mut Vec<([Card; 5], u16)>) {
 }
 
 fn hand_type(cards: &[Card; 5]) -> Type {
-    let mut cards = cards.clone();
+    let mut cards = *cards;
     cards.sort();
     let mut groups: Vec<usize> = cards.group_by(Card::eq).map(|group| group.len()).collect();
     groups.sort_by(|a, b| b.cmp(a)); // descending order
