@@ -20,10 +20,12 @@ fn solve(input: &str) -> (usize, usize) {
     sort_hands(&mut hands);
 
     (
-        hands.iter().enumerate().map(|(i, (_cards, bid))| {
-            (i + 1) * *bid as usize
-        }).sum(),
-        0
+        hands
+            .iter()
+            .enumerate()
+            .map(|(i, (_cards, bid))| (i + 1) * *bid as usize)
+            .sum(),
+        0,
     )
 }
 
@@ -87,7 +89,14 @@ impl From<u8> for Card {
 
 fn sort_hands(hands: &mut Vec<([Card; 5], u16)>) {
     hands.sort_by_key(|(cards, _bid)| {
-        (hand_type(cards), cards[0], cards[1], cards[2], cards[3], cards[4])
+        (
+            hand_type(cards),
+            cards[0],
+            cards[1],
+            cards[2],
+            cards[3],
+            cards[4],
+        )
     });
 }
 
@@ -110,13 +119,16 @@ fn hand_type(cards: &[Card; 5]) -> Type {
 }
 
 fn parse(input: &str) -> Vec<([Card; 5], u16)> {
-    input.lines().map(|line| {
-        let (cards, bid) = line.split_once(' ').unwrap();
+    input
+        .lines()
+        .map(|line| {
+            let (cards, bid) = line.split_once(' ').unwrap();
 
-        let cards: [u8; 5] = cards.as_bytes().try_into().unwrap();
+            let cards: [u8; 5] = cards.as_bytes().try_into().unwrap();
 
-        (cards.map(Card::from), bid.parse().unwrap())
-    }).collect()
+            (cards.map(Card::from), bid.parse().unwrap())
+        })
+        .collect()
 }
 
 #[test]
@@ -129,17 +141,22 @@ fn test_sort_hands_same_type() {
         (King, Ten, Jack, Jack, Ten),
     ];
     vec.sort();
-    assert_eq!(vec, vec![
-        (King, Ten, Jack, Jack, Ten),
-        (King, King, Six, Seven, Seven),
-    ]);
+    assert_eq!(
+        vec,
+        vec![
+            (King, Ten, Jack, Jack, Ten),
+            (King, King, Six, Seven, Seven),
+        ]
+    );
 
-    assert_eq!((King, King, Six, Seven, Seven).cmp(&(King, Ten, Jack, Jack, Ten)), std::cmp::Ordering::Greater);
+    assert_eq!(
+        (King, King, Six, Seven, Seven).cmp(&(King, Ten, Jack, Jack, Ten)),
+        std::cmp::Ordering::Greater
+    );
 
     let mut hands = parse("KK677 1\nKTJJT 1");
     sort_hands(&mut hands);
     assert_eq!(hands, parse("KTJJT 1\nKK677 1"));
-
 
     // T55J5 and QQQJA are both three of a kind. QQQJA has a stronger first
     // card, so it gets rank 5 and T55J5 gets rank 4.
@@ -168,10 +185,12 @@ fn test_hand_type() {
 
 #[test]
 fn test_sort_hands() {
-    let mut hands =
-        parse("32T3K 765\nT55J5 684\nKK677 28\nKTJJT 220\nQQQJA 483\n");
+    let mut hands = parse("32T3K 765\nT55J5 684\nKK677 28\nKTJJT 220\nQQQJA 483\n");
     sort_hands(&mut hands);
-    assert_eq!(hands, parse("32T3K 765\nKTJJT 220\nKK677 28\nT55J5 684\nQQQJA 483\n"));
+    assert_eq!(
+        hands,
+        parse("32T3K 765\nKTJJT 220\nKK677 28\nT55J5 684\nQQQJA 483\n")
+    );
 }
 
 #[test]
