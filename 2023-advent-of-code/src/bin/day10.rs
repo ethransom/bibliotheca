@@ -36,10 +36,13 @@ fn solve(input: &str) -> (i64, i64) {
 
     println!("nodes reachable: {}", visited.len());
 
-    let (all_nodes, loop_nodes) = (
-        map.serialize_fancy(),
-        map.serialize_fancy_only_main_loop(&visited),
-    );
+    let mut main_loop_map = map.clone();
+
+    main_loop_map
+        .edges
+        .retain(|e| visited.contains_key(&e.0) && visited.contains_key(&e.1));
+
+    let (all_nodes, loop_nodes) = (map.serialize_fancy(), main_loop_map.serialize_fancy());
 
     all_nodes
         .lines()
@@ -137,49 +140,6 @@ impl Map {
                 let pos = (x, y);
                 if self.start == pos {
                     buf.push('S');
-                } else {
-                    match self.directions(pos) {
-                        // | is a vertical pipe connecting north and south.
-                        [true, false, true, false] => buf.push('┃'),
-                        // - is a horizontal pipe connecting east and west.
-                        [false, true, false, true] => buf.push('━'),
-                        // L is a 90-degree bend connecting north and east.
-                        [true, true, false, false] => buf.push('┗'),
-                        // J is a 90-degree bend connecting north and west.
-                        [true, false, false, true] => buf.push('┛'),
-                        // 7 is a 90-degree bend connecting south and west.
-                        [false, false, true, true] => buf.push('┓'),
-                        // F is a 90-degree bend connecting south and east.
-                        [false, true, true, false] => buf.push('┏'),
-                        // . is ground; there is no pipe in this tile.
-                        [false, false, false, false] => buf.push(' '),
-
-                        _ => panic!("unknown neighbors: {:?}", self.directions(pos)),
-                    }
-                }
-            }
-        }
-
-        buf
-    }
-
-    fn serialize_fancy_only_main_loop(
-        &self,
-        main_loop: &std::collections::HashMap<(i64, i64), i64>,
-    ) -> String {
-        let mut buf = String::new();
-
-        let ((x_min, x_max), (y_min, y_max)) = self.bounds;
-        for y in y_min..=y_max {
-            if y != 0 {
-                buf.push('\n');
-            }
-            for x in x_min..=x_max {
-                let pos = (x, y);
-                if self.start == pos {
-                    buf.push('S');
-                } else if !main_loop.contains_key(&pos) {
-                    buf.push(' ');
                 } else {
                     match self.directions(pos) {
                         // | is a vertical pipe connecting north and south.
