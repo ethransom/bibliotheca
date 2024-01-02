@@ -36,13 +36,15 @@ fn solve(input: &str) -> (i64, i64) {
 
     println!("nodes reachable: {}", visited.len());
 
-    let mut main_loop_map = map.clone();
+    let main_loop_map = {
+        let mut main_loop_map = map.clone();
+        main_loop_map
+            .edges
+            .retain(|e| visited.contains_key(&e.0) && visited.contains_key(&e.1));
+        main_loop_map
+    };
 
-    main_loop_map
-        .edges
-        .retain(|e| visited.contains_key(&e.0) && visited.contains_key(&e.1));
-
-    let (all_nodes, loop_nodes) = (map.serialize_fancy(), main_loop_map.serialize_fancy());
+    let [all_nodes, loop_nodes] = [&map, &main_loop_map].map(|m| m.serialize_fancy());
 
     all_nodes
         .lines()
@@ -53,7 +55,87 @@ fn solve(input: &str) -> (i64, i64) {
 
     let &max = visited.values().max().expect("no pipes reachable");
 
-    (max, 0)
+    // PART 2
+    let main_loop: HashSet<(i64, i64)> = visited.into_keys().collect();
+
+    println!("BOUNDS: {:?}", main_loop_map.bounds);
+
+    // BFS part two, although DFS would probably also work fine
+    let mut queue = VecDeque::new();
+    queue.push_back(map.start);
+    let mut visited = main_loop.clone();
+    let mut interiors = vec![];
+
+    for pos in &main_loop {
+        let neighbors = [
+            (pos.0, pos.1 - 1), // never
+            (pos.0 + 1, pos.1), // eat
+            (pos.0, pos.1 + 1), // soggy
+            (pos.0 - 1, pos.1), // waffles
+        ];
+        for neighbor in neighbors {
+            if !map.in_bounds(neighbor) {
+                continue;
+            }
+            if visited.contains(&neighbor) {
+                continue;
+            }
+
+            // 'flood'
+            let mut outside = false;
+            let mut seen = HashSet::new();
+            seen.insert(neighbor);
+            let mut queue = VecDeque::new();
+            queue.push_back(neighbor);
+
+            while let Some(pos) = queue.pop_front() {
+                let neighbors = [
+                    (pos.0, pos.1 - 1), // never
+                    (pos.0 + 1, pos.1), // eat
+                    (pos.0, pos.1 + 1), // soggy
+                    (pos.0 - 1, pos.1), // waffles
+                ];
+                for neighbor in neighbors {
+                    if !map.in_bounds(neighbor) {
+                        outside = true;
+                        continue;
+                    }
+                    if visited.contains(&neighbor) {
+                        continue;
+                    }
+                    if !seen.insert(neighbor) {
+                        continue;
+                    }
+                    queue.push_back(neighbor);
+                }
+            }
+
+            visited.extend(&seen);
+            if !outside {
+                interiors.push(seen);
+            }
+        }
+    }
+
+    let inside = interiors.iter().map(|i| i.len()).sum::<usize>();
+    println!("nodes on inside: {:?}", inside);
+
+    println!(
+        "{}",
+        main_loop_map.serialize_inside_fancy(
+            &visited,
+            &main_loop,
+            &interiors
+                .into_iter()
+                .reduce(|mut a, b| {
+                    a.extend(b);
+                    a
+                })
+                .unwrap()
+        )
+    );
+
+    (max, inside as i64)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -64,6 +146,14 @@ struct Map {
 }
 
 impl Map {
+    fn in_bounds(&self, (x, y): (i64, i64)) -> bool {
+        let ((x_min, x_max), (y_min, y_max)) = self.bounds;
+
+        // dbg!((x, y));
+
+        x >= x_min && x <= x_max && y >= y_min && y <= y_max
+    }
+
     fn neighbors(&self, pos: (i64, i64)) -> Vec<(i64, i64)> {
         [
             (pos.0, pos.1 - 1), // never
@@ -139,6 +229,56 @@ impl Map {
             for x in x_min..=x_max {
                 let pos = (x, y);
                 let c = if self.start == pos {
+                    'S'
+                } else {
+                    match self.directions(pos) {
+                        // | is a vertical pipe connecting north and south.
+                        [true, false, true, false] => '┃',
+                        // - is a horizontal pipe connecting east and west.
+                        [false, true, false, true] => '━',
+                        // L is a 90-degree bend connecting north and east.
+                        [true, true, false, false] => '┗',
+                        // J is a 90-degree bend connecting north and west.
+                        [true, false, false, true] => '┛',
+                        // 7 is a 90-degree bend connecting south and west.
+                        [false, false, true, true] => '┓',
+                        // F is a 90-degree bend connecting south and east.
+                        [false, true, true, false] => '┏',
+                        // . is ground; there is no pipe in this tile.
+                        [false, false, false, false] => ' ',
+
+                        _ => panic!("unknown neighbors: {:?}", self.directions(pos)),
+                    }
+                };
+                buf.push(c);
+            }
+        }
+
+        buf
+    }
+
+    fn serialize_inside_fancy(
+        &self,
+        outside: &HashSet<(i64, i64)>,
+        main_loop: &HashSet<(i64, i64)>,
+        interiors: &HashSet<(i64, i64)>,
+    ) -> String {
+        let mut buf = String::new();
+
+        let ((x_min, x_max), (y_min, y_max)) = self.bounds;
+        for y in y_min..=y_max {
+            if y != 0 {
+                buf.push('\n');
+            }
+            for x in x_min..=x_max {
+                let pos = (x, y);
+                let c = if main_loop.contains(&pos) {
+                    '█'
+                } else if interiors.contains(&pos) {
+                    '*'
+                } else if outside.contains(&pos) {
+                    '░'
+                } else if self.start == pos {
                     'S'
                 } else {
                     match self.directions(pos) {
