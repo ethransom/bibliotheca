@@ -2,7 +2,7 @@
 
 // extern crate test;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet, VecDeque};
 
 const EXAMPLE: &str = include_str!("example10.txt");
 const INPUT: &str = include_str!("input10.txt");
@@ -18,9 +18,9 @@ fn solve(input: &str) -> (i64, i64) {
     println!("{}", map.serialize());
 
     // BFS, as it guarantees the shortest path
-    let mut queue = std::collections::VecDeque::new();
+    let mut queue = VecDeque::new();
     queue.push_back(map.start);
-    let mut visited = std::collections::HashMap::new();
+    let mut visited = HashMap::new();
     visited.insert(map.start, 0);
 
     while let Some(pos) = queue.pop_front() {
