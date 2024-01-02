@@ -138,28 +138,29 @@ impl Map {
             }
             for x in x_min..=x_max {
                 let pos = (x, y);
-                if self.start == pos {
-                    buf.push('S');
+                let c = if self.start == pos {
+                    'S'
                 } else {
                     match self.directions(pos) {
                         // | is a vertical pipe connecting north and south.
-                        [true, false, true, false] => buf.push('┃'),
+                        [true, false, true, false] => '┃',
                         // - is a horizontal pipe connecting east and west.
-                        [false, true, false, true] => buf.push('━'),
+                        [false, true, false, true] => '━',
                         // L is a 90-degree bend connecting north and east.
-                        [true, true, false, false] => buf.push('┗'),
+                        [true, true, false, false] => '┗',
                         // J is a 90-degree bend connecting north and west.
-                        [true, false, false, true] => buf.push('┛'),
+                        [true, false, false, true] => '┛',
                         // 7 is a 90-degree bend connecting south and west.
-                        [false, false, true, true] => buf.push('┓'),
+                        [false, false, true, true] => '┓',
                         // F is a 90-degree bend connecting south and east.
-                        [false, true, true, false] => buf.push('┏'),
+                        [false, true, true, false] => '┏',
                         // . is ground; there is no pipe in this tile.
-                        [false, false, false, false] => buf.push(' '),
+                        [false, false, false, false] => ' ',
 
                         _ => panic!("unknown neighbors: {:?}", self.directions(pos)),
                     }
-                }
+                };
+                buf.push(c);
             }
         }
 
