@@ -190,28 +190,29 @@ impl Map {
             }
             for x in x_min..=x_max {
                 let pos = (x, y);
-                if self.start == pos {
-                    buf.push('S');
+                let c = if self.start == pos {
+                    'S'
                 } else {
                     match self.directions(pos) {
                         // | is a vertical pipe connecting north and south.
-                        [true, false, true, false] => buf.push('|'),
+                        [true, false, true, false] => '|',
                         // - is a horizontal pipe connecting east and west.
-                        [false, true, false, true] => buf.push('-'),
+                        [false, true, false, true] => '-',
                         // L is a 90-degree bend connecting north and east.
-                        [true, true, false, false] => buf.push('L'),
+                        [true, true, false, false] => 'L',
                         // J is a 90-degree bend connecting north and west.
-                        [true, false, false, true] => buf.push('J'),
+                        [true, false, false, true] => 'J',
                         // 7 is a 90-degree bend connecting south and west.
-                        [false, false, true, true] => buf.push('7'),
+                        [false, false, true, true] => '7',
                         // F is a 90-degree bend connecting south and east.
-                        [false, true, true, false] => buf.push('F'),
+                        [false, true, true, false] => 'F',
                         // . is ground; there is no pipe in this tile.
-                        [false, false, false, false] => buf.push('.'),
+                        [false, false, false, false] => '.',
 
-                        _ => panic!("unknown neighbors: {:?}", self.directions(pos)),
+                        other => panic!("unknown neighbors: {:?}", other),
                     }
-                }
+                };
+                buf.push(c);
             }
         }
 
@@ -247,7 +248,7 @@ impl Map {
                         // . is ground; there is no pipe in this tile.
                         [false, false, false, false] => ' ',
 
-                        _ => panic!("unknown neighbors: {:?}", self.directions(pos)),
+                        other => panic!("unknown neighbors: {:?}", other),
                     }
                 };
                 buf.push(c);
@@ -297,7 +298,7 @@ impl Map {
                         // . is ground; there is no pipe in this tile.
                         [false, false, false, false] => ' ',
 
-                        _ => panic!("unknown neighbors: {:?}", self.directions(pos)),
+                        other => panic!("unknown neighbors: {:?}", other),
                     }
                 };
                 buf.push(c);
