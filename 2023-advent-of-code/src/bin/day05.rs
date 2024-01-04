@@ -150,7 +150,8 @@ fn test_input() {
 
 #[bench]
 fn bench_solve_current(b: &mut test::Bencher) {
-    b.iter(|| {
-        assert_eq!(solve(INPUT), (318728750, 37384986));
-    });
+    // too slow lol
+    // b.iter(|| {
+    //     assert_eq!(solve(INPUT), (318728750, 37384986));
+    // });
 }
