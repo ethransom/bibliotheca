@@ -117,7 +117,7 @@ impl HolidayAsciiStringHelperManualArrangementProcedure {
         loop {
             if let Some(child) = parent {
                 if child.key == key {
-                    let next = std::mem::replace(&mut child.next, None);
+                    let next = child.next.take();
                     *parent = next; // also drops child?
                     return;
                 }
