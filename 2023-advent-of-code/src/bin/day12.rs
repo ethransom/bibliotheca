@@ -53,43 +53,47 @@ fn sum_possibilities(rows: &Vec<(String, Vec<usize>)>) -> usize {
 
 fn possibilities(springs: &str, actual_groups: &[usize], count: &mut usize) {
     fn possibilities(
-        original_springs: &str,
-        springs: &mut str,
+        original_springs: &[u8],
+        springs: &mut [u8],
         pos: usize,
         actual_groups: &[usize],
         count: &mut usize,
     ) {
-        // println!("possibilities {springs} {pos}");
         if pos >= original_springs.len() {
-            // println!("is_empty {springs}");
-            if get_groups(springs) == actual_groups {
+            // println!(
+            //     "is_empty {springs:?}",
+            //     springs = unsafe { std::str::from_utf8_unchecked(springs) }
+            // );
+            let group = springs.iter().group_by(|&c| c);
+            let groups =
+                group
+                    .into_iter()
+                    .filter_map(|(&c, group)| if c == b'#' { Some(group.count()) } else { None });
+            if itertools::equal(groups, actual_groups.iter().cloned()) {
                 *count += 1;
             }
             return;
         }
 
-        if original_springs.as_bytes()[pos] == b'?' {
-            unsafe { springs.as_bytes_mut()[pos] = b'#' };
+        if original_springs[pos] == b'?' {
+            springs[pos] = b'#';
             possibilities(original_springs, springs, pos + 1, actual_groups, count);
-            unsafe { springs.as_bytes_mut()[pos] = b'.' };
+            springs[pos] = b'.';
             possibilities(original_springs, springs, pos + 1, actual_groups, count);
         } else {
             possibilities(original_springs, springs, pos + 1, actual_groups, count);
         }
     }
 
-    let mut working_copy = springs.to_owned();
+    let mut working_copy = springs.as_bytes().to_owned();
 
-    possibilities(springs, &mut working_copy, 0, actual_groups, count);
-}
-
-fn get_groups(springs: &str) -> Vec<usize> {
-    springs
-        .chars()
-        .group_by(|&c| c)
-        .into_iter()
-        .filter_map(|(c, group)| if c == '#' { Some(group.count()) } else { None })
-        .collect()
+    possibilities(
+        springs.as_bytes(),
+        &mut working_copy,
+        0,
+        actual_groups,
+        count,
+    );
 }
 
 fn parse(input: &str) -> Vec<(String, Vec<usize>)> {
@@ -120,7 +124,7 @@ fn test_input() {
 }
 
 #[bench]
-fn bench_solve_example_current(b: &mut test::Bencher) {
+fn bench_solve_example_02_current(b: &mut test::Bencher) {
     // TODO idk could test different allocation strategies here
     b.iter(|| {
         let rows = parse(EXAMPLE);
@@ -129,7 +133,73 @@ fn bench_solve_example_current(b: &mut test::Bencher) {
 }
 
 #[bench]
-fn bench_solve_example_original(b: &mut test::Bencher) {
+fn bench_solve_example_01_working_buffer(b: &mut test::Bencher) {
+    #[allow(dead_code)]
+    fn sum_possibilities(rows: &Vec<(String, Vec<usize>)>) -> usize {
+        let mut sum = 0;
+
+        for (springs, actual_groups) in rows {
+            let mut count = 0;
+            // println!("{springs}: {actual_groups:?}");
+            possibilities(springs, actual_groups, &mut count);
+            // println!("  -> {count}");
+            sum += count;
+        }
+        sum
+    }
+
+    #[allow(dead_code)]
+    fn possibilities(springs: &str, actual_groups: &[usize], count: &mut usize) {
+        fn possibilities(
+            original_springs: &str,
+            springs: &mut str,
+            pos: usize,
+            actual_groups: &[usize],
+            count: &mut usize,
+        ) {
+            // println!("possibilities {springs} {pos}");
+            if pos >= original_springs.len() {
+                // println!("is_empty {springs}");
+                if get_groups(springs) == actual_groups {
+                    *count += 1;
+                }
+                return;
+            }
+
+            if original_springs.as_bytes()[pos] == b'?' {
+                unsafe { springs.as_bytes_mut()[pos] = b'#' };
+                possibilities(original_springs, springs, pos + 1, actual_groups, count);
+                unsafe { springs.as_bytes_mut()[pos] = b'.' };
+                possibilities(original_springs, springs, pos + 1, actual_groups, count);
+            } else {
+                possibilities(original_springs, springs, pos + 1, actual_groups, count);
+            }
+        }
+
+        let mut working_copy = springs.to_owned();
+
+        possibilities(springs, &mut working_copy, 0, actual_groups, count);
+    }
+
+    #[allow(dead_code)]
+    fn get_groups(springs: &str) -> Vec<usize> {
+        springs
+            .chars()
+            .group_by(|&c| c)
+            .into_iter()
+            .filter_map(|(c, group)| if c == '#' { Some(group.count()) } else { None })
+            .collect()
+    }
+
+    // TODO idk could test different allocation strategies here
+    b.iter(|| {
+        let rows = parse(EXAMPLE);
+        assert_eq!(sum_possibilities(&rows), 21);
+    });
+}
+
+#[bench]
+fn bench_solve_example_00_original(b: &mut test::Bencher) {
     #[allow(dead_code)]
     fn sum_possibilities(rows: &Vec<(String, Vec<usize>)>) -> usize {
         let mut sum = 0;
