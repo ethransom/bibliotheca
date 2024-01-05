@@ -46,8 +46,6 @@ fn solve(input: &str) -> (usize, usize) {
 
     println!();
 
-    println!("computing max possible energized");
-
     let max_energized = thread::Builder::new()
         .stack_size(8 * 1024 * 1024)
         .spawn(move || {
@@ -71,17 +69,21 @@ fn solve(input: &str) -> (usize, usize) {
                     DOWN,
                 )
             });
-            top.chain(bottom)
-                .chain(left)
-                .chain(right)
+            let all_edges = top.chain(bottom).chain(left).chain(right);
+            println!(
+                "checking all {count} possible beam entry points",
+                count = all_edges.clone().count()
+            );
+            all_edges
                 .map(|(start, v)| energize(&grid, start, v).len())
-                .inspect(|e| println!("{e}"))
                 .max()
                 .unwrap_or(0)
         })
         .expect("couldn't spawn big boi thread")
         .join()
         .expect("child thread couldn't compute longest path");
+
+    println!("can get {max_energized} max energized 🌋");
 
     (top_left_energized.len(), max_energized)
 }
