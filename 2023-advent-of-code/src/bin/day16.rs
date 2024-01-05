@@ -1,6 +1,6 @@
-// #![feature(test)]
+#![feature(test)]
 
-// extern crate test;
+extern crate test;
 
 use std::collections::HashMap;
 use std::thread;
@@ -350,9 +350,8 @@ fn test_input() {
     assert_eq!(solve(INPUT), (7472, 7716));
 }
 
-// #[bench]
-// fn bench_solve_current(b: &mut test::Bencher) {
-//     b.iter(|| {
-//         assert_eq!(solve(INPUT), (0, 0));
-//     });
-// }
+#[bench]
+fn bench_energize_input_current(b: &mut test::Bencher) {
+    let grid = Grid::try_from(INPUT).unwrap();
+    b.iter(|| energize(&grid, Point { x: 0, y: 0 }, RIGHT));
+}
