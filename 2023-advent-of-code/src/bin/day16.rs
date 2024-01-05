@@ -3,6 +3,7 @@
 // extern crate test;
 
 use std::collections::HashMap;
+use std::thread;
 
 const EXAMPLE: &str = include_str!("example16.txt");
 const INPUT: &str = include_str!("input16.txt");
@@ -31,21 +32,58 @@ const RIGHTLEFT: [Velocity; 2] = [RIGHT, LEFT];
 fn solve(input: &str) -> (usize, usize) {
     let grid = Grid::try_from(input).unwrap_or_else(|err| panic!("couldn't parse grid: {err}"));
 
-    let energized = energize(&grid);
+    let top_left_energized = energize(&grid, Point { x: 0, y: 0 }, RIGHT);
 
     println!("{}", grid);
 
     println!();
 
-    println!("{}", pretty_print_beams(&grid, &energized));
+    println!("{}", pretty_print_beams(&grid, &top_left_energized));
 
     println!();
 
-    println!("{}", pretty_print_energized(&grid, &energized));
+    println!("{}", pretty_print_energized(&grid, &top_left_energized));
 
     println!();
 
-    (energized.len(), 0)
+    println!("computing max possible energized");
+
+    let max_energized = thread::Builder::new()
+        .stack_size(8 * 1024 * 1024)
+        .spawn(move || {
+            let top = (0..grid.width).map(|x| (Point { x, y: 0 }, DOWN));
+            let bottom = (0..grid.width).map(|x| {
+                (
+                    Point {
+                        x,
+                        y: grid.height - 1,
+                    },
+                    UP,
+                )
+            });
+            let left = (0..grid.height).map(|y| (Point { x: 0, y }, DOWN));
+            let right = (0..grid.height).map(|y| {
+                (
+                    Point {
+                        x: grid.width - 1,
+                        y,
+                    },
+                    DOWN,
+                )
+            });
+            top.chain(bottom)
+                .chain(left)
+                .chain(right)
+                .map(|(start, v)| energize(&grid, start, v).len())
+                .inspect(|e| println!("{e}"))
+                .max()
+                .unwrap_or(0)
+        })
+        .expect("couldn't spawn big boi thread")
+        .join()
+        .expect("child thread couldn't compute longest path");
+
+    (top_left_energized.len(), max_energized)
 }
 
 fn pretty_print_energized(grid: &Grid, energized: &HashMap<Point, Vec<Velocity>>) -> String {
@@ -95,9 +133,9 @@ fn pretty_print_beams(grid: &Grid, energized: &HashMap<Point, Vec<Velocity>>) ->
     output
 }
 
-fn energize(grid: &Grid) -> HashMap<Point, Vec<Velocity>> {
+fn energize(grid: &Grid, start: Point, v: Velocity) -> HashMap<Point, Vec<Velocity>> {
     let mut energized = HashMap::new();
-    energize(grid, &mut energized, Point { x: 0, y: 0 }, RIGHT);
+    energize(grid, &mut energized, start, v);
     return energized;
 
     fn energize(
@@ -287,7 +325,7 @@ fn test_try_parse() {
 #[test]
 fn test_energize_example() {
     let grid = Grid::try_from(EXAMPLE).unwrap();
-    let energized = energize(&grid);
+    let energized = energize(&grid, Point { x: 0, y: 0 }, RIGHT);
     let expected = r#">|<<<\....
 |v-.\^....
 .v...|->>>
@@ -304,12 +342,12 @@ fn test_energize_example() {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (46, 0));
+    assert_eq!(solve(EXAMPLE), (46, 51));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (7472, 0));
+    assert_eq!(solve(INPUT), (7472, 7716));
 }
 
 // #[bench]
