@@ -140,6 +140,13 @@ fn energize(grid: &Grid, start: Point, v: Velocity) -> HashMap<Point, Vec<Veloci
     energize(grid, &mut energized, start, v);
     return energized;
 
+    fn emit(grid: &Grid, energized: &mut HashMap<Point, Vec<Velocity>>, point: Point, v: Velocity) {
+        let next = grid.step(point, v);
+        if let Some(next) = next {
+            energize(grid, energized, next, v)
+        }
+    }
+
     fn energize(
         grid: &Grid,
         energized: &mut HashMap<Point, Vec<Velocity>>,
@@ -152,70 +159,38 @@ fn energize(grid: &Grid, start: Point, v: Velocity) -> HashMap<Point, Vec<Veloci
         }
         beams.push((vx, vy));
 
-        match grid[point] {
-            '.' => {
-                let next = grid.step(point, (vx, vy));
-                if let Some(next) = next {
-                    energize(grid, energized, next, (vx, vy))
-                }
+        let cell = grid[point];
+        match cell {
+            '|' if RIGHTLEFT.contains(&(vx, vy)) => {
+                emit(grid, energized, point, UP);
+                emit(grid, energized, point, DOWN);
             }
-            '|' => {
-                if RIGHTLEFT.contains(&(vx, vy)) {
-                    for v in UPDOWN {
-                        let next = grid.step(point, v);
-                        if let Some(next) = next {
-                            energize(grid, energized, next, v)
-                        }
+            '-' if UPDOWN.contains(&(vx, vy)) => {
+                emit(grid, energized, point, RIGHT);
+                emit(grid, energized, point, LEFT);
+            }
+            _ => {
+                let out = if cell == '/' {
+                    match (vx, vy) {
+                        RIGHT => UP,
+                        LEFT => DOWN,
+                        DOWN => LEFT,
+                        UP => RIGHT,
+                        _ => panic!(),
+                    }
+                } else if cell == '\\' {
+                    match (vx, vy) {
+                        RIGHT => DOWN,
+                        LEFT => UP,
+                        DOWN => RIGHT,
+                        UP => LEFT,
+                        _ => panic!(),
                     }
                 } else {
-                    let next = grid.step(point, (vx, vy));
-                    if let Some(next) = next {
-                        energize(grid, energized, next, (vx, vy))
-                    }
-                }
-            }
-            '-' => {
-                if UPDOWN.contains(&(vx, vy)) {
-                    for v in RIGHTLEFT {
-                        let next = grid.step(point, v);
-                        if let Some(next) = next {
-                            energize(grid, energized, next, v)
-                        }
-                    }
-                } else {
-                    let next = grid.step(point, (vx, vy));
-                    if let Some(next) = next {
-                        energize(grid, energized, next, (vx, vy))
-                    }
-                }
-            }
-            '/' => {
-                let out = match (vx, vy) {
-                    RIGHT => UP,
-                    LEFT => DOWN,
-                    DOWN => LEFT,
-                    UP => RIGHT,
-                    _ => panic!(),
+                    (vx, vy)
                 };
-                let next = grid.step(point, out);
-                if let Some(next) = next {
-                    energize(grid, energized, next, out)
-                }
+                emit(grid, energized, point, out);
             }
-            '\\' => {
-                let out = match (vx, vy) {
-                    RIGHT => DOWN,
-                    LEFT => UP,
-                    DOWN => RIGHT,
-                    UP => LEFT,
-                    _ => panic!(),
-                };
-                let next = grid.step(point, out);
-                if let Some(next) = next {
-                    energize(grid, energized, next, out)
-                }
-            }
-            _ => panic!(),
         }
     }
 }
@@ -343,7 +318,7 @@ fn test_input() {
 }
 
 #[bench]
-fn bench_energize_input_04_flatvectormap(b: &mut test::Bencher) {
+fn bench_energize_input_05_flatvectormap(b: &mut test::Bencher) {
     use arrayvec::ArrayVec;
     fn energize(grid: &Grid, start: Point, v: Velocity) -> Vec<ArrayVec<Velocity, 4>> {
         let mut energized = vec![ArrayVec::default(); grid.cells.len()];
@@ -444,7 +419,7 @@ fn bench_energize_input_04_flatvectormap(b: &mut test::Bencher) {
 }
 
 #[bench]
-fn bench_energize_input_03_vectormap(b: &mut test::Bencher) {
+fn bench_energize_input_04_vectormap(b: &mut test::Bencher) {
     fn energize(grid: &Grid, start: Point, v: Velocity) -> Vec<Vec<Velocity>> {
         let mut energized = vec![vec![]; grid.cells.len()];
         energize(grid, &mut energized, start, v);
@@ -544,7 +519,98 @@ fn bench_energize_input_03_vectormap(b: &mut test::Bencher) {
 }
 
 #[bench]
+fn bench_energize_input_03_readability(b: &mut test::Bencher) {
+    let grid = Grid::try_from(INPUT).unwrap();
+    b.iter(|| assert_eq!(energize(&grid, Point { x: 0, y: 0 }, RIGHT).len(), 7472));
+}
+
+#[bench]
 fn bench_energize_input_02_fxhasher(b: &mut test::Bencher) {
+    fn energize(grid: &Grid, start: Point, v: Velocity) -> HashMap<Point, Vec<Velocity>> {
+        let mut energized = HashMap::default();
+        energize(grid, &mut energized, start, v);
+        return energized;
+
+        fn energize(
+            grid: &Grid,
+            energized: &mut HashMap<Point, Vec<Velocity>>,
+            point: Point,
+            (vx, vy): Velocity,
+        ) {
+            let beams = energized.entry(point).or_default();
+            if beams.contains(&(vx, vy)) {
+                return;
+            }
+            beams.push((vx, vy));
+
+            match grid[point] {
+                '.' => {
+                    let next = grid.step(point, (vx, vy));
+                    if let Some(next) = next {
+                        energize(grid, energized, next, (vx, vy))
+                    }
+                }
+                '|' => {
+                    if RIGHTLEFT.contains(&(vx, vy)) {
+                        for v in UPDOWN {
+                            let next = grid.step(point, v);
+                            if let Some(next) = next {
+                                energize(grid, energized, next, v)
+                            }
+                        }
+                    } else {
+                        let next = grid.step(point, (vx, vy));
+                        if let Some(next) = next {
+                            energize(grid, energized, next, (vx, vy))
+                        }
+                    }
+                }
+                '-' => {
+                    if UPDOWN.contains(&(vx, vy)) {
+                        for v in RIGHTLEFT {
+                            let next = grid.step(point, v);
+                            if let Some(next) = next {
+                                energize(grid, energized, next, v)
+                            }
+                        }
+                    } else {
+                        let next = grid.step(point, (vx, vy));
+                        if let Some(next) = next {
+                            energize(grid, energized, next, (vx, vy))
+                        }
+                    }
+                }
+                '/' => {
+                    let out = match (vx, vy) {
+                        RIGHT => UP,
+                        LEFT => DOWN,
+                        DOWN => LEFT,
+                        UP => RIGHT,
+                        _ => panic!(),
+                    };
+                    let next = grid.step(point, out);
+                    if let Some(next) = next {
+                        energize(grid, energized, next, out)
+                    }
+                }
+                '\\' => {
+                    let out = match (vx, vy) {
+                        RIGHT => DOWN,
+                        LEFT => UP,
+                        DOWN => RIGHT,
+                        UP => LEFT,
+                        _ => panic!(),
+                    };
+                    let next = grid.step(point, out);
+                    if let Some(next) = next {
+                        energize(grid, energized, next, out)
+                    }
+                }
+                _ => panic!(),
+            }
+        }
+    }
+
     let grid = Grid::try_from(INPUT).unwrap();
     b.iter(|| assert_eq!(energize(&grid, Point { x: 0, y: 0 }, RIGHT).len(), 7472));
 }
