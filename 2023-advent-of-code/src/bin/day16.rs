@@ -318,6 +318,119 @@ fn test_input() {
 }
 
 #[bench]
+fn bench_energize_input_06_flat_hanrolled_vectormap(b: &mut test::Bencher) {
+    #[derive(Copy, Clone, Eq, PartialEq)]
+    enum Velocity {
+        Up,
+        Down,
+        Left,
+        Right,
+    }
+
+    fn energize(grid: &Grid, start: Point, v: Velocity) -> Vec<[bool; 4]> {
+        let mut energized = vec![Default::default(); grid.cells.len()];
+        energize(grid, &mut energized, start, v);
+        return energized;
+
+        fn step(grid: &Grid, point: Point, v: Velocity) -> Option<Point> {
+            let (x, y) = (point.x as isize, point.y as isize);
+            let (vx, vy) = match v {
+                Velocity::Up => UP,
+                Velocity::Down => DOWN,
+                Velocity::Left => LEFT,
+                Velocity::Right => RIGHT,
+            };
+            let x = x + vx as isize;
+            let y = y + vy as isize;
+            if x < 0 || x >= grid.width as isize || y < 0 || y >= grid.height as isize {
+                None
+            } else {
+                Some(Point {
+                    x: x as usize,
+                    y: y as usize,
+                })
+            }
+        }
+
+        fn energize(grid: &Grid, energized: &mut [[bool; 4]], point: Point, v: Velocity) {
+            let Point { x, y } = point;
+            let beams = &mut energized[(grid.width * y) + x];
+            let i = match v {
+                Velocity::Up => 0,
+                Velocity::Down => 1,
+                Velocity::Left => 2,
+                Velocity::Right => 3,
+            };
+            if beams[i] {
+                return;
+            }
+            beams[i] = true;
+
+            match grid[point] {
+                '|' if v == Velocity::Right || v == Velocity::Left => {
+                    for v in [Velocity::Up, Velocity::Down] {
+                        let next = step(grid, point, v);
+                        if let Some(next) = next {
+                            energize(grid, energized, next, v)
+                        }
+                    }
+                }
+                '-' if v == Velocity::Up || v == Velocity::Down => {
+                    for v in [Velocity::Right, Velocity::Left] {
+                        let next = step(grid, point, v);
+                        if let Some(next) = next {
+                            energize(grid, energized, next, v)
+                        }
+                    }
+                }
+                '/' => {
+                    let out = match v {
+                        Velocity::Right => Velocity::Up,
+                        Velocity::Left => Velocity::Down,
+                        Velocity::Down => Velocity::Left,
+                        Velocity::Up => Velocity::Right,
+                    };
+                    let next = step(grid, point, out);
+                    if let Some(next) = next {
+                        energize(grid, energized, next, out)
+                    }
+                }
+                '\\' => {
+                    let out = match v {
+                        Velocity::Right => Velocity::Down,
+                        Velocity::Left => Velocity::Up,
+                        Velocity::Down => Velocity::Right,
+                        Velocity::Up => Velocity::Left,
+                    };
+                    let next = step(grid, point, out);
+                    if let Some(next) = next {
+                        energize(grid, energized, next, out)
+                    }
+                }
+                '.' | '|' | '-' => {
+                    let next = step(grid, point, v);
+                    if let Some(next) = next {
+                        energize(grid, energized, next, v)
+                    }
+                }
+                _ => panic!(),
+            }
+        }
+    }
+
+    let grid = Grid::try_from(INPUT).unwrap();
+    b.iter(|| {
+        assert_eq!(
+            energize(&grid, Point { x: 0, y: 0 }, Velocity::Right)
+                .iter()
+                .filter(|c| c[0] || c[1] || c[2] || c[3])
+                .count(),
+            7472
+        );
+    });
+}
+
+#[bench]
 fn bench_energize_input_05_flatvectormap(b: &mut test::Bencher) {
     use arrayvec::ArrayVec;
     fn energize(grid: &Grid, start: Point, v: Velocity) -> Vec<ArrayVec<Velocity, 4>> {
