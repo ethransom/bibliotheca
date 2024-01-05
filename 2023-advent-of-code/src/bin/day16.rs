@@ -347,6 +347,99 @@ fn bench_energize_input_01_fxhasher(b: &mut test::Bencher) {
 }
 
 #[bench]
+fn bench_energize_input_02_ahash(b: &mut test::Bencher) {
+    use ahash::AHashMap;
+
+    fn energize(grid: &Grid, start: Point, v: Velocity) -> AHashMap<Point, Vec<Velocity>> {
+        let mut energized = AHashMap::new();
+        energize(grid, &mut energized, start, v);
+        return energized;
+
+        fn energize(
+            grid: &Grid,
+            energized: &mut AHashMap<Point, Vec<Velocity>>,
+            point: Point,
+            (vx, vy): Velocity,
+        ) {
+            let beams = energized.entry(point).or_default();
+            if beams.contains(&(vx, vy)) {
+                return;
+            }
+            beams.push((vx, vy));
+
+            match grid[point] {
+                '.' => {
+                    let next = grid.step(point, (vx, vy));
+                    if let Some(next) = next {
+                        energize(grid, energized, next, (vx, vy))
+                    }
+                }
+                '|' => {
+                    if RIGHTLEFT.contains(&(vx, vy)) {
+                        for v in UPDOWN {
+                            let next = grid.step(point, v);
+                            if let Some(next) = next {
+                                energize(grid, energized, next, v)
+                            }
+                        }
+                    } else {
+                        let next = grid.step(point, (vx, vy));
+                        if let Some(next) = next {
+                            energize(grid, energized, next, (vx, vy))
+                        }
+                    }
+                }
+                '-' => {
+                    if UPDOWN.contains(&(vx, vy)) {
+                        for v in RIGHTLEFT {
+                            let next = grid.step(point, v);
+                            if let Some(next) = next {
+                                energize(grid, energized, next, v)
+                            }
+                        }
+                    } else {
+                        let next = grid.step(point, (vx, vy));
+                        if let Some(next) = next {
+                            energize(grid, energized, next, (vx, vy))
+                        }
+                    }
+                }
+                '/' => {
+                    let out = match (vx, vy) {
+                        RIGHT => UP,
+                        LEFT => DOWN,
+                        DOWN => LEFT,
+                        UP => RIGHT,
+                        _ => panic!(),
+                    };
+                    let next = grid.step(point, out);
+                    if let Some(next) = next {
+                        energize(grid, energized, next, out)
+                    }
+                }
+                '\\' => {
+                    let out = match (vx, vy) {
+                        RIGHT => DOWN,
+                        LEFT => UP,
+                        DOWN => RIGHT,
+                        UP => LEFT,
+                        _ => panic!(),
+                    };
+                    let next = grid.step(point, out);
+                    if let Some(next) = next {
+                        energize(grid, energized, next, out)
+                    }
+                }
+                _ => panic!(),
+            }
+        }
+    }
+
+    let grid = Grid::try_from(INPUT).unwrap();
+    b.iter(|| energize(&grid, Point { x: 0, y: 0 }, RIGHT));
+}
+
+#[bench]
 fn bench_energize_input_00_std_hasher(b: &mut test::Bencher) {
     use std::collections::HashMap;
 
