@@ -54,6 +54,7 @@ fn sum_possibilities(rows: &Vec<(String, Vec<usize>)>) -> usize {
     sum
 }
 
+#[cfg(debug_assertions)]
 fn print_recursing(str: String, depth: usize) {
     // return;
     for _ in 0..depth {
@@ -61,6 +62,8 @@ fn print_recursing(str: String, depth: usize) {
     }
     println!("{str}");
 }
+#[cfg(not(debug_assertions))]
+fn print_recursing(_str: String, _depth: usize) {}
 
 fn possibilities(springs: &str, groups: &[usize], callcount: &mut usize) -> usize {
     return possibilities(springs.as_bytes(), groups, 0, callcount);
