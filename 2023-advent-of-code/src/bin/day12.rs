@@ -2,7 +2,7 @@
 
 extern crate test;
 
-use itertools::Itertools;
+use fxhash::FxHashMap as HashMap;
 
 const EXAMPLE: &str = include_str!("example12.txt");
 const INPUT: &str = include_str!("input12.txt");
@@ -41,13 +41,14 @@ fn sum_possibilities(rows: &Vec<(String, Vec<usize>)>) -> usize {
     let mut sum = 0;
 
     for (springs, actual_groups) in rows {
-        let mut callcount = 0;
         let wildcards = springs.chars().filter(|c| c == &'?').count() as u32;
         let est_possibilities = 2_usize.pow(wildcards);
         println!("{springs}: {actual_groups:?} ({wildcards} wildcards, meaning {est_possibilities} naive possibilities)");
 
-        let count = possibilities(springs, actual_groups, &mut callcount);
-        println!("  -> {count} (cost of {callcount})");
+        let mut callcount = 0;
+        let mut cachecount = 0;
+        let count = possibilities(springs, actual_groups, &mut callcount, &mut cachecount);
+        println!("  -> {count} (cost of {callcount} calls and {cachecount} cache entries)");
         sum += count;
     }
     sum
@@ -64,14 +65,46 @@ fn print_recursing(str: String, depth: usize) {
 #[cfg(not(debug_assertions))]
 fn print_recursing(_str: String, _depth: usize) {}
 
-fn possibilities(springs: &str, groups: &[usize], callcount: &mut usize) -> usize {
-    return possibilities(springs.as_bytes(), groups, 0, callcount);
+fn possibilities(
+    springs: &str,
+    groups: &[usize],
+    callcount: &mut usize,
+    cachecount: &mut usize,
+) -> usize {
+    let mut cache = HashMap::default();
+    let p = possibilities(springs.as_bytes(), groups, 0, callcount, &mut cache);
+    *cachecount = cache.len();
+    return p;
+
+    fn possibilities_memo(
+        springs: &[u8],
+        groups: &[usize],
+        depth: usize,
+        callcount: &mut usize,
+        cache: &mut HashMap<(Vec<u8>, Vec<usize>), usize>,
+    ) -> usize {
+        if let Some(&cached) = cache.get(&(springs.to_owned(), groups.to_owned())) {
+            print_recursing(
+                format!(
+                    "found in cache: {springs} {groups:?} -> {cached}",
+                    springs = unsafe { std::str::from_utf8_unchecked(springs) }
+                ),
+                depth,
+            );
+            cached
+        } else {
+            let val = possibilities(springs, groups, depth, callcount, cache);
+            cache.insert((springs.to_owned(), groups.to_owned()), val);
+            val
+        }
+    }
 
     fn possibilities(
         springs: &[u8],
         groups: &[usize],
         depth: usize,
         callcount: &mut usize,
+        cache: &mut HashMap<(Vec<u8>, Vec<usize>), usize>,
     ) -> usize {
         let depth = depth + 1;
         print_recursing(
@@ -103,7 +136,7 @@ fn possibilities(springs: &str, groups: &[usize], callcount: &mut usize) -> usiz
 
         if springs[0] == b'.' {
             print_recursing("head is dot, skipping".to_string(), depth);
-            let ret = possibilities(&springs[1..], groups, depth, callcount);
+            let ret = possibilities_memo(&springs[1..], groups, depth, callcount, cache);
             print_recursing(format!("-> {ret}"), depth);
             return ret;
         }
@@ -119,9 +152,9 @@ fn possibilities(springs: &str, groups: &[usize], callcount: &mut usize) -> usiz
             let mut count = 0;
             let mut springs = springs.to_owned();
             springs[i] = b'#';
-            count += possibilities(&springs, groups, depth, callcount);
+            count += possibilities_memo(&springs, groups, depth, callcount, cache);
             springs[i] = b'.';
-            count += possibilities(&springs, groups, depth, callcount);
+            count += possibilities_memo(&springs, groups, depth, callcount, cache);
             print_recursing(format!("recurse found {count} (both branches)"), depth);
             return count;
         }
@@ -139,7 +172,7 @@ fn possibilities(springs: &str, groups: &[usize], callcount: &mut usize) -> usiz
         // we have a group of '#' of size i, delimited by either '.' or end of slice
         if i == groups[0] {
             print_recursing(format!("successfully matched {i}, recursing"), depth);
-            let ret = possibilities(&springs[i..], &groups[1..], depth, callcount);
+            let ret = possibilities_memo(&springs[i..], &groups[1..], depth, callcount, cache);
             print_recursing(format!("recursed with -> {ret}"), depth);
             return ret;
         }
@@ -197,7 +230,7 @@ fn test_example() {
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (6958, 0));
+    assert_eq!(solve(INPUT), (6958, 6555315065024));
 }
 
 #[bench]
@@ -210,6 +243,8 @@ fn bench_sum_possibilities_example_02_current(b: &mut test::Bencher) {
 
 #[bench]
 fn bench_sum_possibilities_example_01_working_buffer(b: &mut test::Bencher) {
+    use itertools::Itertools;
+
     #[allow(dead_code)]
     fn sum_possibilities(rows: &Vec<(String, Vec<usize>)>) -> usize {
         let mut sum = 0;
@@ -275,6 +310,8 @@ fn bench_sum_possibilities_example_01_working_buffer(b: &mut test::Bencher) {
 
 #[bench]
 fn bench_sum_possibilities_example_00_original(b: &mut test::Bencher) {
+    use itertools::Itertools;
+
     #[allow(dead_code)]
     fn sum_possibilities(rows: &Vec<(String, Vec<usize>)>) -> usize {
         let mut sum = 0;
