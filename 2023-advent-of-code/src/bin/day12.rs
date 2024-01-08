@@ -15,18 +15,17 @@ fn main() {
 fn solve(input: &str) -> (usize, usize) {
     let rows = parse(input);
 
-    // for (springs, groups) in &rows {
-    //     print!("{}", springs);
-    //     get_groups(springs).iter().for_each(|l| print!("{l}"));
-    //     println!("{groups:?}");
-    // }
-
     let sum = sum_possibilities(&rows);
 
     // lmfaooooo unfold
     let rows: Vec<_> = rows
         .into_iter()
-        .map(|(springs, groups)| (springs.repeat(5), groups.repeat(5)))
+        .map(|(springs, groups)| {
+            (
+                format!("{springs}?{springs}?{springs}?{springs}?{springs}"),
+                groups.repeat(5),
+            )
+        })
         .collect();
 
     for row in &rows {
@@ -172,6 +171,23 @@ fn parse(input: &str) -> Vec<(String, Vec<usize>)> {
             )
         })
         .collect()
+}
+
+#[test]
+fn test_last_example() {
+    let rows = parse("?###???????? 3,2,1");
+    assert_eq!(sum_possibilities(&rows), 10);
+}
+
+#[test]
+fn test_last_unfolded_example() {
+    let springs = "???.###";
+    let groups = [1, 1, 3];
+    let rows = vec![(
+        format!("{springs}?{springs}?{springs}?{springs}?{springs}?"),
+        groups.repeat(5),
+    )];
+    assert_eq!(sum_possibilities(&rows), 1);
 }
 
 #[test]
