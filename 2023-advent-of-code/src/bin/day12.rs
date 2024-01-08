@@ -54,56 +54,103 @@ fn sum_possibilities(rows: &Vec<(String, Vec<usize>)>) -> usize {
     sum
 }
 
-fn possibilities(springs: &str, actual_groups: &[usize], callcount: &mut usize) -> usize {
-    let mut working_copy = springs.as_bytes().to_owned();
+fn print_recursing(str: String, depth: usize) {
+    // return;
+    for _ in 0..depth {
+        print!("  ");
+    }
+    println!("{str}");
+}
 
-    return possibilities(
-        springs.as_bytes(),
-        &mut working_copy,
-        0,
-        actual_groups,
-        callcount,
-    );
+fn possibilities(springs: &str, groups: &[usize], callcount: &mut usize) -> usize {
+    return possibilities(springs.as_bytes(), groups, 0, callcount);
 
     fn possibilities(
-        original_springs: &[u8],
-        springs: &mut [u8],
-        pos: usize,
-        actual_groups: &[usize],
+        springs: &[u8],
+        groups: &[usize],
+        depth: usize,
         callcount: &mut usize,
     ) -> usize {
-        println!(
-            "{springs}",
-            springs = unsafe { std::str::from_utf8_unchecked(springs) }
+        let depth = depth + 1;
+        print_recursing(
+            format!(
+                "{springs} {groups:?}",
+                springs = unsafe { std::str::from_utf8_unchecked(springs) }
+            ),
+            depth,
         );
         *callcount += 1;
-        if pos >= original_springs.len() {
-            println!(
-                "is_empty {springs:?}",
-                springs = unsafe { std::str::from_utf8_unchecked(springs) }
-            );
-            let group = springs.iter().group_by(|&c| c);
-            let groups =
-                group
-                    .into_iter()
-                    .filter_map(|(&c, group)| if c == b'#' { Some(group.count()) } else { None });
-            if itertools::equal(groups, actual_groups.iter().cloned()) {
+        if *callcount > 100 {
+            // panic!();
+        }
+
+        if springs.is_empty() {
+            if groups.is_empty() {
+                print_recursing(
+                    "springs and groups empty, combo is possible -> 1".to_string(),
+                    depth,
+                );
                 return 1;
             }
+            print_recursing(
+                "had unsatisfied groups, combo is not possible -> 1".to_string(),
+                depth,
+            );
             return 0;
         }
 
-        if original_springs[pos] == b'?' {
-            let mut retcount = 0;
-            springs[pos] = b'#';
-            retcount += possibilities(original_springs, springs, pos + 1, actual_groups, callcount);
-            springs[pos] = b'.';
-            retcount += possibilities(original_springs, springs, pos + 1, actual_groups, callcount);
-
-            retcount
-        } else {
-            possibilities(original_springs, springs, pos + 1, actual_groups, callcount)
+        if springs[0] == b'.' {
+            print_recursing("head is dot, skipping".to_string(), depth);
+            let ret = possibilities(&springs[1..], groups, depth, callcount);
+            print_recursing(format!("-> {ret}"), depth);
+            return ret;
         }
+
+        let mut i = 0;
+        while i < springs.len() && springs[i] == b'#' {
+            i += 1;
+        }
+
+        if i < springs.len() && springs[i] == b'?' {
+            print_recursing("found '?', recursing".to_string(), depth);
+            // NOte do NOT advance slice
+            let mut count = 0;
+            let mut springs = springs.to_owned();
+            springs[i] = b'#';
+            count += possibilities(&springs, groups, depth, callcount);
+            springs[i] = b'.';
+            count += possibilities(&springs, groups, depth, callcount);
+            print_recursing(format!("recurse found {count} (both branches)"), depth);
+            return count;
+        }
+
+        print_recursing(format!("lead of '#' of size {i}"), depth);
+
+        if groups.is_empty() {
+            print_recursing(
+                "no more groups but still ? or #, combo not possible -> 0".to_string(),
+                depth,
+            );
+            return 0;
+        }
+
+        // we have a group of '#' of size i, delimited by either '.' or end of slice
+        if i == groups[0] {
+            print_recursing(format!("successfully matched {i}, recursing"), depth);
+            let ret = possibilities(&springs[i..], &groups[1..], depth, callcount);
+            print_recursing(format!("recursed with -> {ret}"), depth);
+            return ret;
+        }
+
+        print_recursing(
+            format!(
+                "grouping of '#' of {i} when {group} was needed, combo is not possible",
+                group = groups[0]
+            ),
+            depth,
+        );
+
+        0
     }
 }
 
