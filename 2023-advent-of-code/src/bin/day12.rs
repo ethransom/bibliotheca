@@ -201,16 +201,15 @@ fn test_input() {
 }
 
 #[bench]
-fn bench_solve_example_02_current(b: &mut test::Bencher) {
-    // TODO idk could test different allocation strategies here
+fn bench_sum_possibilities_example_02_current(b: &mut test::Bencher) {
+    let rows = parse(EXAMPLE);
     b.iter(|| {
-        let rows = parse(EXAMPLE);
         assert_eq!(sum_possibilities(&rows), 21);
     });
 }
 
 #[bench]
-fn bench_solve_example_01_working_buffer(b: &mut test::Bencher) {
+fn bench_sum_possibilities_example_01_working_buffer(b: &mut test::Bencher) {
     #[allow(dead_code)]
     fn sum_possibilities(rows: &Vec<(String, Vec<usize>)>) -> usize {
         let mut sum = 0;
@@ -268,15 +267,14 @@ fn bench_solve_example_01_working_buffer(b: &mut test::Bencher) {
             .collect()
     }
 
-    // TODO idk could test different allocation strategies here
+    let rows = parse(EXAMPLE);
     b.iter(|| {
-        let rows = parse(EXAMPLE);
         assert_eq!(sum_possibilities(&rows), 21);
     });
 }
 
 #[bench]
-fn bench_solve_example_00_original(b: &mut test::Bencher) {
+fn bench_sum_possibilities_example_00_original(b: &mut test::Bencher) {
     #[allow(dead_code)]
     fn sum_possibilities(rows: &Vec<(String, Vec<usize>)>) -> usize {
         let mut sum = 0;
@@ -348,9 +346,8 @@ fn bench_solve_example_00_original(b: &mut test::Bencher) {
             .collect()
     }
 
-    // TODO idk could test different allocation strategies here
+    let rows = parse(EXAMPLE);
     b.iter(|| {
-        let rows = parse(EXAMPLE);
         assert_eq!(sum_possibilities(&rows), 21);
     });
 }
