@@ -2,44 +2,55 @@
 
 extern crate test;
 
-use fxhash::FxHashSet as HashSet;
+use fxhash::{FxHashMap as HashMap, FxHashSet as HashSet};
 
 const EXAMPLE: &str = include_str!("example14.txt");
 const INPUT: &str = include_str!("input14.txt");
 
 fn main() {
     dbg!(solve(EXAMPLE));
-    // dbg!(solve(INPUT));
+    dbg!(solve(INPUT));
 }
 
 fn solve(input: &str) -> (usize, usize) {
     let mut map = Map::parse(input);
 
-    println!("{}", map.print());
+    println!("Original map:\n{}", map.print());
 
     let mut map2 = map.clone();
 
     map2.tilt(Tilts::Up);
-    println!("\n{}", map2.print());
+    println!("\nTilted UP:\n{}", map2.print());
 
     let single_tilt_load = map2.total_load();
 
-    map.spin_cycle();
-    println!("\n{}", map.print());
-    println!("{}", map.total_load());
-    map.spin_cycle();
-    println!("\n{}", map.print());
-    println!("{}", map.total_load());
-    map.spin_cycle();
-    println!("\n{}", map.print());
-    println!("{}", map.total_load());
+    println!("\nBeginning spin cycle...");
 
-    for _i in 3..3 {
+    let mut load_at_1000000000 = None;
+
+    let mut lookup = HashMap::default();
+    let mut load_lookup = HashMap::default();
+    for i in 0..200usize {
         map.spin_cycle();
-        // println!("{}", map.total_load());
+        let m = map.print();
+        if let Some(s) = lookup.get(&m) {
+            println!("spin {i} is same as spin {s}");
+            let equivalent_spin = ((1000000000 - s) % (i - s)) + s - 1;
+            let load = load_lookup[&equivalent_spin];
+            load_at_1000000000 = Some(load);
+            println!("load at 1000000000 was same as {equivalent_spin}, which was {load}");
+            break;
+        }
+        let load = map.total_load();
+        if i < 3 {
+            println!("\n{}", m);
+            println!("{}", load);
+        }
+        lookup.insert(m, i);
+        load_lookup.insert(i, load);
     }
 
-    (single_tilt_load, 0)
+    (single_tilt_load, load_at_1000000000.unwrap())
 }
 
 type Point = (usize, usize);
@@ -81,7 +92,7 @@ impl Map {
                         self.shift(y, x, dx, dy)
                     }
                 }
-            },
+            }
             Tilts::Up => {
                 let (dx, dy) = (0, -1);
                 for y in 0..self.height {
@@ -89,7 +100,7 @@ impl Map {
                         self.shift(y, x, dx, dy)
                     }
                 }
-            },
+            }
             Tilts::Right => {
                 let (dx, dy) = (1, 0);
                 for x in (0..self.width).rev() {
@@ -97,7 +108,7 @@ impl Map {
                         self.shift(y, x, dx, dy)
                     }
                 }
-            },
+            }
             Tilts::Left => {
                 let (dx, dy) = (-1, 0);
                 for x in 0..self.width {
@@ -211,7 +222,9 @@ fn test_spin_cycle() {
 
     map.spin_cycle();
 
-    assert_eq!(map.print(), ".....#....
+    assert_eq!(
+        map.print(),
+        ".....#....
 ....#...O#
 ...OO##...
 .OO#......
@@ -220,17 +233,50 @@ fn test_spin_cycle() {
 ....O#....
 ......OOOO
 #...O###..
-#..OO#....");
+#..OO#...."
+    );
+
+    map.spin_cycle();
+
+    assert_eq!(
+        map.print(),
+        ".....#....
+....#...O#
+.....##...
+..O#......
+.....OOO#.
+.O#...O#.#
+....O#...O
+.......OOO
+#..OO###..
+#.OOO#...O"
+    );
+
+    map.spin_cycle();
+
+    assert_eq!(
+        map.print(),
+        ".....#....
+....#...O#
+.....##...
+..O#......
+.....OOO#.
+.O#...O#.#
+....O#...O
+.......OOO
+#...O###.O
+#.OOO#...O"
+    );
 }
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (136, 0));
+    assert_eq!(solve(EXAMPLE), (136, 64));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (109939, 0));
+    assert_eq!(solve(INPUT), (109939, 101010));
 }
 
 /// Performance history:
