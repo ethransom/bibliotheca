@@ -42,58 +42,69 @@ fn sum_possibilities(rows: &Vec<(String, Vec<usize>)>) -> usize {
     let mut sum = 0;
 
     for (springs, actual_groups) in rows {
-        let mut count = 0;
-        println!("{springs}: {actual_groups:?}");
-        possibilities(springs, actual_groups, &mut count);
-        // println!("  -> {count}");
+        let mut callcount = 0;
+        let wildcards = springs.chars().filter(|c| c == &'?').count() as u32;
+        let est_possibilities = 2_usize.pow(wildcards);
+        println!("{springs}: {actual_groups:?} ({wildcards} wildcards, meaning {est_possibilities} naive possibilities)");
+
+        let count = possibilities(springs, actual_groups, &mut callcount);
+        println!("  -> {count} (cost of {callcount})");
         sum += count;
     }
     sum
 }
 
-fn possibilities(springs: &str, actual_groups: &[usize], count: &mut usize) {
+fn possibilities(springs: &str, actual_groups: &[usize], callcount: &mut usize) -> usize {
+    let mut working_copy = springs.as_bytes().to_owned();
+
+    return possibilities(
+        springs.as_bytes(),
+        &mut working_copy,
+        0,
+        actual_groups,
+        callcount,
+    );
+
     fn possibilities(
         original_springs: &[u8],
         springs: &mut [u8],
         pos: usize,
         actual_groups: &[usize],
-        count: &mut usize,
-    ) {
+        callcount: &mut usize,
+    ) -> usize {
+        println!(
+            "{springs}",
+            springs = unsafe { std::str::from_utf8_unchecked(springs) }
+        );
+        *callcount += 1;
         if pos >= original_springs.len() {
-            // println!(
-            //     "is_empty {springs:?}",
-            //     springs = unsafe { std::str::from_utf8_unchecked(springs) }
-            // );
+            println!(
+                "is_empty {springs:?}",
+                springs = unsafe { std::str::from_utf8_unchecked(springs) }
+            );
             let group = springs.iter().group_by(|&c| c);
             let groups =
                 group
                     .into_iter()
                     .filter_map(|(&c, group)| if c == b'#' { Some(group.count()) } else { None });
             if itertools::equal(groups, actual_groups.iter().cloned()) {
-                *count += 1;
+                return 1;
             }
-            return;
+            return 0;
         }
 
         if original_springs[pos] == b'?' {
+            let mut retcount = 0;
             springs[pos] = b'#';
-            possibilities(original_springs, springs, pos + 1, actual_groups, count);
+            retcount += possibilities(original_springs, springs, pos + 1, actual_groups, callcount);
             springs[pos] = b'.';
-            possibilities(original_springs, springs, pos + 1, actual_groups, count);
+            retcount += possibilities(original_springs, springs, pos + 1, actual_groups, callcount);
+
+            retcount
         } else {
-            possibilities(original_springs, springs, pos + 1, actual_groups, count);
+            possibilities(original_springs, springs, pos + 1, actual_groups, callcount)
         }
     }
-
-    let mut working_copy = springs.as_bytes().to_owned();
-
-    possibilities(
-        springs.as_bytes(),
-        &mut working_copy,
-        0,
-        actual_groups,
-        count,
-    );
 }
 
 fn parse(input: &str) -> Vec<(String, Vec<usize>)> {
