@@ -1,11 +1,13 @@
 #![feature(let_chains)]
+#![feature(iter_map_windows)]
 // #![feature(test)]
 
 // extern crate test;
 
+use fxhash::FxHashMap as HashMap;
 use itertools::Itertools;
 use std::cmp::Ordering;
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 
 const EXAMPLE: &str = include_str!("example17.txt");
 const INPUT: &str = include_str!("input17.txt");
@@ -31,7 +33,7 @@ fn solve(input: &str) -> (usize, usize) {
         .map(|&pos| (pos, None))
         .collect::<HashMap<_, Option<usize>>>();
     distances.insert(start, Some(0));
-    let mut previous = HashMap::<Point, Point>::new();
+    let mut previous = HashMap::<Point, Point>::default();
     // TODO: can we insert into "frontier" as we discover, to keep length of queue down
     let mut unvisited = map.loss.keys().collect::<Vec<_>>();
     while let Some(current) = unvisited
@@ -45,7 +47,7 @@ fn solve(input: &str) -> (usize, usize) {
         .map(|pos| unvisited.swap_remove(pos))
     {
         let dist = distances[current];
-        println!("visiting {current:?} @ distance {dist:?}",);
+        // println!("visiting {current:?} @ distance {dist:?}",);
 
         let dist = dist.expect("uhhhh, 'unrechable' much??");
 
@@ -58,11 +60,11 @@ fn solve(input: &str) -> (usize, usize) {
             }
         }
 
-        println!("prevv to this were: {prevv:?}");
+        // println!("prevv to this were: {prevv:?}");
 
         for neighbor in map.neighbors(current, &prevv) {
             let alt = dist + map.loss[&neighbor] as usize;
-            println!("\tneighbor of {neighbor:?}, previously reachable with {:?} now reachable with {alt}", distances[&neighbor]);
+            // println!("\tneighbor of {neighbor:?}, previously reachable with {:?} now reachable with {alt}", distances[&neighbor]);
             if distances[&neighbor].map_or(true, |distance| alt < distance) {
                 distances.insert(neighbor, Some(alt));
                 previous.insert(neighbor, *current);
@@ -153,12 +155,13 @@ impl Map {
             .map(|(px, py)| point_delta(x, y, px, py))
             .collect();
 
-        let coming_from_straight_line = pp.len() >= 3 && pp[0] == pp[1] && pp[1] == pp[2];
+        let coming_from_straight_line =
+            pp.len() >= 3 && pp.iter().map_windows(|[a, b]| a == b).all(|v| v);
 
-        println!("previous three deltas of {:?}", pp);
+        // println!("previous three deltas of {:?}", pp);
 
         if coming_from_straight_line {
-            println!("COMING FROM STRAIGHT LINE");
+            // println!("COMING FROM STRAIGHT LINE");
         }
 
         [(-1, 0), (0, 1), (1, 0), (0, -1)]
@@ -215,6 +218,11 @@ fn test_parse_debug() {
 #[test]
 fn test_example() {
     assert_eq!(solve(EXAMPLE), (102, 0));
+}
+
+#[test]
+fn test_subreddit_example() {
+    assert_eq!(solve("112999\n911111"), (7, 0));
 }
 
 #[test]
