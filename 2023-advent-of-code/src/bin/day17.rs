@@ -27,6 +27,20 @@ fn solve(input: &str) -> (usize, usize) {
 
     let start = (0, 0);
     let end = (map.width - 1, map.height - 1);
+
+    let crucible_loss = min_heat_loss(map, start, end, Map::neighbors);
+
+    (crucible_loss, 0)
+}
+
+type NeighborsFn = fn(&Map, &Point, Dir, usize) -> Vec<(Point, Dir, usize)>;
+
+fn min_heat_loss(
+    map: Map,
+    start: (usize, usize),
+    end: (usize, usize),
+    neighbors: NeighborsFn,
+) -> usize {
     let mut distances = map
         .loss
         .keys()
@@ -55,7 +69,7 @@ fn solve(input: &str) -> (usize, usize) {
         let dist = dist.expect("uhhhh, 'unrechable' much??");
 
         for (neighbor, neighbor_dir, neighbor_steps) in
-            map.neighbors(&current, current_dir, current_steps)
+            neighbors(&map, &current, current_dir, current_steps)
         {
             let alt = dist + map.loss[&neighbor] as usize;
             // println!("\tneighbor of {neighbor:?} {neighbor_dir:?} {neighbor_steps}, previously reachable with {:?} now reachable with {alt}", distances[&(neighbor, neighbor_dir, neighbor_steps)]);
@@ -116,8 +130,7 @@ fn solve(input: &str) -> (usize, usize) {
         }
         println!();
     }
-
-    (final_dist, 0)
+    final_dist
 }
 
 type Point = (usize, usize);
