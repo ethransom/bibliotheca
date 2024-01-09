@@ -6,18 +6,19 @@
 
 use fxhash::FxHashMap as HashMap;
 use itertools::Itertools;
-use std::cmp::Ordering;
 use std::collections::VecDeque;
 
 const EXAMPLE: &str = include_str!("example17.txt");
 const INPUT: &str = include_str!("input17.txt");
 
 fn main() {
-    println!("part 1: {:?}", solve(EXAMPLE));
+    dbg!(solve(EXAMPLE));
     dbg!(solve(INPUT));
 }
 
-const STRAIGHT_LINE_MAX: i32 = 3;
+const STRAIGHT_LINE_MAX: usize = 3;
+
+const DIRECTIONS: &[Dir] = &[(-1, 0), (0, 1), (1, 0), (0, -1)];
 
 fn solve(input: &str) -> (usize, usize) {
     let map = Map::parse(input);
@@ -26,69 +27,81 @@ fn solve(input: &str) -> (usize, usize) {
 
     let start = (0, 0);
     let end = (map.width - 1, map.height - 1);
-    // TODO: can absence of distance mean unreachable?
     let mut distances = map
         .loss
         .keys()
-        .map(|&pos| (pos, None))
+        .flat_map(|&pos| {
+            DIRECTIONS.iter().flat_map(move |&dir| {
+                (1..=STRAIGHT_LINE_MAX).map(move |steps| ((pos, dir, steps), None))
+            })
+        })
         .collect::<HashMap<_, Option<usize>>>();
-    distances.insert(start, Some(0));
-    let mut previous = HashMap::<Point, Point>::default();
+    for &dir in DIRECTIONS {
+        for step in 0..=STRAIGHT_LINE_MAX {
+            distances.insert((start, dir, step), Some(0));
+        }
+    }
+    let mut previous = HashMap::<(Point, Dir, usize), (Point, Dir, usize)>::default();
     let mut unvisited = vec![];
-    unvisited.push((start, 0));
-    while let Some((current, _dist)) = unvisited
+    unvisited.push((start, (0, 1), 0usize, 0));
+    while let Some((current, current_dir, current_steps, _dist)) = unvisited
         .iter()
-        .position_min_by(|&(_, a), &(_, b)| a.cmp(&b))
+        .position_min_by(|&(_, _, _, a), &(_, _, _, b)| a.cmp(b))
         .map(|pos| unvisited.swap_remove(pos))
     {
-        let dist = distances[&current];
-        // println!("visiting {current:?} @ distance {dist:?}",);
+        let dist = distances[&(current, current_dir, current_steps)];
+        // println!("visiting {current:?} {current_dir:?} {current_steps} @ distance {dist:?}");
 
         let dist = dist.expect("uhhhh, 'unrechable' much??");
 
-        let mut prevv = vec![];
-        let mut prev = current;
-        for _i in 0..STRAIGHT_LINE_MAX {
-            if let Some(&prev2) = previous.get(&prev) {
-                prevv.push(prev2);
-                prev = prev2;
-            }
-        }
-
-        // println!("prevv to this were: {prevv:?}");
-
-        for neighbor in map.neighbors(&current, &prevv) {
+        for (neighbor, neighbor_dir, neighbor_steps) in
+            map.neighbors(&current, current_dir, current_steps)
+        {
             let alt = dist + map.loss[&neighbor] as usize;
-            // println!("\tneighbor of {neighbor:?}, previously reachable with {:?} now reachable with {alt}", distances[&neighbor]);
-            if distances[&neighbor].map_or(true, |distance| alt < distance) {
-                distances.insert(neighbor, Some(alt));
-                previous.insert(neighbor, current);
-                unvisited.push((neighbor, alt));
+            // println!("\tneighbor of {neighbor:?} {neighbor_dir:?} {neighbor_steps}, previously reachable with {:?} now reachable with {alt}", distances[&(neighbor, neighbor_dir, neighbor_steps)]);
+            if distances[&(neighbor, neighbor_dir, neighbor_steps)]
+                .map_or(true, |distance| alt < distance)
+            {
+                distances.insert((neighbor, neighbor_dir, neighbor_steps), Some(alt));
+                previous.insert(
+                    (neighbor, neighbor_dir, neighbor_steps),
+                    (current, current_dir, current_steps),
+                );
+                unvisited.push((neighbor, neighbor_dir, neighbor_steps, alt));
             }
         }
     }
 
-    let final_dist = distances[&end].expect("no path");
-    println!("SOLVEDDDD with a distance of {final_dist}");
+    println!("{len} total reachable", len = distances.len());
+
+    let (final_point, final_dir, final_steps, &final_dist) = distances
+        .iter()
+        .filter(|&(&(pos, _dir, _steps), _dist)| pos == end)
+        .filter_map(|(&(pos, dir, steps), dist)| dist.as_ref().map(|dist| (pos, dir, steps, dist)))
+        .min_by(|&(_, _, _, a_dist), &(_, _, _, b_dist)| a_dist.cmp(b_dist))
+        .expect("no solution");
+    println!("SOLVEDDDD with a distance of {final_dist:?}");
 
     let mut path = VecDeque::new(); // purely so we don't have to reverse
-    let mut point = end;
-    while point != start {
+    let mut point = (final_point, final_dir, final_steps);
+    while point.0 != start {
         path.push_front(point);
         point = previous[&point];
+    }
+
+    println!("PATH:");
+    for p in &path {
+        println!("{p:?} cost: {cost}", cost = map.loss[&p.0]);
     }
 
     println!();
 
     for y in 0..map.height {
-        if y != 0 {
-            println!();
-        }
         for x in 0..map.width {
-            let c = if path.contains(&(x, y))
-                && let Some(&prev) = previous.get(&(x, y))
+            let c = if let Some((_point, dir, _steps)) =
+                path.iter().find(|(point, _, _)| point == &(x, y))
             {
-                match point_delta(x, y, &prev.0, &prev.1) {
+                match dir {
                     (0, 1) => 'v',
                     (-1, 0) => '<',
                     (1, 0) => '>',
@@ -101,12 +114,15 @@ fn solve(input: &str) -> (usize, usize) {
             };
             print!("{}", c);
         }
+        println!();
     }
 
     (final_dist, 0)
 }
 
 type Point = (usize, usize);
+
+type Dir = (i64, i64);
 
 struct Map {
     loss: HashMap<Point, u8>,
@@ -139,56 +155,47 @@ impl Map {
         }
     }
 
-    fn neighbors(&self, point: &Point, previous_three: &[Point]) -> Vec<Point> {
+    fn neighbors(
+        &self,
+        point: &Point,
+        point_dir: Dir,
+        point_steps: usize,
+    ) -> Vec<(Point, Dir, usize)> {
         let &(x, y) = point;
 
         if !self.loss.contains_key(&(x, y)) {
-            return vec![];
+            panic!("tried neighbors of off-grid");
         }
 
-        let pp: Vec<(i64, i64)> = previous_three
-            .iter()
-            .map(|(px, py)| point_delta(x, y, px, py))
-            .collect();
-
-        let coming_from_straight_line =
-            pp.len() >= 3 && pp.iter().map_windows(|[a, b]| a == b).all(|v| v);
-
-        // println!("previous three deltas of {:?}", pp);
-
-        if coming_from_straight_line {
-            // println!("COMING FROM STRAIGHT LINE");
-        }
-
-        [(-1, 0), (0, 1), (1, 0), (0, -1)]
+        DIRECTIONS
             .iter()
             .cloned()
             .filter_map(|(dx, dy)| {
-                if coming_from_straight_line && (pp[0].0, pp[0].1) == (dx, dy) {
+                let steps = if point_dir == (dx, dy) {
+                    // going straight
+                    let steps = point_steps + 1;
+                    if steps > STRAIGHT_LINE_MAX {
+                        return None;
+                    }
+                    steps
+                } else if point_dir == (-dx, -dy) {
+                    // no backtrack
                     return None;
-                }
+                } else {
+                    1
+                };
 
                 if let Ok(x) = (x as i64 + dx).try_into()
                     && let Ok(y) = (y as i64 + dy).try_into()
                     && self.loss.contains_key(&(x, y))
                 {
-                    return Some((x, y));
+                    return Some(((x, y), (dx, dy), steps));
                 }
 
                 None
             })
             .collect()
     }
-}
-
-fn point_delta(x: usize, y: usize, px: &usize, py: &usize) -> (i64, i64) {
-    [(x, px), (y, py)]
-        .map(|(current, previous)| match current.cmp(previous) {
-            Ordering::Greater => 1,
-            Ordering::Equal => 0,
-            Ordering::Less => -1,
-        })
-        .into()
 }
 
 impl std::fmt::Display for Map {
@@ -223,7 +230,7 @@ fn test_subreddit_example() {
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (0, 0));
+    assert_eq!(solve(INPUT), (956, 0));
 }
 
 // #[bench]
