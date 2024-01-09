@@ -34,8 +34,8 @@ fn solve(input: &str) -> (usize, usize) {
         .collect::<HashMap<_, Option<usize>>>();
     distances.insert(start, Some(0));
     let mut previous = HashMap::<Point, Point>::default();
-    // TODO: can we insert into "frontier" as we discover, to keep length of queue down
-    let mut unvisited = map.loss.keys().collect::<Vec<_>>();
+    let mut unvisited = vec![];
+    unvisited.push(start);
     while let Some(current) = unvisited
         .iter()
         .position_min_by(|&a, &b| match [a, b].map(|v| distances[v]) {
@@ -46,7 +46,7 @@ fn solve(input: &str) -> (usize, usize) {
         })
         .map(|pos| unvisited.swap_remove(pos))
     {
-        let dist = distances[current];
+        let dist = distances[&current];
         // println!("visiting {current:?} @ distance {dist:?}",);
 
         let dist = dist.expect("uhhhh, 'unrechable' much??");
@@ -54,20 +54,21 @@ fn solve(input: &str) -> (usize, usize) {
         let mut prevv = vec![];
         let mut prev = current;
         for _i in 0..STRAIGHT_LINE_MAX {
-            if let Some(prev2) = previous.get(prev) {
-                prevv.push(*prev2);
+            if let Some(&prev2) = previous.get(&prev) {
+                prevv.push(prev2);
                 prev = prev2;
             }
         }
 
         // println!("prevv to this were: {prevv:?}");
 
-        for neighbor in map.neighbors(current, &prevv) {
+        for neighbor in map.neighbors(&current, &prevv) {
             let alt = dist + map.loss[&neighbor] as usize;
             // println!("\tneighbor of {neighbor:?}, previously reachable with {:?} now reachable with {alt}", distances[&neighbor]);
             if distances[&neighbor].map_or(true, |distance| alt < distance) {
                 distances.insert(neighbor, Some(alt));
-                previous.insert(neighbor, *current);
+                previous.insert(neighbor, current);
+                unvisited.push(neighbor);
             }
         }
     }
