@@ -35,15 +35,10 @@ fn solve(input: &str) -> (usize, usize) {
     distances.insert(start, Some(0));
     let mut previous = HashMap::<Point, Point>::default();
     let mut unvisited = vec![];
-    unvisited.push(start);
-    while let Some(current) = unvisited
+    unvisited.push((start, 0));
+    while let Some((current, _dist)) = unvisited
         .iter()
-        .position_min_by(|&a, &b| match [a, b].map(|v| distances[v]) {
-            [None, None] => Ordering::Equal,
-            [Some(_), None] => Ordering::Less,
-            [None, Some(_)] => Ordering::Greater,
-            [Some(a), Some(b)] => a.cmp(&b),
-        })
+        .position_min_by(|&(_, a), &(_, b)| a.cmp(&b))
         .map(|pos| unvisited.swap_remove(pos))
     {
         let dist = distances[&current];
@@ -68,7 +63,7 @@ fn solve(input: &str) -> (usize, usize) {
             if distances[&neighbor].map_or(true, |distance| alt < distance) {
                 distances.insert(neighbor, Some(alt));
                 previous.insert(neighbor, current);
-                unvisited.push(neighbor);
+                unvisited.push((neighbor, alt));
             }
         }
     }
