@@ -12,22 +12,26 @@ fn main() {
     dbg!(solve(INPUT));
 }
 
-type Point = (isize, isize);
+type Point = (i64, i64);
 
-fn solve(input: &str) -> (usize, usize) {
+fn solve(input: &str) -> (u64, u64) {
     let plan = parse(input);
 
     let mut dug = HashSet::<Point>::new();
     let mut position = (0, 0);
     dug.insert(position);
+    let mut vertexes = vec![];
+    let mut pos = (0, 0);
     for &(dir, amount, _color) in &plan {
-        let (dx, dy) = match dir {
+        let (dx, dy): (i64, i64) = match dir {
             "U" => (0, -1),
             "R" => (1, 0),
             "D" => (0, 1),
             "L" => (-1, 0),
             _ => panic!(),
         };
+        vertexes.push(pos);
+        pos = (pos.0 + dx * amount as i64, pos.1 + dy * amount as i64);
         for _ in 0..amount {
             let (x, y) = position;
             position = (x + dx, y + dy);
@@ -93,8 +97,13 @@ fn solve(input: &str) -> (usize, usize) {
             dug.extend(region);
         }
     }
-    let count = dug.len();
+    let count = dug.len() as u64;
+    let area = dbg!(shoelace_area(&vertexes));
+    let area = area + (dbg!(perimeter(&vertexes)) / 2) + 1;
+    assert_eq!(count, area);
 
+    let mut vertexes = vec![];
+    let (mut x, mut y): (i64, i64) = (0, 0);
     for &(_dir, _amount, color) in &plan {
         let color = color
             .trim_start_matches('(')
@@ -102,7 +111,8 @@ fn solve(input: &str) -> (usize, usize) {
             .trim_end_matches(')');
         assert_eq!(color.len(), 6, "invalid hex digits: '{color}'");
         let amount = i64::from_str_radix(&color[..5], 16).expect("invalid hex number");
-        let (dx, dy, d) = match color[5..].parse::<u8>() {
+        vertexes.push((x, y));
+        let (dx, dy, _d) = match color[5..].parse::<u8>() {
             // 0 means R, 1 means D, 2 means L, and 3 means U
             Ok(0) => (1, 0, 'R'),
             Ok(1) => (0, 1, 'D'),
@@ -110,10 +120,52 @@ fn solve(input: &str) -> (usize, usize) {
             Ok(3) => (0, -1, 'U'),
             err => panic!("error with dir digit: '{err:?}"),
         };
-        println!("#{color} -> {d} {amount}");
+        // println!("#{color} -> {d} {amount}");
+        (x, y) = (x + dx * amount, y + dy * amount);
     }
 
-    (count, 0)
+    let area = dbg!(shoelace_area(&vertexes));
+    let area = area + (dbg!(perimeter(&vertexes)) / 2) + 1;
+
+    (count, area)
+}
+
+fn shoelace_area(vertexes: &[(i64, i64)]) -> u64 {
+    let mut sum = 0;
+    for i in 0..vertexes.len() {
+        let a = vertexes[i];
+        let b = vertexes[(i + 1) % vertexes.len()];
+
+        // println!("a: {a:?}, b: {b:?}");
+
+        let (x1, y1) = a;
+        let (x2, y2) = b;
+
+        let det = x1 * y2 - y1 * x2;
+
+        sum += det;
+    }
+    (sum / 2) as u64 // .unsigned_abs()
+}
+
+fn perimeter(vertexes: &[(i64, i64)]) -> u64 {
+    let mut sum = 0;
+    for i in 0..vertexes.len() {
+        let a = vertexes[i];
+        let b = vertexes[(i + 1) % vertexes.len()];
+
+        // println!("a: {a:?}, b: {b:?}");
+
+        let (x1, y1) = a;
+        let (x2, y2) = b;
+        //
+        // let det = x1 * y2 - y1 * x2;
+
+        let len = x1.abs_diff(x2) + y1.abs_diff(y2);
+
+        sum += len;
+    }
+    sum
 }
 
 fn parse(input: &str) -> Vec<(&str, usize, &str)> {
@@ -131,13 +183,18 @@ fn parse(input: &str) -> Vec<(&str, usize, &str)> {
 }
 
 #[test]
+fn test_shoelace_area() {
+    assert_eq!(shoelace_area(&[(1, 6), (3, 1), (7, 2), (4, 4), (8, 5)]), 16);
+}
+
+#[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (62, 0));
+    assert_eq!(solve(EXAMPLE), (62, 952408144115));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (0, 0));
+    assert_eq!(solve(INPUT), (52035, 60612092439765));
 }
 
 // #[bench]
