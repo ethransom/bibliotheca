@@ -28,55 +28,50 @@ fn solve(input: &str) -> (usize, usize) {
     let start = (0, 0);
     let end = (map.width - 1, map.height - 1);
 
-    let crucible_loss = min_heat_loss(map, start, end, Map::neighbors);
+    let crucible_loss = min_heat_loss(&map, start, end, Map::crucible_neighbors, 0);
 
-    (crucible_loss, 0)
+    let ultra_crucible_loss = min_heat_loss(&map, start, end, Map::ultra_crucible_neighbors, 4);
+
+    (crucible_loss, ultra_crucible_loss)
 }
 
 type NeighborsFn = fn(&Map, &Point, Dir, usize) -> Vec<(Point, Dir, usize)>;
 
 fn min_heat_loss(
-    map: Map,
+    map: &Map,
     start: (usize, usize),
     end: (usize, usize),
     neighbors: NeighborsFn,
+    min: usize,
 ) -> usize {
-    let mut distances = map
-        .loss
-        .keys()
-        .flat_map(|&pos| {
-            DIRECTIONS.iter().flat_map(move |&dir| {
-                (1..=STRAIGHT_LINE_MAX).map(move |steps| ((pos, dir, steps), None))
-            })
-        })
-        .collect::<HashMap<_, Option<usize>>>();
+    let mut distances = HashMap::<(Point, Dir, usize), usize>::default();
     for &dir in DIRECTIONS {
-        for step in 0..=STRAIGHT_LINE_MAX {
-            distances.insert((start, dir, step), Some(0));
+        for step in 0..=10 {
+            distances.insert((start, dir, step), 0);
         }
     }
     let mut previous = HashMap::<(Point, Dir, usize), (Point, Dir, usize)>::default();
     let mut unvisited = vec![];
     unvisited.push((start, (0, 1), 0usize, 0));
+    unvisited.push((start, (1, 0), 0usize, 0));
     while let Some((current, current_dir, current_steps, _dist)) = unvisited
         .iter()
         .position_min_by(|&(_, _, _, a), &(_, _, _, b)| a.cmp(b))
         .map(|pos| unvisited.swap_remove(pos))
     {
-        let dist = distances[&(current, current_dir, current_steps)];
+        let dist = distances.get(&(current, current_dir, current_steps));
         // println!("visiting {current:?} {current_dir:?} {current_steps} @ distance {dist:?}");
 
-        let dist = dist.expect("uhhhh, 'unrechable' much??");
+        let &dist = dist.expect("uhhhh, 'unrechable' much??");
 
         for (neighbor, neighbor_dir, neighbor_steps) in
-            neighbors(&map, &current, current_dir, current_steps)
+            neighbors(map, &current, current_dir, current_steps)
         {
             let alt = dist + map.loss[&neighbor] as usize;
-            // println!("\tneighbor of {neighbor:?} {neighbor_dir:?} {neighbor_steps}, previously reachable with {:?} now reachable with {alt}", distances[&(neighbor, neighbor_dir, neighbor_steps)]);
-            if distances[&(neighbor, neighbor_dir, neighbor_steps)]
-                .map_or(true, |distance| alt < distance)
-            {
-                distances.insert((neighbor, neighbor_dir, neighbor_steps), Some(alt));
+            let last = distances.get(&(neighbor, neighbor_dir, neighbor_steps));
+            // println!("\tneighbor of {neighbor:?} {neighbor_dir:?} {neighbor_steps}, previously reachable with {last:?} now reachable with {alt}");
+            if last.map_or(true, |&distance| alt < distance) {
+                distances.insert((neighbor, neighbor_dir, neighbor_steps), alt);
                 previous.insert(
                     (neighbor, neighbor_dir, neighbor_steps),
                     (current, current_dir, current_steps),
@@ -88,11 +83,16 @@ fn min_heat_loss(
 
     println!("{len} total reachable", len = distances.len());
 
-    let (final_point, final_dir, final_steps, &final_dist) = distances
+    let foo = distances
         .iter()
         .filter(|&(&(pos, _dir, _steps), _dist)| pos == end)
-        .filter_map(|(&(pos, dir, steps), dist)| dist.as_ref().map(|dist| (pos, dir, steps, dist)))
-        .min_by(|&(_, _, _, a_dist), &(_, _, _, b_dist)| a_dist.cmp(b_dist))
+        .collect_vec();
+    println!("solutions: {foo:?}");
+
+    let (&(final_point, final_dir, final_steps), &final_dist) = distances
+        .iter()
+        .filter(|&(&(pos, _dir, steps), _dist)| pos == end && steps >= min)
+        .min_by(|&((_, _, _), a_dist), &((_, _, _), b_dist)| a_dist.cmp(b_dist))
         .expect("no solution");
     println!("SOLVEDDDD with a distance of {final_dist:?}");
 
@@ -168,7 +168,7 @@ impl Map {
         }
     }
 
-    fn neighbors(
+    fn crucible_neighbors(
         &self,
         point: &Point,
         point_dir: Dir,
@@ -209,6 +209,56 @@ impl Map {
             })
             .collect()
     }
+
+    fn ultra_crucible_neighbors(
+        &self,
+        point: &Point,
+        point_dir: Dir,
+        point_steps: usize,
+    ) -> Vec<(Point, Dir, usize)> {
+        let &(x, y) = point;
+
+        if !self.loss.contains_key(&(x, y)) {
+            panic!("tried neighbors of off-grid");
+        }
+
+        DIRECTIONS
+            .iter()
+            .cloned()
+            .filter_map(|(dx, dy)| {
+                let steps = if point_steps >= 4 {
+                    if point_dir == (dx, dy) {
+                        // going straight
+                        let steps = point_steps + 1;
+                        if steps > 10 {
+                            return None;
+                        }
+                        steps
+                    } else if point_dir == (-dx, -dy) {
+                        // no backtrack
+                        return None;
+                    } else {
+                        1
+                    }
+                } else {
+                    // must go straight
+                    if point_dir != (dx, dy) {
+                        return None;
+                    }
+                    point_steps + 1
+                };
+
+                if let Ok(x) = (x as i64 + dx).try_into()
+                    && let Ok(y) = (y as i64 + dy).try_into()
+                    && self.loss.contains_key(&(x, y))
+                {
+                    return Some(((x, y), (dx, dy), steps));
+                }
+
+                None
+            })
+            .collect()
+    }
 }
 
 impl std::fmt::Display for Map {
@@ -233,17 +283,47 @@ fn test_parse_debug() {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (102, 0));
+    assert_eq!(solve(EXAMPLE), (102, 94));
 }
 
 #[test]
 fn test_subreddit_example() {
-    assert_eq!(solve("112999\n911111"), (7, 0));
+    let map = Map::parse("112999\n911111");
+
+    println!("{}", map);
+
+    let start = (0, 0);
+    let end = (map.width - 1, map.height - 1);
+
+    let crucible_loss = min_heat_loss(&map, start, end, Map::crucible_neighbors, 0);
+
+    assert_eq!(crucible_loss, 7);
+}
+
+#[test]
+fn test_ultra_crucible_example() {
+    let map = Map::parse(
+        "111111111111
+999999999991
+999999999991
+999999999991
+999999999991",
+    );
+    assert_eq!(
+        min_heat_loss(
+            &map,
+            (0, 0),
+            (map.width - 1, map.height - 1),
+            Map::ultra_crucible_neighbors,
+            4
+        ),
+        71
+    );
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (956, 0));
+    assert_eq!(solve(INPUT), (956, 1106));
 }
 
 // #[bench]
