@@ -5,7 +5,6 @@
 // extern crate test;
 
 use fxhash::FxHashMap as HashMap;
-use itertools::Itertools;
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, VecDeque};
 
@@ -72,14 +71,6 @@ fn min_heat_loss(
         }
     }
 
-    println!("{len} total reachable", len = distances.len());
-
-    let foo = distances
-        .iter()
-        .filter(|&(&(pos, _dir, _steps), _dist)| pos == end)
-        .collect_vec();
-    println!("solutions: {foo:?}");
-
     let (&(final_point, final_dir, final_steps), &final_dist) = distances
         .iter()
         .filter(|&(&(pos, _dir, steps), _dist)| pos == end && steps >= min)
@@ -92,11 +83,6 @@ fn min_heat_loss(
     while point.0 != start {
         path.push_front(point);
         point = previous[&point];
-    }
-
-    println!("PATH:");
-    for p in &path {
-        println!("{p:?} cost: {cost}", cost = map.loss[&p.0]);
     }
 
     println!();
@@ -121,6 +107,7 @@ fn min_heat_loss(
         }
         println!();
     }
+
     final_dist
 }
 
