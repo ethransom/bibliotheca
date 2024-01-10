@@ -12,15 +12,53 @@ fn main() {
     dbg!(solve(INPUT));
 }
 
-fn solve(input: &str) -> (usize, usize) {
+fn solve(input: &str) -> (u64, u64) {
     let (workflows, parts) = parse(input);
 
-    dbg!(&workflows, &parts);
+    let accepted_ratings = parts
+        .iter()
+        .filter(|Part { props }| {
+            println!("evaluating part {props:?}");
+            let mut workflow = "in";
+            loop {
+                println!("\tagainst workflow {workflow}");
+                if workflow == "A" {
+                    return true;
+                }
+                if workflow == "R" {
+                    return false;
+                }
+                for &Rule { dest, cond } in &workflows[workflow] {
+                    println!("\t\tfor rule {dest} {cond:?}");
+                    if let Some(Cond { key, op, value }) = cond {
+                        println!(
+                            "\t\t\tcond: {cond:?}: {key} (={eval}) {op} {value}",
+                            eval = props[key]
+                        );
+                        let op = match op {
+                            '>' => u64::gt,
+                            '<' => u64::lt,
+                            _ => panic!(),
+                        };
+                        if op(&props[key], &value) {
+                            workflow = dest;
+                            break;
+                        }
+                    } else {
+                        println!("\t\t\tno cond, straight to workflow {dest}");
+                        workflow = dest;
+                        break;
+                    }
+                }
+            }
+        })
+        .map(|Part { props }| props.values().sum::<u64>())
+        .sum();
 
-    (0, 0)
+    (accepted_ratings, 0)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 struct Cond<'a> {
     key: &'a str,
     op: char,
@@ -96,12 +134,12 @@ fn parse(input: &str) -> (HashMap<&str, Vec<Rule>>, Vec<Part>) {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (0, 0));
+    assert_eq!(solve(EXAMPLE), (19114, 0));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (0, 0));
+    assert_eq!(solve(INPUT), (348378, 0));
 }
 
 // #[bench]
