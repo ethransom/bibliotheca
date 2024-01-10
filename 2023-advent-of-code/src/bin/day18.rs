@@ -51,27 +51,49 @@ fn solve(input: &str) -> (usize, usize) {
         println!();
     }
 
-    let mut count = 0;
+    let mut undug = HashSet::<Point>::new();
     for y in min_y..=max_y {
-        let mut in_region = false;
-        let mut line = String::new();
-        let mut io = String::new();
         for x in min_x..=max_x {
-            let c = if dug.contains(&(x, y)) { '#' } else { '.' };
-            line.push(c);
-            let c = if in_region { 'I' } else { 'O' };
-            io.push(c);
-            if dug.contains(&(x, y)) {
-                in_region = !in_region;
-            }
-            if in_region {
-                count += 1;
+            if !dug.contains(&(x, y)) {
+                undug.insert((x, y));
             }
         }
-        println!("{line}");
-        println!("{io}");
-        println!();
     }
+    while let Some(&(x, y)) = undug.iter().next() {
+        // println!("random visit: {pos:?}", pos = (x, y));
+        let mut outside = false;
+        let mut region = HashSet::new();
+        let mut unvisited = Vec::<Point>::new();
+        unvisited.push((x, y));
+        while let Some((x, y)) = unvisited.pop() {
+            undug.remove(&(x, y));
+            region.insert((x, y));
+            for (dx, dy) in [(1, 0), (0, 1), (-1, 0), (0, -1)] {
+                let (x, y) = (x + dx, y + dy);
+                // println!("neighbor of: {pos:?}", pos = (x, y));
+                if x < min_x || x > max_x || y < min_y || y > max_y {
+                    // println!("\t out of bounds");
+                    outside = true;
+                    continue;
+                }
+                if dug.contains(&(x, y)) {
+                    continue;
+                }
+                if region.contains(&(x, y)) {
+                    continue;
+                }
+                unvisited.push((x, y));
+            }
+        }
+        // println!(
+        //     "region {region:?} was {outside}outside",
+        //     outside = if outside { "" } else { "not " }
+        // );
+        if !outside {
+            dug.extend(region);
+        }
+    }
+    let count = dug.len();
 
     (count, 0)
 }
