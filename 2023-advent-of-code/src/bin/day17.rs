@@ -6,7 +6,8 @@
 
 use fxhash::FxHashMap as HashMap;
 use itertools::Itertools;
-use std::collections::VecDeque;
+use std::cmp::Reverse;
+use std::collections::{BinaryHeap, VecDeque};
 
 const EXAMPLE: &str = include_str!("example17.txt");
 const INPUT: &str = include_str!("input17.txt");
@@ -46,24 +47,14 @@ fn min_heat_loss(
 ) -> usize {
     let mut distances = HashMap::<(Point, Dir, usize), usize>::default();
     for &dir in DIRECTIONS {
-        for step in 0..=10 {
-            distances.insert((start, dir, step), 0);
-        }
+        distances.insert((start, dir, 0), 0);
     }
     let mut previous = HashMap::<(Point, Dir, usize), (Point, Dir, usize)>::default();
-    let mut unvisited = vec![];
-    unvisited.push((start, (0, 1), 0usize, 0));
-    unvisited.push((start, (1, 0), 0usize, 0));
-    while let Some((current, current_dir, current_steps, _dist)) = unvisited
-        .iter()
-        .position_min_by(|&(_, _, _, a), &(_, _, _, b)| a.cmp(b))
-        .map(|pos| unvisited.swap_remove(pos))
-    {
-        let dist = distances.get(&(current, current_dir, current_steps));
+    let mut unvisited = BinaryHeap::new();
+    unvisited.push(Reverse((0, start, (0, 1), 0usize)));
+    unvisited.push(Reverse((0, start, (1, 0), 0usize)));
+    while let Some(Reverse((dist, current, current_dir, current_steps))) = unvisited.pop() {
         // println!("visiting {current:?} {current_dir:?} {current_steps} @ distance {dist:?}");
-
-        let &dist = dist.expect("uhhhh, 'unrechable' much??");
-
         for (neighbor, neighbor_dir, neighbor_steps) in
             neighbors(map, &current, current_dir, current_steps)
         {
@@ -76,7 +67,7 @@ fn min_heat_loss(
                     (neighbor, neighbor_dir, neighbor_steps),
                     (current, current_dir, current_steps),
                 );
-                unvisited.push((neighbor, neighbor_dir, neighbor_steps, alt));
+                unvisited.push(Reverse((alt, neighbor, neighbor_dir, neighbor_steps)));
             }
         }
     }
