@@ -95,6 +95,24 @@ fn solve(input: &str) -> (usize, usize) {
     }
     let count = dug.len();
 
+    for &(_dir, _amount, color) in &plan {
+        let color = color
+            .trim_start_matches('(')
+            .trim_start_matches('#')
+            .trim_end_matches(')');
+        assert_eq!(color.len(), 6, "invalid hex digits: '{color}'");
+        let amount = i64::from_str_radix(&color[..5], 16).expect("invalid hex number");
+        let (dx, dy, d) = match color[5..].parse::<u8>() {
+            // 0 means R, 1 means D, 2 means L, and 3 means U
+            Ok(0) => (1, 0, 'R'),
+            Ok(1) => (0, 1, 'D'),
+            Ok(2) => (-1, 0, 'L'),
+            Ok(3) => (0, -1, 'U'),
+            err => panic!("error with dir digit: '{err:?}"),
+        };
+        println!("#{color} -> {d} {amount}");
+    }
+
     (count, 0)
 }
 
