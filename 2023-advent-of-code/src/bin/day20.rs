@@ -1,6 +1,6 @@
-// #![feature(test)]
+#![feature(test)]
 
-// extern crate test;
+extern crate test;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -230,6 +230,16 @@ fn test_example_2() {
 #[test]
 fn test_input() {
     assert_eq!(solve(INPUT, 1000), (886701120, 0));
+}
+
+#[bench]
+fn bench_handle_press(b: &mut test::Bencher) {
+    let mut modules = parse(INPUT);
+    b.iter(|| {
+        let [mut high_pulses, mut low_pulses] = [0; 2];
+
+        handle_press(&mut modules, 0, &mut high_pulses, &mut low_pulses);
+    });
 }
 
 // #[bench]
