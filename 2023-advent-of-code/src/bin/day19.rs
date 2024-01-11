@@ -103,6 +103,7 @@ fn test_invert_range() {
     assert_eq!(range, 1..=2090);
 }
 
+#[cfg(debug_assertions)]
 fn rprint(str: String, depth: usize) {
     // return;
     for _ in 0..depth {
@@ -110,6 +111,9 @@ fn rprint(str: String, depth: usize) {
     }
     println!("{str}");
 }
+
+#[cfg(not(debug_assertions))]
+fn rprint(_str: String, _depth: usize) {}
 
 fn do_the_thing(workflows: &HashMap<&str, Vec<Rule>>) -> u64 {
     fn do_the_thing_2(
