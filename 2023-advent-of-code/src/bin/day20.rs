@@ -2,7 +2,8 @@
 
 extern crate test;
 
-use std::collections::{HashMap, HashSet, VecDeque};
+use fxhash::{FxHashMap as HashMap, FxHashSet as HashSet};
+use std::collections::VecDeque;
 
 const EXAMPLE: &str = include_str!("example20.txt");
 const EXAMPLE_2: &str = include_str!("example20_2.txt");
