@@ -2,7 +2,7 @@
 
 // extern crate test;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter};
 
 const EXAMPLE: &str = include_str!("example21.txt");
@@ -18,7 +18,29 @@ fn solve(input: &str) -> (usize, usize) {
 
     println!("{:?}", map);
 
-    (0, 0)
+    let mut stepped = HashSet::from([map.start]);
+    for _i in 1..=64 {
+        let mut next = HashSet::default();
+
+        for &Point { x, y } in &stepped {
+            for (x, y) in [
+                (x, y - 1), // never
+                (x + 1, y), // eat
+                (x, y + 1), // soggy
+                (x - 1, y), // waffles
+            ] {
+                let n = Point { x, y };
+
+                if *map.tiles.get(&n).unwrap_or(&'.') == '.' {
+                    next.insert(n);
+                }
+            }
+        }
+
+        stepped = next;
+    }
+
+    (stepped.len(), 0)
 }
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
@@ -104,12 +126,12 @@ fn test_parse_display() {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (0, 0));
+    assert_eq!(solve(EXAMPLE), (4056, 0));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (0, 0));
+    assert_eq!(solve(INPUT), (3689, 0));
 }
 
 // #[bench]
