@@ -1,8 +1,9 @@
-// #![feature(test)]
+#![feature(test)]
 
-// extern crate test;
+extern crate test;
 
-use std::collections::{HashMap, HashSet};
+use fxhash::FxHashSet as HashSet;
+use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 
 const EXAMPLE: &str = include_str!("example21.txt");
@@ -16,9 +17,10 @@ fn main() {
 fn solve(input: &str) -> (usize, usize) {
     let map = parse(input);
 
-    println!("{:?}", map);
+    // println!("{:?}", map);
 
-    let mut stepped = HashSet::from([map.start]);
+    let mut stepped = HashSet::default();
+    stepped.insert(map.start);
     for _i in 1..=64 {
         let mut next = HashSet::default();
 
@@ -38,6 +40,8 @@ fn solve(input: &str) -> (usize, usize) {
         }
 
         stepped = next;
+
+        // println!("\n{}", map.fmt_with_steps(&stepped));
     }
 
     (stepped.len(), 0)
@@ -118,6 +122,34 @@ impl Debug for Map {
     }
 }
 
+impl Map {
+    fn fmt_with_steps(&self, stepped: &HashSet<Point>) -> String {
+        let mut out = String::new();
+        for y in 0..self.height {
+            if y != 0 {
+                out.push('\n');
+            }
+            for x in 0..self.width {
+                let point = Point {
+                    x: x as isize,
+                    y: y as isize,
+                };
+                let c = if stepped.contains(&point) {
+                    'O'
+                } else if self.start == point {
+                    'S'
+                } else {
+                    self.tiles[&point]
+                };
+
+                out.push(c);
+            }
+        }
+
+        out
+    }
+}
+
 #[test]
 fn test_parse_display() {
     assert_eq!(format!("{:?}", parse(EXAMPLE)), EXAMPLE);
@@ -134,9 +166,49 @@ fn test_input() {
     assert_eq!(solve(INPUT), (3689, 0));
 }
 
-// #[bench]
-// fn bench_solve_current(b: &mut test::Bencher) {
-//     b.iter(|| {
-//         assert_eq!(solve(INPUT), (0, 0));
-//     });
-// }
+#[bench]
+fn bench_solve_current(b: &mut test::Bencher) {
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (3689, 0));
+    });
+}
+
+#[bench]
+fn bench_solve_original(b: &mut test::Bencher) {
+    use std::collections::HashSet;
+    fn solve(input: &str) -> (usize, usize) {
+        let map = parse(input);
+
+        // println!("{:?}", map);
+
+        let mut stepped = HashSet::from([map.start]);
+        for _i in 1..=64 {
+            let mut next = HashSet::default();
+
+            for &Point { x, y } in &stepped {
+                for (x, y) in [
+                    (x, y - 1), // never
+                    (x + 1, y), // eat
+                    (x, y + 1), // soggy
+                    (x - 1, y), // waffles
+                ] {
+                    let n = Point { x, y };
+
+                    if *map.tiles.get(&n).unwrap_or(&'.') == '.' {
+                        next.insert(n);
+                    }
+                }
+            }
+
+            stepped = next;
+
+            // println!("\n{}", map.fmt_with_steps(&stepped));
+        }
+
+        (stepped.len(), 0)
+    }
+
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (3689, 0));
+    });
+}
