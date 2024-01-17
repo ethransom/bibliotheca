@@ -2,8 +2,7 @@
 
 extern crate test;
 
-use fxhash::FxHashSet as HashSet;
-use std::collections::HashMap;
+use fxhash::{FxHashMap as HashMap, FxHashSet as HashSet};
 use std::fmt::{Debug, Formatter};
 
 const EXAMPLE: &str = include_str!("example21.txt");
@@ -62,7 +61,7 @@ struct Map {
 
 fn parse(input: &str) -> Map {
     let mut start = None;
-    let mut tiles = HashMap::new();
+    let mut tiles = HashMap::default();
 
     for (y, line) in input.lines().enumerate() {
         for (x, mut char) in line.chars().enumerate() {
@@ -167,7 +166,47 @@ fn test_input() {
 }
 
 #[bench]
-fn bench_solve_current(b: &mut test::Bencher) {
+fn bench_solve_steps(b: &mut test::Bencher) {
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (3689, 0));
+    });
+}
+
+#[bench]
+fn bench_solve_fxhash(b: &mut test::Bencher) {
+    fn solve(input: &str) -> (usize, usize) {
+        let map = parse(input);
+
+        // println!("{:?}", map);
+
+        let mut stepped = HashSet::default();
+        stepped.insert(map.start);
+        for _i in 1..=64 {
+            let mut next = HashSet::default();
+
+            for &Point { x, y } in &stepped {
+                for (x, y) in [
+                    (x, y - 1), // never
+                    (x + 1, y), // eat
+                    (x, y + 1), // soggy
+                    (x - 1, y), // waffles
+                ] {
+                    let n = Point { x, y };
+
+                    if *map.tiles.get(&n).unwrap_or(&'.') == '.' {
+                        next.insert(n);
+                    }
+                }
+            }
+
+            stepped = next;
+
+            // println!("\n{}", map.fmt_with_steps(&stepped));
+        }
+
+        (stepped.len(), 0)
+    }
+
     b.iter(|| {
         assert_eq!(solve(INPUT), (3689, 0));
     });
