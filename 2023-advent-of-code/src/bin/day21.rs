@@ -208,14 +208,88 @@ fn test_input() {
 }
 
 #[bench]
-fn bench_solve_03_current(b: &mut test::Bencher) {
+fn bench_part1_03_dfs(b: &mut test::Bencher) {
+    fn solve(input: &str) -> (usize, usize) {
+        let map = parse(input);
+
+        // println!("{:?}", map);
+
+        let steps = 64;
+
+        let mut distance = HashMap::default();
+        distance.insert(map.start, 0);
+        let mut queue = VecDeque::new();
+        queue.push_back(map.start);
+        while let Some(point) = queue.pop_front() {
+            let dist = distance[&point];
+            if dist > steps {
+                continue;
+            }
+            let Point { x, y } = point;
+            for (x, y) in [
+                (x, y - 1), // never
+                (x + 1, y), // eat
+                (x, y + 1), // soggy
+                (x - 1, y), // waffles
+            ] {
+                let n = Point { x, y };
+
+                if distance.contains_key(&n) {
+                    continue;
+                }
+
+                if *map.tiles.get(&n).unwrap_or(&'.') == '#' {
+                    continue;
+                }
+
+                distance.insert(n, dist + 1);
+                queue.push_back(n);
+            }
+        }
+        // for i in 1..=3 {
+        //     let mut out = String::new();
+        //     for y in 0..map.height {
+        //         if y != 0 {
+        //             out.push('\n');
+        //         }
+        //         for x in 0..map.width {
+        //             let point = Point {
+        //                 x: x as isize,
+        //                 y: y as isize,
+        //             };
+        //             let c = if distance.contains_key(&point)
+        //                 && distance[&point] <= i
+        //                 && distance[&point] % 2 == i % 2
+        //             {
+        //                 'O'
+        //             } else if map.start == point {
+        //                 'S'
+        //             } else {
+        //                 map.tiles[&point]
+        //             };
+        //
+        //             out.push(c);
+        //         }
+        //     }
+        //
+        //     println!("\n{}", out);
+        // }
+
+        let stepped = distance
+            .values()
+            .filter(|&dist| dist % 2 == steps % 2)
+            .count();
+
+        (stepped, 0)
+    }
+
     b.iter(|| {
         assert_eq!(solve(INPUT), (3689, 0));
     });
 }
 
 #[bench]
-fn bench_solve_02_steps(b: &mut test::Bencher) {
+fn bench_part1_02_steps(b: &mut test::Bencher) {
     fn solve(input: &str) -> (usize, usize) {
         let map = parse(input);
 
@@ -255,7 +329,7 @@ fn bench_solve_02_steps(b: &mut test::Bencher) {
 }
 
 #[bench]
-fn bench_solve_01_fxhash(b: &mut test::Bencher) {
+fn bench_part1_01_fxhash(b: &mut test::Bencher) {
     fn solve(input: &str) -> (usize, usize) {
         let map = parse(input);
 
@@ -295,7 +369,7 @@ fn bench_solve_01_fxhash(b: &mut test::Bencher) {
 }
 
 #[bench]
-fn bench_solve_00_original(b: &mut test::Bencher) {
+fn bench_part1_00_original(b: &mut test::Bencher) {
     use std::collections::HashSet;
     fn solve(input: &str) -> (usize, usize) {
         let map = parse(input);
