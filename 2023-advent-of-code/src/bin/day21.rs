@@ -20,9 +20,8 @@ fn solve(input: &str) -> (usize, usize) {
 
     let mut stepped = HashSet::default();
     stepped.insert(map.start);
+    let mut next = HashSet::default();
     for _i in 1..=64 {
-        let mut next = HashSet::default();
-
         for &Point { x, y } in &stepped {
             for (x, y) in [
                 (x, y - 1), // never
@@ -38,7 +37,8 @@ fn solve(input: &str) -> (usize, usize) {
             }
         }
 
-        stepped = next;
+        std::mem::swap(&mut stepped, &mut next);
+        next.clear();
 
         // println!("\n{}", map.fmt_with_steps(&stepped));
     }
