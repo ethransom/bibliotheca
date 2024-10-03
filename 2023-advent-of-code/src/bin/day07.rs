@@ -134,33 +134,21 @@ const NON_JOKERS: [Card; 12] = [
     Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Queen, King, Ace,
 ];
 
-fn best_joker_hand(cards: &[Card]) -> Type {
-    let mut best_hand = None;
-    for &card0 in if cards[0] == Jack {
+fn expand_if_joker(cards: &[Card]) -> &[Card] {
+    if cards[0] == Jack {
         &NON_JOKERS
     } else {
         &cards[0..=0]
-    } {
-        for &card1 in if cards[1] == Jack {
-            &NON_JOKERS
-        } else {
-            &cards[1..=1]
-        } {
-            for &card2 in if cards[2] == Jack {
-                &NON_JOKERS
-            } else {
-                &cards[2..=2]
-            } {
-                for &card3 in if cards[3] == Jack {
-                    &NON_JOKERS
-                } else {
-                    &cards[3..=3]
-                } {
-                    for &card4 in if cards[4] == Jack {
-                        &NON_JOKERS
-                    } else {
-                        &cards[4..=4]
-                    } {
+    }
+}
+
+fn best_joker_hand(cards: &[Card]) -> Type {
+    let mut best_hand = None;
+    for &card0 in expand_if_joker(&cards[0..=0]) {
+        for &card1 in expand_if_joker(&cards[1..=1]) {
+            for &card2 in expand_if_joker(&cards[2..=2]) {
+                for &card3 in expand_if_joker(&cards[3..=3]) {
+                    for &card4 in expand_if_joker(&cards[4..=4]) {
                         let t = hand_type(&[card0, card1, card2, card3, card4]);
                         if let Some(best_hand) = best_hand {
                             if best_hand > t {
@@ -287,6 +275,59 @@ fn test_example() {
 #[test]
 fn test_input() {
     assert_eq!(solve(INPUT), (252052080, 252898370));
+}
+
+#[bench]
+fn bench_best_joker_hand(b: &mut test::Bencher) {
+    b.iter(|| best_joker_hand(&parse(INPUT)[0].0));
+}
+
+#[bench]
+fn bench_best_joker_hand_original(b: &mut test::Bencher) {
+    fn best_joker_hand(cards: &[Card]) -> Type {
+        let mut best_hand = None;
+        for &card0 in if cards[0] == Jack {
+            &NON_JOKERS
+        } else {
+            &cards[0..=0]
+        } {
+            for &card1 in if cards[1] == Jack {
+                &NON_JOKERS
+            } else {
+                &cards[1..=1]
+            } {
+                for &card2 in if cards[2] == Jack {
+                    &NON_JOKERS
+                } else {
+                    &cards[2..=2]
+                } {
+                    for &card3 in if cards[3] == Jack {
+                        &NON_JOKERS
+                    } else {
+                        &cards[3..=3]
+                    } {
+                        for &card4 in if cards[4] == Jack {
+                            &NON_JOKERS
+                        } else {
+                            &cards[4..=4]
+                        } {
+                            let t = hand_type(&[card0, card1, card2, card3, card4]);
+                            if let Some(best_hand) = best_hand {
+                                if best_hand > t {
+                                    continue;
+                                }
+                            }
+                            best_hand = Some(t);
+                        }
+                    }
+                }
+            }
+        }
+
+        best_hand.unwrap()
+    }
+
+    b.iter(|| best_joker_hand(&parse(INPUT)[0].0));
 }
 
 #[bench]
