@@ -15,21 +15,21 @@ fn solve(input: &str) -> (usize, usize) {
 
     sort_hands(&mut hands, false);
 
-    let winnings = hands
-        .iter()
-        .enumerate()
-        .map(|(i, (_cards, bid))| (i + 1) * *bid as usize)
-        .sum();
+    let winnings = sum_winnings(&hands);
 
     sort_hands(&mut hands, true);
 
-    let joker_rule_winnings = hands
+    let joker_rule_winnings = sum_winnings(&hands);
+
+    (winnings, joker_rule_winnings)
+}
+
+fn sum_winnings(hands: &[([Card; 5], u16)]) -> usize {
+    hands
         .iter()
         .enumerate()
         .map(|(i, (_cards, bid))| (i + 1) * *bid as usize)
-        .sum();
-
-    (winnings, joker_rule_winnings)
+        .sum()
 }
 
 use Card::*;
