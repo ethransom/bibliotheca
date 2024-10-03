@@ -1,4 +1,3 @@
-#![feature(slice_group_by)]
 #![feature(test)]
 
 extern crate test;
@@ -185,7 +184,7 @@ fn best_joker_hand(cards: &[Card]) -> Type {
 fn hand_type(cards: &[Card]) -> Type {
     let mut cards = cards.to_vec();
     cards.sort();
-    let mut groups: Vec<usize> = cards.group_by(Card::eq).map(|group| group.len()).collect();
+    let mut groups: Vec<usize> = cards.chunk_by(Card::eq).map(|group| group.len()).collect();
     groups.sort_by(|a, b| b.cmp(a)); // descending order
 
     match groups.as_slice() {
