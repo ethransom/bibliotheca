@@ -13,11 +13,11 @@ fn main() {
 fn solve(input: &str) -> (usize, usize) {
     let mut hands = parse(input);
 
-    sort_hands(&mut hands, false);
+    hands.sort_by_cached_key(sort_key);
 
     let winnings = sum_winnings(&hands);
 
-    sort_hands(&mut hands, true);
+    hands.sort_by_cached_key(sort_key_joker_rule);
 
     let joker_rule_winnings = sum_winnings(&hands);
 
@@ -90,48 +90,44 @@ impl From<u8> for Card {
     }
 }
 
-fn sort_hands(hands: &mut [([Card; 5], u16)], joker_rule: bool) {
-    if joker_rule {
-        hands.sort_by_cached_key(|(cards, _bid)| {
-            let best_hand_type = best_joker_hand(cards);
-            fn joker_sort_order(card: Card) -> u8 {
-                match card {
-                    Jack => 0,
-                    Two => 1,
-                    Three => 2,
-                    Four => 3,
-                    Five => 4,
-                    Six => 5,
-                    Seven => 6,
-                    Eight => 7,
-                    Nine => 8,
-                    Ten => 9,
-                    Queen => 10,
-                    King => 11,
-                    Ace => 12,
-                }
-            }
-            (
-                best_hand_type,
-                joker_sort_order(cards[0]),
-                joker_sort_order(cards[1]),
-                joker_sort_order(cards[2]),
-                joker_sort_order(cards[3]),
-                joker_sort_order(cards[4]),
-            )
-        });
-    } else {
-        hands.sort_by_cached_key(|(cards, _bid)| {
-            (
-                hand_type(cards),
-                cards[0],
-                cards[1],
-                cards[2],
-                cards[3],
-                cards[4],
-            )
-        });
+fn sort_key_joker_rule((cards, _bid): &([Card; 5], u16)) -> (Type, u8, u8, u8, u8, u8) {
+    let best_hand_type = best_joker_hand(cards);
+    fn joker_sort_order(card: Card) -> u8 {
+        match card {
+            Jack => 0,
+            Two => 1,
+            Three => 2,
+            Four => 3,
+            Five => 4,
+            Six => 5,
+            Seven => 6,
+            Eight => 7,
+            Nine => 8,
+            Ten => 9,
+            Queen => 10,
+            King => 11,
+            Ace => 12,
+        }
     }
+    (
+        best_hand_type,
+        joker_sort_order(cards[0]),
+        joker_sort_order(cards[1]),
+        joker_sort_order(cards[2]),
+        joker_sort_order(cards[3]),
+        joker_sort_order(cards[4]),
+    )
+}
+
+fn sort_key((cards, _bid): &([Card; 5], u16)) -> (Type, Card, Card, Card, Card, Card) {
+    (
+        hand_type(cards),
+        cards[0],
+        cards[1],
+        cards[2],
+        cards[3],
+        cards[4],
+    )
 }
 
 const NON_JOKERS: [Card; 12] = [
@@ -238,13 +234,13 @@ fn test_sort_hands_same_type() {
     );
 
     let mut hands = parse("KK677 1\nKTJJT 1");
-    sort_hands(&mut hands, false);
+    hands.sort_by_cached_key(sort_key);
     assert_eq!(hands, parse("KTJJT 1\nKK677 1"));
 
     // T55J5 and QQQJA are both three of a kind. QQQJA has a stronger first
     // card, so it gets rank 5 and T55J5 gets rank 4.
     let mut hands = parse("T55J5 1\nQQQJA 1");
-    sort_hands(&mut hands, false);
+    hands.sort_by_cached_key(sort_key);
     assert_eq!(hands, parse("T55J5 1\nQQQJA 1"));
 }
 
@@ -270,13 +266,13 @@ fn test_hand_type() {
 fn test_sort_hands() {
     let mut hands = parse("32T3K 765\nT55J5 684\nKK677 28\nKTJJT 220\nQQQJA 483\n");
 
-    sort_hands(&mut hands, false);
+    hands.sort_by_cached_key(sort_key);
     assert_eq!(
         hands,
         parse("32T3K 765\nKTJJT 220\nKK677 28\nT55J5 684\nQQQJA 483\n")
     );
 
-    sort_hands(&mut hands, true);
+    hands.sort_by_cached_key(sort_key_joker_rule);
     assert_eq!(
         hands,
         parse("32T3K 765\nKK677 28\nT55J5 684\nQQQJA 483\nKTJJT 220\n")
