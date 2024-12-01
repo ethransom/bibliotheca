@@ -1,0 +1,38 @@
+// #![feature(test)]
+
+// extern crate test;
+
+const EXAMPLE: &str = include_str!("exampleXX.txt");
+const INPUT: &str = include_str!("inputXX.txt");
+
+fn main() {
+    dbg!(solve(EXAMPLE));
+    dbg!(solve(INPUT));
+}
+
+fn solve(input: &str) -> (usize, usize) {
+    let blocks = parse(input);
+
+    (0, 0)
+}
+
+fn parse(input: &str) -> Vec<&str> {
+    input.lines().collect::<Vec<&str>>()
+}
+
+#[test]
+fn test_example() {
+    assert_eq!(solve(EXAMPLE), (0, 0));
+}
+
+#[test]
+fn test_input() {
+    assert_eq!(solve(INPUT), (0, 0));
+}
+
+// #[bench]
+// fn bench_solve_current(b: &mut test::Bencher) {
+//     b.iter(|| {
+//         assert_eq!(solve(INPUT), (0, 0));
+//     });
+// }
