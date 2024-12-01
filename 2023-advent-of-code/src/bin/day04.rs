@@ -4,7 +4,7 @@ use itertools::Itertools;
 
 // extern crate test;
 
-use std::collections::HashSet;
+use std::{collections::HashSet, slice::from_mut};
 
 const EXAMPLE: &str = include_str!("example04.txt");
 const INPUT: &str = include_str!("input04.txt");

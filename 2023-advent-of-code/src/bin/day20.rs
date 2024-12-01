@@ -10,12 +10,12 @@ const EXAMPLE_2: &str = include_str!("example20_2.txt");
 const INPUT: &str = include_str!("input20.txt");
 
 fn main() {
-    dbg!(solve(EXAMPLE, 1));
-    dbg!(solve(EXAMPLE_2, 3));
-    dbg!(solve(INPUT, 1));
+    dbg!(solve(EXAMPLE, 1, false));
+    dbg!(solve(EXAMPLE_2, 3, false));
+    dbg!(solve(INPUT, 1, true));
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 enum ModuleType<'a> {
     Output { activated_on: Option<usize> },
     Broadcaster,
@@ -23,15 +23,17 @@ enum ModuleType<'a> {
     Conjunction { memory: HashMap<&'a str, bool> }, // conjunction function, what's your compunction
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Module<'a> {
     kind: ModuleType<'a>,
     // name: &'a str,
     destinations: Vec<&'a str>,
 }
 
-fn solve(input: &str, presses: usize) -> (usize, usize) {
-    let mut modules = parse(input);
+fn solve(input: &str, presses: usize, activate_rx: bool) -> (usize, usize) {
+    let original_modules = parse(input);
+
+    let mut modules = original_modules.clone();
 
     // dbg!(&modules);
 
@@ -51,27 +53,101 @@ fn solve(input: &str, presses: usize) -> (usize, usize) {
         }
         handle_press(&mut modules, press, &mut high_pulses, &mut low_pulses);
     }
+    let total_sent = high_pulses * low_pulses;
 
     let mut min_for_output = 0;
-    for press in (presses + 1).. {
-        if press % 10_000 == 0 {
-            println!("{press}");
-        }
-        if let Some(output_module) = modules.get("rx") {
-            if let ModuleType::Output {
-                activated_on: Some(activated_on),
-            } = output_module.kind
-            {
-                min_for_output = activated_on;
-                break;
-            }
-        } else {
-            break;
-        }
-        handle_press(&mut modules, press, &mut high_pulses, &mut low_pulses);
+    if activate_rx {
+        let (name, rx_proxy) = modules
+            .iter()
+            .find(|(_name, module)| module.destinations.contains(&"rx"))
+            .unwrap();
+        assert!(matches!(rx_proxy.kind, ModuleType::Conjunction { .. }));
+        println!("input to 'rx' is '{name}'");
+        let stages = modules
+            .iter()
+            .filter(|(_name, module)| module.destinations.contains(name))
+            .collect::<Vec<_>>();
+        println!("inputs to '{name}' are {stages:?}");
+        let stages = stages
+            .iter()
+            .map(|&(name, _module)| {
+                let mut modules = modules.clone();
+                let mut stage_output = 0;
+                modules.insert(
+                    name,
+                    Module {
+                        kind: ModuleType::Output { activated_on: None },
+                        destinations: vec![],
+                    },
+                );
+
+                for press in 1.. {
+                    if let Some(output_module) = modules.get(name) {
+                        if let ModuleType::Output {
+                            activated_on: Some(activated_on),
+                        } = output_module.kind
+                        {
+                            stage_output = activated_on;
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                    handle_press(&mut modules, press, &mut high_pulses, &mut low_pulses);
+                }
+
+                stage_output
+            })
+            .collect::<Vec<_>>();
+        println!("stages active on: {stages:?}");
+        min_for_output = stages.into_iter().reduce(lcm).unwrap();
+    }
+    // for press in (presses + 1).. {
+    //     if press % 100_000 == 0 {
+    //         let press = press
+    //             .to_string()
+    //             .as_bytes()
+    //             .rchunks(3)
+    //             .rev()
+    //             .map(std::str::from_utf8)
+    //             .collect::<Result<Vec<&str>, _>>()
+    //             .unwrap()
+    //             .join(",");
+    //         println!("{press}");
+    //     }
+    //     if let Some(output_module) = modules.get("rx") {
+    //         if let ModuleType::Output {
+    //             activated_on: Some(activated_on),
+    //         } = output_module.kind
+    //         {
+    //             min_for_output = activated_on;
+    //             break;
+    //         }
+    //     } else {
+    //         break;
+    //     }
+    //     handle_press(&mut modules, press, &mut high_pulses, &mut low_pulses);
+    // }
+
+    (total_sent, min_for_output)
+}
+
+// borrowed from day 8
+fn lcm(a: usize, b: usize) -> usize {
+    a * b / gcd(a, b)
+}
+
+fn gcd(mut a: usize, mut b: usize) -> usize {
+    // for shame: copilot wrote this one
+    // TODO: we do have this already oxidixed example:
+    // https://en.wikipedia.org/wiki/Binary_GCD_algorithm#Implementation
+    while b != 0 {
+        let t = b;
+        b = a % b;
+        a = t;
     }
 
-    (high_pulses * low_pulses, min_for_output)
+    a
 }
 
 fn handle_press(
@@ -220,17 +296,17 @@ fn parse(input: &str) -> HashMap<&str, Module> {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE, 1000), (32000000, 0));
+    assert_eq!(solve(EXAMPLE, 1000, false), (32000000, 0));
 }
 
 #[test]
 fn test_example_2() {
-    assert_eq!(solve(EXAMPLE_2, 1000), (11687500, 0));
+    assert_eq!(solve(EXAMPLE_2, 1000, false), (11687500, 0));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT, 1000), (886701120, 0));
+    assert_eq!(solve(INPUT, 1000, true), (886701120, 0));
 }
 
 #[bench]
