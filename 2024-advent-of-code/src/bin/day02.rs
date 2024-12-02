@@ -133,3 +133,130 @@ fn bench_solve_02_low_alloc(b: &mut test::Bencher) {
         assert_eq!(solve(INPUT), (516, 561));
     });
 }
+
+#[bench]
+fn bench_solve_03_lower_alloc(b: &mut test::Bencher) {
+    fn solve(input: &str) -> (usize, usize) {
+        let reports = parse(input);
+
+        let num_safe = reports.iter().filter(|r| report_is_safe(r.iter())).count();
+
+        let num_safe_dampener =
+            reports
+                .iter()
+                .filter(|r| {
+                    // println!("{:?}", r);
+
+                    for dampened in 0..r.len() {
+                        let report = r.iter().enumerate().filter_map(|(i, v)| {
+                            if i == dampened {
+                                None
+                            } else {
+                                Some(v)
+                            }
+                        });
+
+                        // println!("\t{:?}", report);
+
+                        if report_is_safe(report) {
+                            return true;
+                        }
+                    }
+
+                    false
+                })
+                .count();
+
+        (num_safe, num_safe_dampener)
+    }
+
+    fn report_is_safe<'a>(report: impl Iterator<Item = &'a i16> + Clone) -> bool {
+        use itertools::Itertools;
+
+        let all_increasing = report
+            .clone()
+            .tuple_windows()
+            .map(|(&a, &b)| a - b)
+            .all(|d| d < 0);
+        let all_decreasing = report
+            .clone()
+            .tuple_windows()
+            .map(|(&a, &b)| a - b)
+            .all(|d| d > 0);
+        let gradually_changing = report
+            .tuple_windows()
+            .map(|(&a, &b)| a - b)
+            .map(|d| d.abs())
+            .all(|d| (1..=3).contains(&d));
+
+        (all_increasing || all_decreasing) && (gradually_changing)
+    }
+
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (516, 561));
+    });
+}
+
+#[bench]
+fn bench_solve_04_lower_alloc(b: &mut test::Bencher) {
+    fn solve(input: &str) -> (usize, usize) {
+        let reports = parse(input);
+
+        let num_safe = reports.iter().filter(|r| report_is_safe(r.iter())).count();
+
+        let num_safe_dampener =
+            reports
+                .iter()
+                .filter(|r| {
+                    // println!("{:?}", r);
+
+                    for dampened in 0..r.len() {
+                        let report = r.iter().enumerate().filter_map(|(i, v)| {
+                            if i == dampened {
+                                None
+                            } else {
+                                Some(v)
+                            }
+                        });
+
+                        // println!("\t{:?}", report);
+
+                        if report_is_safe(report) {
+                            return true;
+                        }
+                    }
+
+                    false
+                })
+                .count();
+
+        (num_safe, num_safe_dampener)
+    }
+
+    fn report_is_safe<'a>(report: impl Iterator<Item = &'a i16> + Clone) -> bool {
+        use itertools::Itertools;
+
+        let mut direction = None;
+
+        for (a, b) in report.tuple_windows() {
+            let diff = a - b;
+            if let Some(direction) = direction {
+                if diff.signum() != direction {
+                    return false;
+                }
+            } else {
+                direction = Some(diff.signum());
+            }
+
+            if !(1..=3).contains(&diff.abs()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (516, 561));
+    });
+}
