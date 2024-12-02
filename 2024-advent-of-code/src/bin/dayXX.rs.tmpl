@@ -17,7 +17,13 @@ fn solve(input: &str) -> (usize, usize) {
 }
 
 fn parse(input: &str) -> Vec<&str> {
-    input.lines().collect::<Vec<&str>>()
+    input
+        .lines()
+        .map(|line| {
+            // foo
+            line
+        })
+        .collect::<Vec<&str>>()
 }
 
 #[test]
