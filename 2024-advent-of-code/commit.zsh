@@ -23,4 +23,4 @@ fi
 git add .
 
 echo 'COMMIT MESSAGE: (Ctrl+C to abort)'
-git commit -m "aoc22:$day $(read -r; printf '%s' "$REPLY")"
+git commit -m "aoc24:$day $(read -r; printf '%s' "$REPLY")"
