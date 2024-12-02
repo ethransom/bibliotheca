@@ -1,7 +1,7 @@
-// #![feature(test)]
+#![feature(test)]
 #![feature(iter_map_windows)]
 
-// extern crate test;
+extern crate test;
 
 use core::iter::Iterator;
 
@@ -78,9 +78,58 @@ fn test_input() {
     assert_eq!(solve(INPUT), (516, 561));
 }
 
-// #[bench]
-// fn bench_solve_current(b: &mut test::Bencher) {
-//     b.iter(|| {
-//         assert_eq!(solve(INPUT), (0, 0));
-//     });
-// }
+#[bench]
+fn bench_solve_01_original(b: &mut test::Bencher) {
+    b.iter(test_input);
+}
+
+#[bench]
+fn bench_solve_02_low_alloc(b: &mut test::Bencher) {
+    fn solve(input: &str) -> (usize, usize) {
+        let reports = parse(input);
+
+        let num_safe = reports.iter().filter(|r| report_is_safe(r.iter())).count();
+
+        let num_safe_dampener =
+            reports
+                .iter()
+                .filter(|r| {
+                    // println!("{:?}", r);
+
+                    for dampened in 0..r.len() {
+                        let report = r.iter().enumerate().filter_map(|(i, v)| {
+                            if i == dampened {
+                                None
+                            } else {
+                                Some(v)
+                            }
+                        });
+
+                        // println!("\t{:?}", report);
+
+                        if report_is_safe(report) {
+                            return true;
+                        }
+                    }
+
+                    false
+                })
+                .count();
+
+        (num_safe, num_safe_dampener)
+    }
+
+    fn report_is_safe<'a>(report: impl Iterator<Item = &'a i16>) -> bool {
+        let diffs = report.map_windows(|&[a, b]| a - b).collect::<Vec<_>>();
+
+        let all_increasing = diffs.iter().all(|&d| d < 0);
+        let all_decreasing = diffs.iter().all(|&d| d > 0);
+        let gradually_changing = diffs.iter().map(|d| d.abs()).all(|d| (1..=3).contains(&d));
+
+        (all_increasing || all_decreasing) && (gradually_changing)
+    }
+
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (516, 561));
+    });
+}
