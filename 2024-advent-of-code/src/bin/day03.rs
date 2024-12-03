@@ -13,55 +13,63 @@ fn main() {
     dbg!(solve(INPUT));
 }
 
+fn matches(buf: &mut &str, pat: &str) -> bool {
+    if buf.starts_with(pat) {
+        *buf = &buf[pat.len()..];
+        true
+    } else {
+        false
+    }
+}
+
 fn solve(input: &str) -> (usize, usize) {
     let mut instructions: Vec<(usize, usize)> = Vec::new();
     for line in input.lines() {
-        let mut chars = line;
+        let mut buf = line;
 
-        while chars.len() != 0 {
-            if !chars.starts_with("mul") {
-                chars = &chars[1..];
+        while !buf.is_empty() {
+            let mut peek = buf;
+            buf = &buf[1..];
+
+            println!("{:?}", peek);
+
+            if !matches(&mut peek, "mul") {
                 continue;
             }
-            chars = &chars["mul".len()..];
 
-            if !chars.starts_with('(') {
-                chars = &chars[1..];
+            if !matches(&mut peek, "(") {
                 continue;
             }
-            chars = &chars[1..];
 
             let mut digit = 0;
-            while let Some(c) = chars.chars().next()
+            while let Some(c) = peek.chars().next()
                 && let Some(d) = c.to_digit(10)
             {
-                chars = &chars[1..];
+                peek = &peek[1..];
                 digit *= 10;
                 digit += d as usize;
             }
             let left = digit;
 
-            if !chars.starts_with(',') {
-                chars = &chars[1..];
+            if !matches(&mut peek, ",") {
                 continue;
             }
-            chars = &chars[1..];
 
             let mut digit = 0;
-            while let Some(c) = chars.chars().next()
+            while let Some(c) = peek.chars().next()
                 && let Some(d) = c.to_digit(10)
             {
-                chars = &chars[1..];
+                peek = &peek[1..];
                 digit *= 10;
                 digit += d as usize;
             }
             let right = digit;
 
-            if !chars.starts_with(')') {
-                chars = &chars[1..];
+            if !matches(&mut peek, ")") {
                 continue;
             }
-            chars = &chars[1..];
+
+            buf = peek; // "commit"
 
             instructions.push((left, right));
         }
