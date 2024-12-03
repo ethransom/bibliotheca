@@ -13,15 +13,6 @@ fn main() {
     dbg!(solve(INPUT));
 }
 
-fn matches(buf: &mut &str, pat: &str) -> bool {
-    if buf.starts_with(pat) {
-        *buf = &buf[pat.len()..];
-        true
-    } else {
-        false
-    }
-}
-
 fn solve(input: &str) -> (usize, usize) {
     (scan(input), scan_with_conditionals(input))
 }
@@ -139,6 +130,15 @@ fn parse_statement(buf: &mut &str, name: &str) -> Option<()> {
     *buf = peek;
 
     Some(())
+}
+
+fn matches(buf: &mut &str, pat: &str) -> bool {
+    if buf.starts_with(pat) {
+        *buf = &buf[pat.len()..];
+        true
+    } else {
+        false
+    }
 }
 
 #[test]
