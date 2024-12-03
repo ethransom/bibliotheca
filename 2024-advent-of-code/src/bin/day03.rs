@@ -229,3 +229,138 @@ fn bench_solve_02_zach_regexes(b: &mut test::Bencher) {
         assert_eq!(solve(INPUT), (160672468, 84893551));
     })
 }
+
+#[bench]
+fn bench_solve_03_bytes(b: &mut test::Bencher) {
+    fn solve(input: &str) -> (usize, usize) {
+        (scan(input), scan_with_conditionals(input))
+    }
+
+    fn scan(input: &str) -> usize {
+        let mut sum = 0;
+        for line in input.lines() {
+            let mut buf = line.as_bytes();
+
+            while !buf.is_empty() {
+                if let Some(mul) = parse_mul(&mut buf) {
+                    let (left, right) = mul;
+                    sum += left * right;
+
+                    continue;
+                }
+
+                buf = &buf[1..];
+            }
+        }
+        sum
+    }
+
+    fn scan_with_conditionals(input: &str) -> usize {
+        let mut sum = 0;
+        let mut mul_enabled = true;
+
+        for line in input.lines() {
+            let mut buf = line.as_bytes();
+
+            while !buf.is_empty() {
+                if let Some(mul) = parse_mul(&mut buf) {
+                    if mul_enabled {
+                        let (left, right) = mul;
+                        sum += left * right;
+                    }
+
+                    continue;
+                }
+
+                if let Some(()) = parse_do(&mut buf) {
+                    mul_enabled = true;
+
+                    continue;
+                }
+
+                if let Some(()) = parse_dont(&mut buf) {
+                    mul_enabled = false;
+
+                    continue;
+                }
+
+                buf = &buf[1..];
+            }
+        }
+        sum
+    }
+
+    fn parse_mul(buf: &mut &[u8]) -> Option<(usize, usize)> {
+        let mut peek = *buf;
+        if !matches(&mut peek, b"mul") {
+            return None;
+        }
+        if !matches(&mut peek, b"(") {
+            return None;
+        }
+        let mut digit = 0;
+        while let Some(c) = peek.first()
+            && (b'0'..=b'9').contains(c)
+        {
+            peek = &peek[1..];
+            digit *= 10;
+            digit += (c - b'0') as usize;
+        }
+        let left = digit;
+        if !matches(&mut peek, b",") {
+            return None;
+        }
+        let mut digit = 0;
+        while let Some(c) = peek.first()
+            && (b'0'..=b'9').contains(c)
+        {
+            peek = &peek[1..];
+            digit *= 10;
+            digit += (c - b'0') as usize;
+        }
+        let right = digit;
+        if !matches(&mut peek, b")") {
+            return None;
+        }
+        *buf = peek;
+        let mul = (left, right);
+        Some(mul)
+    }
+
+    fn parse_do(buf: &mut &[u8]) -> Option<()> {
+        parse_statement(buf, b"do")
+    }
+
+    fn parse_dont(buf: &mut &[u8]) -> Option<()> {
+        parse_statement(buf, b"don't")
+    }
+
+    fn parse_statement(buf: &mut &[u8], name: &[u8]) -> Option<()> {
+        let mut peek = *buf;
+        if !matches(&mut peek, name) {
+            return None;
+        }
+        if !matches(&mut peek, b"(") {
+            return None;
+        }
+        if !matches(&mut peek, b")") {
+            return None;
+        }
+        *buf = peek;
+
+        Some(())
+    }
+
+    fn matches(buf: &mut &[u8], pat: &[u8]) -> bool {
+        if buf.starts_with(pat) {
+            *buf = &buf[pat.len()..];
+            true
+        } else {
+            false
+        }
+    }
+
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (160672468, 84893551));
+    });
+}
