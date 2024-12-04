@@ -1,7 +1,7 @@
-// #![feature(test)]
+#![feature(test)]
 #![feature(array_try_map)]
 
-// extern crate test;
+extern crate test;
 
 use core::iter::Iterator;
 use std::collections::HashMap;
@@ -114,9 +114,9 @@ fn test_input() {
     assert_eq!(solve(INPUT), (2434, 1835));
 }
 
-// #[bench]
-// fn bench_solve_current(b: &mut test::Bencher) {
-//     b.iter(|| {
-//         assert_eq!(solve(INPUT), (0, 0));
-//     });
-// }
+#[bench]
+fn bench_solve_current(b: &mut test::Bencher) {
+    b.iter(|| {
+        test_input();
+    });
+}
