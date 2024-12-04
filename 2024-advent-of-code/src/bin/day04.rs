@@ -122,7 +122,9 @@ fn bench_solve_01_current(b: &mut test::Bencher) {
 }
 
 #[bench]
-fn bench_solve_02_bytes(b: &mut test::Bencher) {
+fn bench_solve_02_current_with_fxhash(b: &mut test::Bencher) {
+    use fxhash::FxHashMap as HashMap;
+
     fn solve(input: &str) -> (usize, usize) {
         let search = parse(input);
 
@@ -140,7 +142,7 @@ fn bench_solve_02_bytes(b: &mut test::Bencher) {
                     continue;
                 };
 
-                if &[c0, c1, c2, c3] == b"XMAS" {
+                if [c0, c1, c2, c3] == ['X', 'M', 'A', 'S'] {
                     xmases += 1;
                 }
             }
@@ -164,7 +166,7 @@ fn bench_solve_02_bytes(b: &mut test::Bencher) {
                     continue;
                 };
 
-                if &values == b"MASMAS" {
+                if values == ['M', 'A', 'S', 'M', 'A', 'S'] {
                     x_mases += 1;
                 }
             }
@@ -173,11 +175,11 @@ fn bench_solve_02_bytes(b: &mut test::Bencher) {
         (xmases, x_mases)
     }
 
-    fn parse(input: &str) -> HashMap<(isize, isize), u8> {
-        let mut map = HashMap::new();
+    fn parse(input: &str) -> HashMap<(isize, isize), char> {
+        let mut map = HashMap::default();
 
         for (y, line) in input.lines().enumerate() {
-            for (x, c) in line.bytes().enumerate() {
+            for (x, c) in line.chars().enumerate() {
                 map.insert((x as isize, y as isize), c);
             }
         }
