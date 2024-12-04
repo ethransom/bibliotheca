@@ -115,8 +115,171 @@ fn test_input() {
 }
 
 #[bench]
-fn bench_solve_current(b: &mut test::Bencher) {
+fn bench_solve_01_current(b: &mut test::Bencher) {
     b.iter(|| {
-        test_input();
+        assert_eq!(solve(INPUT), (2434, 1835));
+    });
+}
+
+#[bench]
+fn bench_solve_02_bytes(b: &mut test::Bencher) {
+    fn solve(input: &str) -> (usize, usize) {
+        let search = parse(input);
+
+        let mut xmases = 0;
+
+        for ((x0, y0), &c0) in search.iter() {
+            for (dx, dy) in DIRECTIONS {
+                let Some(&c1) = search.get(&(x0 + dx, y0 + dy)) else {
+                    continue;
+                };
+                let Some(&c2) = search.get(&(x0 + dx * 2, y0 + dy * 2)) else {
+                    continue;
+                };
+                let Some(&c3) = search.get(&(x0 + dx * 3, y0 + dy * 3)) else {
+                    continue;
+                };
+
+                if &[c0, c1, c2, c3] == b"XMAS" {
+                    xmases += 1;
+                }
+            }
+        }
+
+        let mut x_mases = 0;
+
+        fn rotate((x, y): (isize, isize), rot: [[isize; 2]; 2]) -> (isize, isize) {
+            (rot[0][0] * x + rot[0][1] * y, rot[1][0] * x + rot[1][1] * y)
+        }
+
+        for (x, y) in search.keys() {
+            let pattern = [[0, 0], [1, 1], [2, 2], [2, 0], [1, 1], [0, 2]];
+
+            for rot in ROTATIONS {
+                let pattern = pattern.map(|[x, y]| rotate((x, y), rot));
+
+                let positions = pattern.map(|(dx, dy)| (x + dx, y + dy));
+
+                let Some(values) = positions.try_map(|(x, y)| search.get(&(x, y)).copied()) else {
+                    continue;
+                };
+
+                if &values == b"MASMAS" {
+                    x_mases += 1;
+                }
+            }
+        }
+
+        (xmases, x_mases)
+    }
+
+    fn parse(input: &str) -> HashMap<(isize, isize), u8> {
+        let mut map = HashMap::new();
+
+        for (y, line) in input.lines().enumerate() {
+            for (x, c) in line.bytes().enumerate() {
+                map.insert((x as isize, y as isize), c);
+            }
+        }
+
+        map
+    }
+
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (2434, 1835));
+    });
+}
+
+#[bench]
+fn bench_solve_03_vectors(b: &mut test::Bencher) {
+    fn solve(input: &str) -> (usize, usize) {
+        let search = parse(input);
+
+        let mut xmases = 0;
+
+        for (y, row) in search.iter().enumerate() {
+            for (x, &c0) in row.iter().enumerate() {
+                for (dx, dy) in DIRECTIONS {
+                    let Some(c1) = try_get((x as isize + dx, y as isize + dy), &search) else {
+                        continue;
+                    };
+                    let Some(c2) = try_get((x as isize + dx * 2, y as isize + dy * 2), &search)
+                    else {
+                        continue;
+                    };
+                    let Some(c3) = try_get((x as isize + dx * 3, y as isize + dy * 3), &search)
+                    else {
+                        continue;
+                    };
+
+                    if [c0, c1, c2, c3] == ['X', 'M', 'A', 'S'] {
+                        xmases += 1;
+                    }
+                }
+            }
+        }
+
+        let mut x_mases = 0;
+
+        fn rotate((x, y): (isize, isize), rot: [[isize; 2]; 2]) -> (isize, isize) {
+            (rot[0][0] * x + rot[0][1] * y, rot[1][0] * x + rot[1][1] * y)
+        }
+
+        for (y, row) in search.iter().enumerate() {
+            for (x, _) in row.iter().enumerate() {
+                let pattern = [[0, 0], [1, 1], [2, 2], [2, 0], [1, 1], [0, 2]];
+
+                for rot in ROTATIONS {
+                    let pattern = pattern.map(|[x, y]| rotate((x, y), rot));
+
+                    let positions = pattern.map(|(dx, dy)| (x as isize + dx, y as isize + dy));
+
+                    let Some(values) = positions.try_map(|(x, y)| try_get((x, y), &search)) else {
+                        continue;
+                    };
+
+                    if values == ['M', 'A', 'S', 'M', 'A', 'S'] {
+                        x_mases += 1;
+                    }
+                }
+            }
+        }
+
+        (xmases, x_mases)
+    }
+
+    fn try_get((x, y): (isize, isize), search: &[Vec<char>]) -> Option<char> {
+        let Ok(y): Result<usize, _> = y.try_into() else {
+            return None;
+        };
+        if y >= search.len() {
+            return None;
+        }
+        let row: &[_] = &search[y];
+        let Ok(x): Result<usize, _> = x.try_into() else {
+            return None;
+        };
+        if x >= row.len() {
+            return None;
+        }
+        return Some(row[x]);
+    }
+
+    fn parse(input: &str) -> Vec<Vec<char>> {
+        let mut rows = vec![];
+
+        for line in input.lines() {
+            let mut cols = vec![];
+            for c in line.chars() {
+                cols.push(c);
+            }
+            rows.push(cols);
+        }
+
+        rows
+    }
+
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (2434, 1835));
     });
 }
