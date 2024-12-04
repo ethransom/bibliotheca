@@ -1,4 +1,5 @@
 // #![feature(test)]
+#![feature(array_try_map)]
 
 // extern crate test;
 
@@ -24,6 +25,14 @@ const DIRECTIONS: [(isize, isize); 8] = [
     (1, 0),
 ];
 
+// https://en.wikipedia.org/wiki/Rotation_matrix#Common_2D_rotations
+const ROTATIONS: [[[isize; 2]; 2]; 4] = [
+    [[1, 0], [0, 1]],   // 0°
+    [[0, -1], [1, 0]],  // 90°
+    [[-1, 0], [0, -1]], // 180°
+    [[0, 1], [-1, 0]],  // 270°
+];
+
 fn solve(input: &str) -> (usize, usize) {
     let search = parse(input);
 
@@ -47,7 +56,31 @@ fn solve(input: &str) -> (usize, usize) {
         }
     }
 
-    (xmases, 0)
+    let mut x_mases = 0;
+
+    fn rotate((x, y): (isize, isize), rot: [[isize; 2]; 2]) -> (isize, isize) {
+        (rot[0][0] * x + rot[0][1] * y, rot[1][0] * x + rot[1][1] * y)
+    }
+
+    for (x1, y1) in search.keys() {
+        let pattern = [[0, 0], [1, 1], [2, 2], [2, 0], [1, 1], [0, 2]];
+
+        for rot in ROTATIONS {
+            let pattern = pattern.map(|[x, y]| rotate((x, y), rot));
+
+            let positions = pattern.map(|(dx, dy)| (x1 + dx, y1 + dy));
+
+            let Some(values) = positions.try_map(|(x, y)| search.get(&(x, y)).copied()) else {
+                continue;
+            };
+
+            if values == ['M', 'A', 'S', 'M', 'A', 'S'] {
+                x_mases += 1;
+            }
+        }
+    }
+
+    (xmases, x_mases)
 }
 
 fn parse(input: &str) -> HashMap<(isize, isize), char> {
@@ -64,12 +97,21 @@ fn parse(input: &str) -> HashMap<(isize, isize), char> {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (18, 0));
+    assert_eq!(solve(EXAMPLE), (18, 9));
+}
+
+#[test]
+fn test_easy() {
+    assert_eq!(solve("MYM\nYAY\nSYS"), (0, 1));
+}
+#[test]
+fn test_rotation() {
+    assert_eq!(solve("SYS\nYAY\nMYM"), (0, 1));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (2434, 0));
+    assert_eq!(solve(INPUT), (2434, 1835));
 }
 
 // #[bench]
