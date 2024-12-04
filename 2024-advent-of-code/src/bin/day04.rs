@@ -62,13 +62,13 @@ fn solve(input: &str) -> (usize, usize) {
         (rot[0][0] * x + rot[0][1] * y, rot[1][0] * x + rot[1][1] * y)
     }
 
-    for (x1, y1) in search.keys() {
+    for (x, y) in search.keys() {
         let pattern = [[0, 0], [1, 1], [2, 2], [2, 0], [1, 1], [0, 2]];
 
         for rot in ROTATIONS {
             let pattern = pattern.map(|[x, y]| rotate((x, y), rot));
 
-            let positions = pattern.map(|(dx, dy)| (x1 + dx, y1 + dy));
+            let positions = pattern.map(|(dx, dy)| (x + dx, y + dy));
 
             let Some(values) = positions.try_map(|(x, y)| search.get(&(x, y)).copied()) else {
                 continue;
