@@ -5,7 +5,7 @@ set -e
 
 # precommit checks
 cargo test
-cargo clippy
+cargo clippy -- -F warnings
 
 day=$(git status . --porcelain | (rg 'src/bin/(day\d\d).rs' -or '$1' || true))
 
