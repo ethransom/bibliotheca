@@ -12,43 +12,39 @@ fn main() {
     dbg!(solve(INPUT));
 }
 
+fn update_valid(update: &[&str], rules: &HashMap<&str, Vec<&str>>) -> bool {
+    for i in 1..=update.len() {
+        let set = &update[..i];
+        let preceding = &set[..set.len() - 1];
+        let target = set[set.len() - 1];
+
+        if preceding.is_empty() {
+            continue;
+        }
+
+        for p in preceding {
+            // here, we have `target` coming after `p`
+            // is there a rule that has `target` -> `p`?
+
+            if rules.get(target).is_some_and(|v| v.contains(p)) {
+                return false;
+            }
+        }
+    }
+
+    true
+}
+
 fn solve(input: &str) -> (usize, usize) {
     let (rules, updates) = parse(input);
 
-    let mut sum = 0;
+    let bad_updates = updates.iter().filter(|update| update_valid(update, &rules));
 
-    'update: for update in updates {
-        dbg!(&update);
+    let part1 = bad_updates
+        .map(|update| update[update.len() / 2].parse::<usize>().unwrap())
+        .sum();
 
-        for i in 1..=update.len() {
-            let set = &update[..i];
-            let preceding = &set[..set.len() - 1];
-            let target = set[set.len() - 1];
-            println!("\t{preceding:?} {target:?}");
-            if preceding.is_empty() {
-                continue;
-            }
-
-            for p in preceding {
-                // here, we have `target` coming after `p`
-                // is there a rule that has `target` -> `p`?
-                println!("\t\t{p}");
-
-                if rules.get(target).is_some_and(|v| v.contains(&p)) {
-                    println!("rule found for {target:?} -> {p:?}, INVALID");
-                    continue 'update;
-                } else {
-                    println!("no rule for {target:?} -> {p:?}");
-                }
-            }
-        }
-
-        println!("update was ok");
-
-        sum += update[update.len() / 2].parse::<usize>().unwrap();
-    }
-
-    (sum, 0)
+    (part1, 0)
 }
 
 fn parse(input: &str) -> (HashMap<&str, Vec<&str>>, Vec<Vec<&str>>) {
@@ -78,7 +74,7 @@ fn test_example() {
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (0, 0));
+    assert_eq!(solve(INPUT), (4924, 0));
 }
 
 // #[bench]
