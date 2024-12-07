@@ -15,7 +15,7 @@ fn main() {
 const CLOCKWISE_DIRS: [(isize, isize); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
 
 fn solve(input: &str) -> (usize, usize) {
-    let (map, mut guard) = parse(input);
+    let (map, mut guard, height, width) = parse(input);
 
     let mut dir = (0, -1);
 
@@ -23,8 +23,8 @@ fn solve(input: &str) -> (usize, usize) {
 
     loop {
         // println!();
-        // for y in 0..10 {
-        //     for x in 0..10 {
+        // for y in 0..height {
+        //     for x in 0..width {
         //         if (x, y) == guard {
         //             print!("^");
         //         }
@@ -52,16 +52,40 @@ fn solve(input: &str) -> (usize, usize) {
         };
     }
 
+    #[cfg(debug_assertions)]
+    {
+        println!();
+        for y in 0isize..height as isize {
+            for x in 0isize..width as isize {
+                let c = if (x, y) == guard {
+                    '^'
+                } else if visited.contains(&(x, y)) {
+                    'X'
+                } else {
+                    *map.get(&(x, y)).unwrap()
+                };
+                print!("{c}");
+            }
+            println!();
+        }
+    }
+
     (visited.len(), 0)
 }
 
-fn parse(input: &str) -> (HashMap<(isize, isize), char>, (isize, isize)) {
+#[allow(clippy::type_complexity)]
+fn parse(input: &str) -> (HashMap<(isize, isize), char>, (isize, isize), usize, usize) {
     let mut map = HashMap::new();
 
     let mut start = None;
 
+    let mut height = 0;
+    let mut width = 0;
+
     for (y, line) in input.lines().enumerate() {
+        height = height.max(y);
         for (x, mut c) in line.chars().enumerate() {
+            width = width.max(x);
             if c == '^' {
                 start = Some((x as isize, y as isize));
                 c = '.';
@@ -72,7 +96,7 @@ fn parse(input: &str) -> (HashMap<(isize, isize), char>, (isize, isize)) {
 
     let start = start.expect("no guard on map");
 
-    (map, start)
+    (map, start, height, width)
 }
 
 #[test]
