@@ -1,4 +1,5 @@
 // #![feature(test)]
+#![feature(let_chains)]
 
 // extern crate test;
 
@@ -14,6 +15,7 @@ fn main() {
 
 const CLOCKWISE_DIRS: [(isize, isize); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
 
+#[derive(Clone)]
 struct Map {
     map: HashMap<(isize, isize), char>,
     height: usize,
@@ -24,6 +26,7 @@ fn walk(
     map: &Map,
     mut guard: (isize, isize),
     mut dir: (isize, isize),
+    obstacle: bool,
     visited: &mut HashSet<((isize, isize), (isize, isize))>,
     loops: &mut usize,
 ) -> bool {
@@ -42,56 +45,79 @@ fn walk(
         //
         //
 
-        // if walk(map, height, width, guard, visited) {}
-
-        if visited.contains(&(guard, rotate(dir))) {
-            *loops += 1;
-            let loop_loc = (guard.0 + dir.0, guard.1 + dir.1);
-            println!("LOOP LOC: {loop_loc:?}");
-            let dirs = visited.iter().map(|(pos, dir)| {
-                (
-                    pos,
-                    match dir {
-                        (0, -1) => '|',
-                        (1, 0) => '-',
-                        (0, 1) => '|',
-                        (-1, 0) => '-',
-                        _ => panic!(),
-                    },
-                )
-            });
-            let mut dirs_dirs = HashMap::<(isize, isize), HashSet<char>>::new();
-            for (pos, dir) in dirs {
-                dirs_dirs
-                    .entry(*pos)
-                    .and_modify(|s| {
-                        s.insert(dir);
-                    })
-                    .or_insert(HashSet::from([dir]));
-            }
-            println!();
-            for y in 0isize..=map.height as isize {
-                for x in 0isize..=map.width as isize {
-                    let c = if (x, y) == loop_loc {
-                        'O'
-                    } else if (x, y) == guard {
-                        '^'
-                    } else if let Some(dirs) = dirs_dirs.get(&(x, y)) {
-                        if dirs.len() == 2 {
-                            '+'
-                        } else {
-                            *dirs.iter().next().unwrap()
-                        }
-                    } else {
-                        *map.map.get(&(x, y)).unwrap()
-                    };
-                    print!("{c}");
-                }
-                println!();
-            }
+        if !visited.insert((guard, dir)) {
+            return true;
         }
 
-        visited.insert((guard, dir));
+        if !obstacle {
+            let loop_loc = (guard.0 + dir.0, guard.1 + dir.1);
+
+            let is_empty = if let Some(c) = map.map.get(&(loop_loc)) {
+                *c == '.'
+            } else {
+                false
+            };
+            let is_unvisited = visited
+                .iter()
+                .find(|(pos, _dir)| pos == &loop_loc)
+                .is_none();
+
+            if is_empty && is_unvisited {
+                let mut map = map.clone();
+                map.map.insert(loop_loc, '#');
+
+                if walk(&map, guard, rotate(dir), true, &mut visited.clone(), loops) {
+                    *loops += 1;
+
+                    #[cfg(debug_assertions)]
+                    {
+                        println!("LOOP LOC: {loop_loc:?}");
+
+                        let dirs = visited.iter().map(|(pos, dir)| {
+                            (
+                                pos,
+                                match dir {
+                                    (0, -1) => '|',
+                                    (1, 0) => '-',
+                                    (0, 1) => '|',
+                                    (-1, 0) => '-',
+                                    _ => panic!(),
+                                },
+                            )
+                        });
+                        let mut dirs_dirs = HashMap::<(isize, isize), HashSet<char>>::new();
+                        for (pos, dir) in dirs {
+                            dirs_dirs
+                                .entry(*pos)
+                                .and_modify(|s| {
+                                    s.insert(dir);
+                                })
+                                .or_insert(HashSet::from([dir]));
+                        }
+                        println!();
+                        for y in 0isize..=map.height as isize {
+                            for x in 0isize..=map.width as isize {
+                                let c = if (x, y) == loop_loc {
+                                    'O'
+                                } else if (x, y) == guard {
+                                    '^'
+                                } else if let Some(dirs) = dirs_dirs.get(&(x, y)) {
+                                    if dirs.len() == 2 {
+                                        '+'
+                                    } else {
+                                        *dirs.iter().next().unwrap()
+                                    }
+                                } else {
+                                    *map.map.get(&(x, y)).unwrap()
+                                };
+                                print!("{c}");
+                            }
+                            println!();
+                        }
+                    }
+                }
+            }
+        }
 
         let next = (guard.0 + dir.0, guard.1 + dir.1);
         let Some(next_c) = map.map.get(&next) else {
@@ -120,7 +146,7 @@ fn solve(input: &str) -> (usize, usize) {
 
     let mut loops = 0;
 
-    if walk(&map, guard, dir, &mut visited, &mut loops) {
+    if walk(&map, guard, dir, false, &mut visited, &mut loops) {
         panic!("everything is a loop, guard never leaves");
     }
 
@@ -183,7 +209,6 @@ fn rotate(dir: (isize, isize)) -> (isize, isize) {
         [(CLOCKWISE_DIRS.iter().position(|d| d == &dir).unwrap() + 1) % CLOCKWISE_DIRS.len()]
 }
 
-#[allow(clippy::type_complexity)]
 fn parse(input: &str) -> (Map, (isize, isize)) {
     let mut map = HashMap::new();
 
@@ -216,7 +241,7 @@ fn test_example() {
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (5086, 0));
+    assert_eq!(solve(INPUT), (5086, 1770));
 }
 
 // #[bench]
