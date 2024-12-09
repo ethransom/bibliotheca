@@ -14,8 +14,19 @@ fn main() {
 
 const CLOCKWISE_DIRS: [(isize, isize); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
 
+struct Map {
+    map: HashMap<(isize, isize), char>,
+    height: usize,
+    width: usize,
+}
+
+// // fn walk(map, height, width, guard, visited, loops) -> Option<usize> {
+// fn walk(map, height, width, guard, visited) -> Option<usize> {
+
+// }
+
 fn solve(input: &str) -> (usize, usize) {
-    let (map, mut guard, height, width) = parse(input);
+    let (map, mut guard) = parse(input);
 
     let mut dir = CLOCKWISE_DIRS[0];
 
@@ -35,6 +46,10 @@ fn solve(input: &str) -> (usize, usize) {
         //     }
         //     println!();
         // }
+        //
+        //
+
+        // if walk(map, height, width, guard, visited) {}
 
         if visited.contains(&(guard, rotate(dir))) {
             loops += 1;
@@ -62,8 +77,8 @@ fn solve(input: &str) -> (usize, usize) {
                     .or_insert(HashSet::from([dir]));
             }
             println!();
-            for y in 0isize..=height as isize {
-                for x in 0isize..=width as isize {
+            for y in 0isize..=map.height as isize {
+                for x in 0isize..=map.width as isize {
                     let c = if (x, y) == loop_loc {
                         'O'
                     } else if (x, y) == guard {
@@ -75,7 +90,7 @@ fn solve(input: &str) -> (usize, usize) {
                             *dirs.iter().next().unwrap()
                         }
                     } else {
-                        *map.get(&(x, y)).unwrap()
+                        *map.map.get(&(x, y)).unwrap()
                     };
                     print!("{c}");
                 }
@@ -86,7 +101,7 @@ fn solve(input: &str) -> (usize, usize) {
         visited.insert((guard, dir));
 
         let next = (guard.0 + dir.0, guard.1 + dir.1);
-        let Some(next_c) = map.get(&next) else {
+        let Some(next_c) = map.map.get(&next) else {
             break;
         };
         match next_c {
@@ -124,8 +139,8 @@ fn solve(input: &str) -> (usize, usize) {
                 .or_insert(HashSet::from([dir]));
         }
         println!();
-        for y in 0isize..=height as isize {
-            for x in 0isize..=width as isize {
+        for y in 0isize..=map.height as isize {
+            for x in 0isize..=map.width as isize {
                 let c = if (x, y) == guard {
                     '^'
                 } else if let Some(dirs) = dirs_dirs.get(&(x, y)) {
@@ -135,7 +150,7 @@ fn solve(input: &str) -> (usize, usize) {
                         *dirs.iter().next().unwrap()
                     }
                 } else {
-                    *map.get(&(x, y)).unwrap()
+                    *map.map.get(&(x, y)).unwrap()
                 };
                 print!("{c}");
             }
@@ -160,7 +175,7 @@ fn rotate(dir: (isize, isize)) -> (isize, isize) {
 }
 
 #[allow(clippy::type_complexity)]
-fn parse(input: &str) -> (HashMap<(isize, isize), char>, (isize, isize), usize, usize) {
+fn parse(input: &str) -> (Map, (isize, isize)) {
     let mut map = HashMap::new();
 
     let mut start = None;
@@ -182,7 +197,7 @@ fn parse(input: &str) -> (HashMap<(isize, isize), char>, (isize, isize), usize, 
 
     let start = start.expect("no guard on map");
 
-    (map, start, height, width)
+    (Map { map, height, width }, start)
 }
 
 #[test]
