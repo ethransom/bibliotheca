@@ -12,7 +12,7 @@ fn main() {
     dbg!(solve(INPUT));
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum Operator {
     Add,
     Mul,
@@ -37,11 +37,7 @@ fn solve(input: &str) -> (usize, usize) {
                             .reduce(|a, b| match ops_iter.next() {
                                 Some(Operator::Add) => a + b,
                                 Some(Operator::Mul) => a * b,
-                                Some(Operator::Con) => {
-                                    format!("{a}{b}", a = a.to_string(), b = b.to_string())
-                                        .parse()
-                                        .unwrap()
-                                }
+                                Some(Operator::Con) => concat(a, b),
                                 None => unreachable!(),
                             })
                             .unwrap();
@@ -55,6 +51,10 @@ fn solve(input: &str) -> (usize, usize) {
         .into()
 }
 
+fn concat(a: usize, b: usize) -> usize {
+    a * 10usize.pow(b.ilog10()) + b
+}
+
 fn operator_permutations(
     ops: &'static [Operator],
     len: usize,
@@ -62,6 +62,42 @@ fn operator_permutations(
     std::iter::repeat(ops.iter().cloned())
         .take(len)
         .multi_cartesian_product()
+}
+
+#[test]
+fn test_permutations() {
+    // TODO: can we be faster by re-rusing a vector here?
+
+    // fn operator_permutations_2(
+    //     ops: &'static [Operator],
+    //     len: usize,
+    // ) -> impl Iterator<Item = Vec<Operator>> {
+    //     let v = vec![ops[0]; len];
+    //     for i in 0..ops.len().pow(len as u32) {
+    //         let mut v = v.clone();
+    //         let mut i = i;
+    //         for j in 0..len {
+    //             v[j] = ops[i % ops.len()];
+    //             i /= ops.len();
+    //         }
+    //         yield v;
+    //     }
+    // }
+
+    assert_eq!(
+        operator_permutations(&[Operator::Add, Operator::Mul], 2).collect_vec(),
+        vec![
+            [Operator::Add, Operator::Add],
+            [Operator::Add, Operator::Mul],
+            [Operator::Mul, Operator::Add],
+            [Operator::Mul, Operator::Mul]
+        ]
+    );
+
+    // assert_eq!(
+    //     operator_permutations(&BASIC_OPERATORS, 3).collect_vec(),
+    //     operator_permutations_2(&BASIC_OPERATORS, 3).collect_vec(),
+    // );
 }
 
 fn parse(input: &str) -> Vec<(usize, Vec<usize>)> {
