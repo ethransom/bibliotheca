@@ -300,7 +300,7 @@ fn bench_solve_03_bytes(b: &mut test::Bencher) {
         }
         let mut digit = 0;
         while let Some(c) = peek.first()
-            && (b'0'..=b'9').contains(c)
+            && c.is_ascii_digit()
         {
             peek = &peek[1..];
             digit *= 10;
@@ -312,7 +312,7 @@ fn bench_solve_03_bytes(b: &mut test::Bencher) {
         }
         let mut digit = 0;
         while let Some(c) = peek.first()
-            && (b'0'..=b'9').contains(c)
+            && c.is_ascii_digit()
         {
             peek = &peek[1..];
             digit *= 10;

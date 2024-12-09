@@ -253,7 +253,7 @@ fn bench_solve_04_lower_alloc(b: &mut test::Bencher) {
             }
         }
 
-        return true;
+        true
     }
 
     b.iter(|| {

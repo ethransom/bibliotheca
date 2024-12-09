@@ -57,10 +57,8 @@ fn walk(
             } else {
                 false
             };
-            let is_unvisited = visited
-                .iter()
-                .find(|(pos, _dir)| pos == &loop_loc)
-                .is_none();
+            let is_unvisited = !visited
+                .iter().any(|(pos, _dir)| pos == &loop_loc);
 
             if is_empty && is_unvisited {
                 let mut map = map.clone();

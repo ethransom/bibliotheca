@@ -264,7 +264,7 @@ fn bench_solve_03_vectors(b: &mut test::Bencher) {
         if x >= row.len() {
             return None;
         }
-        return Some(row[x]);
+        Some(row[x])
     }
 
     fn parse(input: &str) -> Vec<Vec<char>> {
