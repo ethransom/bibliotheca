@@ -20,20 +20,13 @@ struct Map {
     width: usize,
 }
 
-// // fn walk(map, height, width, guard, visited, loops) -> Option<usize> {
-// fn walk(map, height, width, guard, visited) -> Option<usize> {
-
-// }
-
-fn solve(input: &str) -> (usize, usize) {
-    let (map, mut guard) = parse(input);
-
-    let mut dir = CLOCKWISE_DIRS[0];
-
-    let mut visited = HashSet::<((isize, isize), (isize, isize))>::new();
-
-    let mut loops = 0;
-
+fn walk(
+    map: &Map,
+    mut guard: (isize, isize),
+    mut dir: (isize, isize),
+    visited: &mut HashSet<((isize, isize), (isize, isize))>,
+    loops: &mut usize,
+) -> bool {
     loop {
         // println!();
         // for y in 0..height {
@@ -52,7 +45,7 @@ fn solve(input: &str) -> (usize, usize) {
         // if walk(map, height, width, guard, visited) {}
 
         if visited.contains(&(guard, rotate(dir))) {
-            loops += 1;
+            *loops += 1;
             let loop_loc = (guard.0 + dir.0, guard.1 + dir.1);
             println!("LOOP LOC: {loop_loc:?}");
             let dirs = visited.iter().map(|(pos, dir)| {
@@ -113,6 +106,22 @@ fn solve(input: &str) -> (usize, usize) {
             }
             _ => panic!(),
         };
+    }
+
+    false
+}
+
+fn solve(input: &str) -> (usize, usize) {
+    let (map, guard) = parse(input);
+
+    let dir = CLOCKWISE_DIRS[0];
+
+    let mut visited = HashSet::<((isize, isize), (isize, isize))>::new();
+
+    let mut loops = 0;
+
+    if walk(&map, guard, dir, &mut visited, &mut loops) {
+        panic!("everything is a loop, guard never leaves");
     }
 
     #[cfg(debug_assertions)]
