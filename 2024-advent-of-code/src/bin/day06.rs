@@ -17,9 +17,11 @@ const CLOCKWISE_DIRS: [(isize, isize); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
 fn solve(input: &str) -> (usize, usize) {
     let (map, mut guard, height, width) = parse(input);
 
-    let mut dir = (0, -1);
+    let mut dir = CLOCKWISE_DIRS[0];
 
-    let mut visited = HashSet::<(isize, isize)>::new();
+    let mut visited = HashSet::<((isize, isize), (isize, isize))>::new();
+
+    let mut loops = 0;
 
     loop {
         // println!();
@@ -34,7 +36,54 @@ fn solve(input: &str) -> (usize, usize) {
         //     println!();
         // }
 
-        visited.insert(guard);
+        if visited.contains(&(guard, rotate(dir))) {
+            loops += 1;
+            let loop_loc = (guard.0 + dir.0, guard.1 + dir.1);
+            println!("LOOP LOC: {loop_loc:?}");
+            let dirs = visited.iter().map(|(pos, dir)| {
+                (
+                    pos,
+                    match dir {
+                        (0, -1) => '|',
+                        (1, 0) => '-',
+                        (0, 1) => '|',
+                        (-1, 0) => '-',
+                        _ => panic!(),
+                    },
+                )
+            });
+            let mut dirs_dirs = HashMap::<(isize, isize), HashSet<char>>::new();
+            for (pos, dir) in dirs {
+                dirs_dirs
+                    .entry(*pos)
+                    .and_modify(|s| {
+                        s.insert(dir);
+                    })
+                    .or_insert(HashSet::from([dir]));
+            }
+            println!();
+            for y in 0isize..=height as isize {
+                for x in 0isize..=width as isize {
+                    let c = if (x, y) == loop_loc {
+                        'O'
+                    } else if (x, y) == guard {
+                        '^'
+                    } else if let Some(dirs) = dirs_dirs.get(&(x, y)) {
+                        if dirs.len() == 2 {
+                            '+'
+                        } else {
+                            *dirs.iter().next().unwrap()
+                        }
+                    } else {
+                        *map.get(&(x, y)).unwrap()
+                    };
+                    print!("{c}");
+                }
+                println!();
+            }
+        }
+
+        visited.insert((guard, dir));
 
         let next = (guard.0 + dir.0, guard.1 + dir.1);
         let Some(next_c) = map.get(&next) else {
@@ -45,8 +94,7 @@ fn solve(input: &str) -> (usize, usize) {
                 guard = next;
             }
             '#' => {
-                dir = CLOCKWISE_DIRS[(CLOCKWISE_DIRS.iter().position(|d| d == &dir).unwrap() + 1)
-                    % CLOCKWISE_DIRS.len()];
+                dir = rotate(dir);
             }
             _ => panic!(),
         };
@@ -54,13 +102,38 @@ fn solve(input: &str) -> (usize, usize) {
 
     #[cfg(debug_assertions)]
     {
+        let dirs = visited.iter().map(|(pos, dir)| {
+            (
+                pos,
+                match dir {
+                    (0, -1) => '|',
+                    (1, 0) => '-',
+                    (0, 1) => '|',
+                    (-1, 0) => '-',
+                    _ => panic!(),
+                },
+            )
+        });
+        let mut dirs_dirs = HashMap::<(isize, isize), HashSet<char>>::new();
+        for (pos, dir) in dirs {
+            dirs_dirs
+                .entry(*pos)
+                .and_modify(|s| {
+                    s.insert(dir);
+                })
+                .or_insert(HashSet::from([dir]));
+        }
         println!();
-        for y in 0isize..height as isize {
-            for x in 0isize..width as isize {
+        for y in 0isize..=height as isize {
+            for x in 0isize..=width as isize {
                 let c = if (x, y) == guard {
                     '^'
-                } else if visited.contains(&(x, y)) {
-                    'X'
+                } else if let Some(dirs) = dirs_dirs.get(&(x, y)) {
+                    if dirs.len() == 2 {
+                        '+'
+                    } else {
+                        *dirs.iter().next().unwrap()
+                    }
                 } else {
                     *map.get(&(x, y)).unwrap()
                 };
@@ -70,7 +143,20 @@ fn solve(input: &str) -> (usize, usize) {
         }
     }
 
-    (visited.len(), 0)
+    (
+        visited
+            .iter()
+            .cloned()
+            .map(|(pos, _)| pos)
+            .collect::<HashSet<(isize, isize)>>()
+            .len(),
+        loops,
+    )
+}
+
+fn rotate(dir: (isize, isize)) -> (isize, isize) {
+    CLOCKWISE_DIRS
+        [(CLOCKWISE_DIRS.iter().position(|d| d == &dir).unwrap() + 1) % CLOCKWISE_DIRS.len()]
 }
 
 #[allow(clippy::type_complexity)]
@@ -101,7 +187,7 @@ fn parse(input: &str) -> (HashMap<(isize, isize), char>, (isize, isize), usize, 
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (41, 0));
+    assert_eq!(solve(EXAMPLE), (41, 6));
 }
 
 #[test]
