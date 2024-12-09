@@ -16,39 +16,50 @@ fn main() {
 enum Operator {
     Add,
     Mul,
+    Con,
 }
 
-const OPERATORS: [Operator; 2] = [Operator::Add, Operator::Mul];
+const BASIC_OPERATORS: [Operator; 2] = [Operator::Add, Operator::Mul];
+const ADV_OPERATORS: [Operator; 3] = [Operator::Add, Operator::Mul, Operator::Con];
 
 fn solve(input: &str) -> (usize, usize) {
     let eqs = parse(input);
 
-    let part1 = eqs
-        .iter()
-        .filter(|(value, nums)| {
-            operator_permutations(nums.len() - 1).any(|ops| {
-                let mut ops_iter = ops.iter();
-                let result = nums
-                    .iter()
-                    .cloned()
-                    .reduce(|a, b| match ops_iter.next() {
-                        Some(Operator::Add) => a + b,
-                        Some(Operator::Mul) => a * b,
-                        None => unreachable!(),
+    ([&BASIC_OPERATORS, &ADV_OPERATORS] as [&[Operator]; 2])
+        .map(|operators| {
+            eqs.iter()
+                .filter(|(value, nums)| {
+                    operator_permutations(operators, nums.len() - 1).any(|ops| {
+                        let mut ops_iter = ops.iter();
+                        let result = nums
+                            .iter()
+                            .cloned()
+                            .reduce(|a, b| match ops_iter.next() {
+                                Some(Operator::Add) => a + b,
+                                Some(Operator::Mul) => a * b,
+                                Some(Operator::Con) => {
+                                    format!("{a}{b}", a = a.to_string(), b = b.to_string())
+                                        .parse()
+                                        .unwrap()
+                                }
+                                None => unreachable!(),
+                            })
+                            .unwrap();
+
+                        result == *value
                     })
-                    .unwrap();
-
-                result == *value
-            })
+                })
+                .map(|(value, _nums)| value)
+                .sum()
         })
-        .map(|(value, _nums)| value)
-        .sum();
-
-    (part1, 0)
+        .into()
 }
 
-fn operator_permutations(len: usize) -> impl Iterator<Item = Vec<Operator>> {
-    std::iter::repeat(OPERATORS.into_iter())
+fn operator_permutations(
+    ops: &'static [Operator],
+    len: usize,
+) -> impl Iterator<Item = Vec<Operator>> {
+    std::iter::repeat(ops.iter().cloned())
         .take(len)
         .multi_cartesian_product()
 }
@@ -71,12 +82,12 @@ fn parse(input: &str) -> Vec<(usize, Vec<usize>)> {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (3749, 0));
+    assert_eq!(solve(EXAMPLE), (3749, 11387));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (7885693428401, 0));
+    assert_eq!(solve(INPUT), (7885693428401, 348360680516005));
 }
 
 // #[bench]
