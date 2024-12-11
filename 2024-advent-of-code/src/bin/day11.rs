@@ -2,6 +2,8 @@
 
 // extern crate test;
 
+use std::collections::HashMap;
+
 const EXAMPLE: &str = include_str!("example11.txt");
 const INPUT: &str = include_str!("input11.txt");
 
@@ -10,38 +12,45 @@ fn main() {
     dbg!(solve(INPUT));
 }
 
-fn solve(input: &str) -> (usize, usize) {
-    let mut stones = parse(input);
+fn solve(input: &str) -> (u64, u64) {
+    let stones = parse(input);
 
-    for i in 0..25 {
-        stones = blink(&stones);
-        println!("did {i}");
+    let mut stones = stones
+        .into_iter()
+        .map(|s| (s, 1))
+        .collect::<HashMap<_, _>>();
+
+    for _i in 0..25 {
+        stones = blink(stones);
     }
 
-    let after_25 = stones.len();
+    let after_25 = stones.values().sum();
 
-    for i in 0..25 {
-        stones = blink(&stones);
-        println!("did {i}", i = i + 25);
+    for _i in 0..50 {
+        stones = blink(stones);
     }
 
-    let after_75 = stones.len();
+    let after_75 = stones.values().sum();
 
     (after_25, after_75)
 }
 
-fn blink(stones: &[u64]) -> Vec<u64> {
-    let mut next = vec![];
+fn blink(stones: HashMap<u64, u64>) -> HashMap<u64, u64> {
+    let mut next = HashMap::new();
 
-    for stone in stones {
+    fn insert(counts: &mut HashMap<u64, u64>, stone: u64, count: u64) {
+        *counts.entry(stone).or_insert(0) += count;
+    }
+
+    for (stone, count) in stones.into_iter() {
         match stone {
-            0 => next.push(1),
+            0 => insert(&mut next, 1, count),
             n if n.ilog10() % 2 == 1 => {
-                let (left, right) = split(*n);
-                next.push(left);
-                next.push(right);
+                let (left, right) = split(n);
+                insert(&mut next, left, count);
+                insert(&mut next, right, count);
             }
-            n => next.push(n * 2024),
+            n => insert(&mut next, n * 2024, count),
         }
     }
 
@@ -71,35 +80,13 @@ fn parse(input: &str) -> Vec<u64> {
 }
 
 #[test]
-fn test_blink() {
-    assert_eq!(blink(&[125, 17]), [253000, 1, 7]);
-    assert_eq!(blink(&[253000, 1, 7]), [253, 0, 2024, 14168]);
-    assert_eq!(blink(&[253, 0, 2024, 14168]), [512072, 1, 20, 24, 28676032]);
-    assert_eq!(
-        blink(&[512072, 1, 20, 24, 28676032]),
-        [512, 72, 2024, 2, 0, 2, 4, 2867, 6032]
-    );
-    assert_eq!(
-        blink(&[512, 72, 2024, 2, 0, 2, 4, 2867, 6032]),
-        [1036288, 7, 2, 20, 24, 4048, 1, 4048, 8096, 28, 67, 60, 32]
-    );
-    assert_eq!(
-        blink(&[1036288, 7, 2, 20, 24, 4048, 1, 4048, 8096, 28, 67, 60, 32]),
-        [
-            2097446912, 14168, 4048, 2, 0, 2, 4, 40, 48, 2024, 40, 48, 80, 96, 2, 8, 6, 7, 6, 0, 3,
-            2
-        ]
-    );
-}
-
-#[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (55312, 0));
+    assert_eq!(solve(EXAMPLE), (55312, 65601038650482));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (0, 0));
+    assert_eq!(solve(INPUT), (189167, 225253278506288));
 }
 
 // #[bench]
