@@ -1,6 +1,6 @@
-// #![feature(test)]
+#![feature(test)]
 
-// extern crate test;
+extern crate test;
 
 use std::collections::HashMap;
 
@@ -89,9 +89,62 @@ fn test_input() {
     assert_eq!(solve(INPUT), (189167, 225253278506288));
 }
 
-// #[bench]
-// fn bench_solve_current(b: &mut test::Bencher) {
-//     b.iter(|| {
-//         assert_eq!(solve(INPUT), (0, 0));
-//     });
-// }
+#[bench]
+fn bench_solve_00_current(b: &mut test::Bencher) {
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (189167, 225253278506288));
+    });
+}
+
+#[bench]
+fn bench_solve_01_current_fxhash(b: &mut test::Bencher) {
+    use fxhash::FxHashMap as HashMap;
+    fn solve(input: &str) -> (u64, u64) {
+        let stones = parse(input);
+
+        let mut stones = stones
+            .into_iter()
+            .map(|s| (s, 1))
+            .collect::<HashMap<_, _>>();
+
+        for _i in 0..25 {
+            stones = blink(stones);
+        }
+
+        let after_25 = stones.values().sum();
+
+        for _i in 0..50 {
+            stones = blink(stones);
+        }
+
+        let after_75 = stones.values().sum();
+
+        (after_25, after_75)
+    }
+
+    fn blink(stones: HashMap<u64, u64>) -> HashMap<u64, u64> {
+        let mut next = HashMap::default();
+
+        fn insert(counts: &mut HashMap<u64, u64>, stone: u64, count: u64) {
+            *counts.entry(stone).or_insert(0) += count;
+        }
+
+        for (stone, count) in stones.into_iter() {
+            match stone {
+                0 => insert(&mut next, 1, count),
+                n if n.ilog10() % 2 == 1 => {
+                    let (left, right) = split(n);
+                    insert(&mut next, left, count);
+                    insert(&mut next, right, count);
+                }
+                n => insert(&mut next, n * 2024, count),
+            }
+        }
+
+        next
+    }
+
+    b.iter(|| {
+        assert_eq!(solve(INPUT), (189167, 225253278506288));
+    });
+}
