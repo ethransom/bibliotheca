@@ -1,6 +1,6 @@
-// #![feature(test)]
+#![feature(test)]
 
-// extern crate test;
+extern crate test;
 
 use std::collections::{HashMap, HashSet};
 
@@ -29,20 +29,22 @@ fn solve(input: &str) -> (usize, usize) {
 
     println!("{s:?}", s = starts.clone().collect::<Vec<_>>());
 
-    let mut trailhead_scores = HashMap::<Point, usize>::new();
+    let mut trailhead_scores = HashMap::<Point, HashMap<Point, usize>>::new();
 
     for start in starts {
-        let mut stack = vec![start]; // DFS? Don't think it matters.
-        let mut visited = HashSet::<Point>::from([start]);
+        let visited = HashSet::<Point>::from([start]);
+        let mut stack = vec![(start, visited)];
 
-        while let Some((x, y)) = stack.pop() {
+        while let Some(((x, y), visited)) = stack.pop() {
             let &height = map.map.get(&(x, y)).unwrap();
 
             if height == 0 {
                 // valid trailhead
                 trailhead_scores
                     .entry((x, y))
-                    .and_modify(|e| *e += 1)
+                    .or_default()
+                    .entry(start)
+                    .and_modify(|c| *c += 1)
                     .or_insert(1);
             }
 
@@ -52,25 +54,32 @@ fn solve(input: &str) -> (usize, usize) {
                     continue;
                 };
 
-                if neighbor_height + 1 == height && visited.insert(neighbor) {
-                    stack.push(neighbor);
+                if neighbor_height + 1 == height && !visited.contains(&neighbor) {
+                    let visited = visited.clone();
+                    stack.push((neighbor, visited));
                 }
             }
         }
     }
 
-    for y in 0..map.height {
-        for x in 0..map.width {
-            let c = trailhead_scores
-                .get(&(x as isize, y as isize))
-                .map_or('.', |&c| char::from_digit(c as u32, 10).unwrap());
+    // for y in 0..map.height {
+    //     for x in 0..map.width {
+    //         let c = trailhead_scores
+    //             .get(&(x as isize, y as isize))
+    //             .map_or('.', |&c| char::from_digit(c as u32, 10).unwrap());
 
-            print!("{c}");
-        }
-        println!();
-    }
+    //         print!("{c}");
+    //     }
+    //     println!();
+    // }
 
-    (trailhead_scores.values().sum(), 0)
+    (
+        trailhead_scores
+            .values()
+            .map(|m| m.keys().collect::<HashSet<_>>().len())
+            .sum(),
+        trailhead_scores.values().flat_map(|m| m.values()).sum(),
+    )
 }
 
 #[derive(Clone)]
@@ -80,7 +89,6 @@ struct Map {
     width: usize,
 }
 
-// implement Display for Map
 impl std::fmt::Display for Map {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         for y in 0..self.height {
@@ -117,17 +125,17 @@ fn parse(input: &str) -> Map {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (36, 0));
+    assert_eq!(solve(EXAMPLE), (36, 81));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (0, 0));
+    assert_eq!(solve(INPUT), (611, 1380));
 }
 
-// #[bench]
-// fn bench_solve_current(b: &mut test::Bencher) {
-//     b.iter(|| {
-//         assert_eq!(solve(INPUT), (0, 0));
-//     });
-// }
+#[bench]
+fn bench_solve_current(b: &mut test::Bencher) {
+    b.iter(|| {
+        test_input();
+    });
+}
