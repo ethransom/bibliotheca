@@ -2,14 +2,14 @@
 
 // extern crate test;
 
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet};
 
 const EXAMPLE: &str = include_str!("example05.txt");
 const INPUT: &str = include_str!("input05.txt");
 
 fn main() {
     dbg!(solve(EXAMPLE));
-    // dbg!(solve(INPUT));
+    dbg!(solve(INPUT));
 }
 
 fn is_update_valid(update: &[&str], rules: &HashMap<&str, Vec<&str>>) -> bool {
@@ -56,72 +56,20 @@ fn solve(input: &str) -> (usize, usize) {
         .map(|line| line.split(",").collect())
         .collect();
 
-    let all_nodes = HashSet::<&str>::from_iter(
-        rules
-            .iter()
-            .flat_map(|&(left, right)| [left, right].into_iter()),
-    );
-
-    // println!("{all_nodes:?}");
-
-    let mut rules2 = rules.clone();
-    let mut sorted = vec![];
-    let mut s = all_nodes.clone();
-    for (_from, to) in &rules {
-        s.remove(to);
-    }
-    // let mut s = VecDeque::from_iter(s.into_iter());
-    println!("starting edges: {s:?}");
-    while let Some(&n) = s.iter().next() {
-        s.remove(n);
-
-        sorted.push(n);
-
-        println!("considering source node {n}");
-
-        // dbg!(&sorted, &s, &rules2);
-
-        // for each node m with an edge e from n to m do
-        while let Some(i) = rules2.iter().position(|&(f, _t)| f == n) {
-            // remove edge e from the graph
-            let (_n, m) = rules2.remove(i);
-            println!("edge from {n} to {m}");
-
-            println!("\t{rules2:?}");
-
-            // if m has no other incoming edges then
-            if rules2.iter().all(|&(_f, t)| t != m) {
-                println!("\t{m} is now source, queueing...");
-                // insert m into S
-                s.insert(m);
-            }
-        }
-    }
-    println!("remainder: {rules2:?}");
-    println!("sorted: {sorted:?}");
-
-    if !rules2.is_empty() {
-        panic!("rules had cycle");
-    }
-
-    let sorted_map: HashMap<_, _> = sorted
-        .into_iter()
-        .enumerate()
-        .map(|(i, v)| (v, i))
-        .collect();
-
     let (good_updates, bad_updates) = updates
         .into_iter()
         .partition::<Vec<_>, _>(|update| is_update_valid(update, &rule_map));
 
-    dbg!(&bad_updates);
-
     let reordered_updates: Vec<_> = bad_updates
         .into_iter()
-        .map(|mut update| {
-            update.sort_by_key(|v| sorted_map.get(dbg!(v)).unwrap());
-
-            update
+        .map(|update| {
+            topo_sort(
+                &rules
+                    .iter()
+                    .cloned()
+                    .filter(|(t, f)| update.contains(t) && update.contains(f))
+                    .collect::<Vec<_>>(),
+            )
         })
         .collect();
 
@@ -142,46 +90,32 @@ fn topo_sort<'a>(rules: &[(&'a str, &'a str)]) -> Vec<&'a str> {
             .flat_map(|&(left, right)| [left, right].into_iter()),
     );
 
-    let mut rules2 = Vec::from(rules);
+    let mut rules = Vec::from(rules);
+    let sinks = rules.iter().map(|&(_f, t)| t).collect::<HashSet<_>>();
+    let mut s = all_nodes
+        .difference(&sinks)
+        .cloned()
+        .collect::<HashSet<_>>();
+
     let mut sorted = vec![];
-    let mut s = all_nodes.clone();
-    for (_from, to) in rules {
-        s.remove(to);
-    }
-    // let mut s = VecDeque::from_iter(s.into_iter());
-    // println!("starting edges: {s:?}");
+
     while let Some(&n) = s.iter().next() {
         s.remove(n);
 
         sorted.push(n);
 
-        // println!("considering source node {n}");
-
-        // dbg!(&sorted, &s, &rules2);
-
         // for each node m with an edge e from n to m do
-        while let Some(i) = rules2.iter().position(|&(f, _t)| f == n) {
+        while let Some(i) = rules.iter().position(|&(f, _t)| f == n) {
             // remove edge e from the graph
-            let (_n, m) = rules2.remove(i);
-            // println!("edge from {n} to {m}");
+            let (_n, m) = rules.remove(i);
 
             // if m has no other incoming edges then
-            if rules2.iter().any(|&(_f, t)| t == m) {
-                // println!("\t{m} is now source, queueing...");
+            if rules.iter().all(|&(_f, t)| t != m) {
                 // insert m into S
                 s.insert(m);
             }
         }
     }
-    // println!("sorted: {sorted:?}");
-
-    let mut seen = HashSet::new();
-    let sorted = sorted
-        .into_iter()
-        .filter(|&s| seen.insert(s))
-        .collect::<Vec<_>>();
-
-    // println!("sorted deduped: {sorted:?}");
 
     sorted
 }
@@ -193,7 +127,7 @@ fn test_example() {
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (4924, 0));
+    assert_eq!(solve(INPUT), (4924, 6085));
 }
 
 // #[bench]
