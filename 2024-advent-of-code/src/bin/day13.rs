@@ -2,6 +2,8 @@
 
 // extern crate test;
 
+use std::collections::{HashMap, HashSet};
+
 const EXAMPLE: &str = include_str!("example13.txt");
 const INPUT: &str = include_str!("input13.txt");
 
@@ -13,10 +15,7 @@ fn main() {
 fn solve(input: &str) -> (usize, usize) {
     let arcades = parse(input);
 
-    let cost = arcades
-        .iter()
-        .map(|arcade| min_cost(arcade, Point { x: 0, y: 0 }, 0, 0))
-        .sum();
+    let cost = arcades.iter().filter_map(|a| dbg!(min_cost(a))).sum();
 
     (cost, 0)
 }
@@ -24,23 +23,55 @@ fn solve(input: &str) -> (usize, usize) {
 const A_COST: usize = 3;
 const B_COST: usize = 1;
 
-fn min_cost(arcade: &Arcade, pos: Point, cost: usize, depth: usize) -> usize {
-    if depth > 100 {
-        return usize::MAX;
+fn min_cost(arcade: &Arcade) -> Option<usize> {
+    // let frontier = BinaryHeap::<(usize, Point)>::new();
+    type Node = (usize, Point);
+    let mut frontier = HashSet::<Node>::new();
+    let start = Point { x: 0, y: 0 };
+    frontier.insert((0, start));
+
+    let mut came_from = HashMap::<Point, Point>::new();
+
+    let mut cost = HashMap::<Point, usize>::new();
+    cost.insert(start, 0);
+
+    let mut est_cost = HashMap::<Point, usize>::new();
+    est_cost.insert(start, 0); // a little weird but I guess we have to hit the start first
+
+    while !frontier.is_empty() {
+        let &(depth, current) = frontier.iter().min_by_key(|&(_, p)| est_cost[p]).unwrap();
+        let current_cost = cost[&current];
+        if current == arcade.prize {
+            return Some(current_cost);
+        }
+
+        frontier.remove(&(depth, current));
+
+        if depth + 1 > 100 {
+            continue;
+        }
+
+        for (neighbor, incremental_cost) in
+            [(current + arcade.a, A_COST), (current + arcade.b, B_COST)]
+        {
+            let tentative_cost = current_cost + incremental_cost;
+            if tentative_cost < *cost.get(&neighbor).unwrap_or(&usize::MAX) {
+                came_from.insert(neighbor, current);
+                cost.insert(neighbor, tentative_cost);
+                est_cost.insert(neighbor, tentative_cost + heuristic(neighbor, arcade.prize));
+                frontier.insert((depth + 1, neighbor));
+            }
+        }
     }
 
-    if pos == arcade.prize {
-        return cost;
-    }
-
-    // min_cost(arcade, pos.clone(), cost + 1, depth + 1)
-    let a_min = min_cost(arcade, pos + arcade.a, cost + A_COST, depth + 1);
-    let b_min = min_cost(arcade, pos + arcade.b, cost + B_COST, depth + 1);
-
-    a_min.min(b_min)
+    None
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+fn heuristic(neighbor: Point, prize: Point) -> usize {
+    ((neighbor.x + prize.x).pow(2) as usize + (neighbor.y + prize.y).pow(2) as usize).isqrt()
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct Point {
     x: isize,
     y: isize,
@@ -132,7 +163,7 @@ fn test_one() {
         prize: Point { x: 8400, y: 5400 },
     };
 
-    assert_eq!(min_cost(&arcade, Point { x: 0, y: 0 }, 0, 0), 23);
+    assert_eq!(min_cost(&arcade), Some(23));
 }
 
 #[test]
