@@ -15,33 +15,43 @@ fn main() {
     dbg!(solve(INPUT));
 }
 
-fn solve((input, (w, h), time): Problem) -> (usize, usize) {
+fn solve((input, (w, h), time): Problem) -> (usize, Point) {
     let locs = parse(input);
 
     let mut map = HashSet::<Point>::new();
 
-    for &(x, y) in locs.iter().take(time) {
+    let mut locs = locs.iter();
+
+    for &(x, y) in locs.by_ref().take(time) {
         map.insert((x, y));
     }
 
-    for y in 0..=h {
-        for x in 0..=w {
-            let c = if map.contains(&(x, y)) { '#' } else { '.' };
-            print!("{c}");
-        }
-        println!();
-    }
+    // for y in 0..=h {
+    //     for x in 0..=w {
+    //         let c = if map.contains(&(x, y)) { '#' } else { '.' };
+    //         print!("{c}");
+    //     }
+    //     println!();
+    // }
 
     let start = (0, 0);
     let end = (w, h);
 
-    let p = pathfind(map, start, end).unwrap();
+    let dist = pathfind(&map, start, end).unwrap();
 
-    (p, 0)
+    let &first_blockage = locs
+        .find(|&&(x, y)| {
+            map.insert((x, y));
+
+            pathfind(&map, start, end).is_none()
+        })
+        .unwrap();
+
+    (dist, first_blockage)
 }
 const NEIGHBORS: [(isize, isize); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
 
-fn pathfind(corrupted: HashSet<Point>, start: Point, end: Point) -> Option<usize> {
+fn pathfind(corrupted: &HashSet<Point>, start: Point, end: Point) -> Option<usize> {
     let mut frontier = VecDeque::new();
     frontier.push_back(start);
 
@@ -53,26 +63,27 @@ fn pathfind(corrupted: HashSet<Point>, start: Point, end: Point) -> Option<usize
     while let Some(current) = frontier.pop_front() {
         let current_dist = dists[&current];
         if current == end {
-            let mut path = HashSet::new();
-            let mut pointer = end;
-            while pointer != start {
-                path.insert(pointer);
-                pointer = prev[&pointer];
-            }
+            // let mut path = HashSet::new();
+            // let mut pointer = end;
+            // while pointer != start {
+            //     path.insert(pointer);
+            //     pointer = prev[&pointer];
+            // }
 
-            for y in 0..=end.1 {
-                for x in 0..=end.0 {
-                    let c = if corrupted.contains(&(x, y)) {
-                        '#'
-                    } else if path.contains(&(x, y)) {
-                        'O'
-                    } else {
-                        '.'
-                    };
-                    print!("{c}");
-                }
-                println!();
-            }
+            // for y in 0..=end.1 {
+            //     for x in 0..=end.0 {
+            //         let c = if corrupted.contains(&(x, y)) {
+            //             '#'
+            //         } else if path.contains(&(x, y)) {
+            //             'O'
+            //         } else {
+            //             '.'
+            //         };
+            //         print!("{c}");
+            //     }
+            //     println!();
+            // }
+
             return Some(current_dist);
         }
 
@@ -112,12 +123,12 @@ fn parse(input: &str) -> Vec<Point> {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (22, 0));
+    assert_eq!(solve(EXAMPLE), (22, (6, 1)));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (298, 0));
+    assert_eq!(solve(INPUT), (298, (52, 32)));
 }
 
 // #[bench]
