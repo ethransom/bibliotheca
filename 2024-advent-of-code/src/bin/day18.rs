@@ -2,7 +2,8 @@
 
 // extern crate test;
 
-use std::collections::{HashMap, HashSet, VecDeque};
+use fxhash::{FxHashMap as HashMap, FxHashSet as HashSet};
+use std::collections::VecDeque;
 
 type Problem = (&'static str, Point, usize);
 
@@ -18,7 +19,7 @@ fn main() {
 fn solve((input, (w, h), time): Problem) -> (usize, Point) {
     let locs = parse(input);
 
-    let mut map = HashSet::<Point>::new();
+    let mut map = HashSet::<Point>::default();
 
     let mut locs = locs.iter();
 
@@ -55,10 +56,10 @@ fn pathfind(corrupted: &HashSet<Point>, start: Point, end: Point) -> Option<usiz
     let mut frontier = VecDeque::new();
     frontier.push_back(start);
 
-    let mut dists = HashMap::<Point, usize>::new();
+    let mut dists = HashMap::<Point, usize>::default();
     dists.insert(start, 0);
 
-    let mut prev = HashMap::<Point, Point>::new();
+    let mut prev = HashMap::<Point, Point>::default();
 
     while let Some(current) = frontier.pop_front() {
         let current_dist = dists[&current];
