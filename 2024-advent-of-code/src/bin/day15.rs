@@ -62,10 +62,10 @@ fn solve(input: &str) -> (usize, usize) {
         let mut robot = robot;
         let mut boxes = boxes.clone();
 
-        for instr in instructions {
+        for instr in &instructions {
             let delta = instr.get_deltas();
 
-            println!("moving robot {instr:?} ({delta:?})");
+            // println!("moving robot {instr:?} ({delta:?})");
 
             let new = (robot.0 + delta.0, robot.1 + delta.1);
             if walls.contains(&new) {
@@ -83,10 +83,8 @@ fn solve(input: &str) -> (usize, usize) {
                     if walls.contains(&new) {
                         return false;
                     }
-                    if boxes.contains(&new) {
-                        if !push(boxes, walls, new, dir) {
-                            return false;
-                        }
+                    if boxes.contains(&new) && !push(boxes, walls, new, dir) {
+                        return false;
                     }
 
                     boxes.remove(&loc);
@@ -124,7 +122,103 @@ fn solve(input: &str) -> (usize, usize) {
         boxes.iter().map(|&(x, y)| x + y * 100).sum::<isize>()
     };
 
-    (part1 as usize, 0)
+    let part2 = {
+        let mut robot = (robot.0 * 2, robot.1);
+        let mut boxes = HashSet::from_iter(boxes.iter().map(|(x, y)| (x * 2, *y)));
+        let walls = HashSet::from_iter(walls.iter().map(|(x, y)| (x * 2, *y)));
+
+        for instr in &instructions {
+            let delta = instr.get_deltas();
+
+            // println!("moving robot {instr:?} ({delta:?})");
+
+            let new = (robot.0 + delta.0, robot.1 + delta.1);
+            if walls.contains(&new) || walls.contains(&(new.0 - 1, new.1)) {
+                // println!("\tcannot move, hit wall");
+                continue;
+            }
+            let occupied_by_box = boxes.contains(&new);
+            let new_offset = (new.0 - 1, new.1);
+            let occupied_by_offset_box = boxes.contains(&new_offset);
+            if occupied_by_box || occupied_by_offset_box {
+                fn push(
+                    boxes: &mut HashSet<Point>,
+                    walls: &HashSet<Point>,
+                    loc: Point,
+                    dir: Point,
+                ) -> bool {
+                    boxes.remove(&loc);
+                    let new = (loc.0 + dir.0, loc.1 + dir.1);
+                    let new_ass = (loc.0 + dir.0 + 1, loc.1 + dir.1);
+                    if (walls.contains(&new) || walls.contains(&(new.0 - 1, new.1)))
+                        || (walls.contains(&new_ass) || walls.contains(&(new_ass.0 - 1, new_ass.1)))
+                    {
+                        return false;
+                    }
+                    let new_offset = (new.0 - 1, new.1);
+                    // TODO: how come we don't need this?
+                    // let new_ass_offset = (new_offset.0 - 1, new_offset.1);
+                    if boxes.contains(&new) && !push(boxes, walls, new, dir) {
+                        return false;
+                    }
+                    if boxes.contains(&new_offset) && !push(boxes, walls, new_offset, dir) {
+                        return false;
+                    }
+                    if boxes.contains(&new_ass) && !push(boxes, walls, new_ass, dir) {
+                        return false;
+                    }
+
+                    boxes.insert(new);
+
+                    // println!("AFTER PUSH:");
+                    // print(boxes);
+
+                    true
+                }
+
+                // println!("\tpushing boxes...");
+
+                let mut new_boxes = boxes.clone();
+
+                let to_push = if occupied_by_box {
+                    new
+                } else if occupied_by_offset_box {
+                    new_offset
+                } else {
+                    unreachable!();
+                };
+                if push(&mut new_boxes, &walls, to_push, delta) {
+                    boxes = new_boxes;
+                } else {
+                    continue;
+                }
+            }
+
+            robot = new;
+
+            // for y in 0..=height {
+            //     for x in 0..=(width * 2 + 1) {
+            //         let c = if (x, y) == robot {
+            //             '@'
+            //         } else if walls.contains(&(x, y)) || walls.contains(&(x - 1, y)) {
+            //             '#'
+            //         } else if boxes.contains(&(x, y)) {
+            //             '['
+            //         } else if boxes.contains(&(x - 1, y)) {
+            //             ']'
+            //         } else {
+            //             '.'
+            //         };
+            //         print!("{c}");
+            //     }
+            //     println!();
+            // }
+        }
+
+        boxes.iter().map(|&(x, y)| x + y * 100).sum::<isize>()
+    };
+
+    (part1 as usize, part2 as usize)
 }
 
 type Point = (isize, isize);
@@ -149,7 +243,7 @@ impl Move {
 }
 
 #[test]
-fn test_small_example() {
+fn test_small_example_part1() {
     let input = "########
 #..O.O.#
 ##@.O..#
@@ -161,17 +255,32 @@ fn test_small_example() {
 
 <^^>>>vv<v>>v<<";
 
-    assert_eq!(solve(input), (2028, 0));
+    assert_eq!(solve(input).0, 2028);
+}
+
+#[test]
+fn test_small_example_part2() {
+    let input = "#######
+#...#.#
+#.....#
+#..OO@#
+#..O..#
+#.....#
+#######
+
+<vv<<^^<<^^";
+
+    solve(input);
 }
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (10092, 0));
+    assert_eq!(solve(EXAMPLE), (10092, 9021));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (1514333, 0));
+    assert_eq!(solve(INPUT), (1514333, 1528453));
 }
 
 // #[bench]
