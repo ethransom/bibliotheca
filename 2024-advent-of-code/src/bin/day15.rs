@@ -65,11 +65,8 @@ fn solve(input: &str) -> (usize, usize) {
         for instr in &instructions {
             let delta = instr.get_deltas();
 
-            // println!("moving robot {instr:?} ({delta:?})");
-
             let new = (robot.0 + delta.0, robot.1 + delta.1);
             if walls.contains(&new) {
-                // println!("\tcannot move, hit wall");
                 continue;
             }
             if boxes.contains(&new) {
@@ -93,30 +90,12 @@ fn solve(input: &str) -> (usize, usize) {
                     true
                 }
 
-                // println!("\tpushing boxes...");
-
                 if !push(&mut boxes, &walls, new, delta) {
                     continue;
                 }
             }
 
             robot = new;
-
-            // for y in 0..=height {
-            //     for x in 0..=width {
-            //         let c = if (x, y) == robot {
-            //             '@'
-            //         } else if walls.contains(&(x, y)) {
-            //             '#'
-            //         } else if boxes.contains(&(x, y)) {
-            //             'O'
-            //         } else {
-            //             '.'
-            //         };
-            //         print!("{c}");
-            //     }
-            //     println!();
-            // }
         }
 
         boxes.iter().map(|&(x, y)| x + y * 100).sum::<isize>()
@@ -130,11 +109,8 @@ fn solve(input: &str) -> (usize, usize) {
         for instr in &instructions {
             let delta = instr.get_deltas();
 
-            // println!("moving robot {instr:?} ({delta:?})");
-
             let new = (robot.0 + delta.0, robot.1 + delta.1);
             if walls.contains(&new) || walls.contains(&(new.0 - 1, new.1)) {
-                // println!("\tcannot move, hit wall");
                 continue;
             }
             let occupied_by_box = boxes.contains(&new);
@@ -156,8 +132,6 @@ fn solve(input: &str) -> (usize, usize) {
                         return false;
                     }
                     let new_offset = (new.0 - 1, new.1);
-                    // TODO: how come we don't need this?
-                    // let new_ass_offset = (new_offset.0 - 1, new_offset.1);
                     if boxes.contains(&new) && !push(boxes, walls, new, dir) {
                         return false;
                     }
@@ -170,13 +144,8 @@ fn solve(input: &str) -> (usize, usize) {
 
                     boxes.insert(new);
 
-                    // println!("AFTER PUSH:");
-                    // print(boxes);
-
                     true
                 }
-
-                // println!("\tpushing boxes...");
 
                 let mut new_boxes = boxes.clone();
 
@@ -195,24 +164,6 @@ fn solve(input: &str) -> (usize, usize) {
             }
 
             robot = new;
-
-            // for y in 0..=height {
-            //     for x in 0..=(width * 2 + 1) {
-            //         let c = if (x, y) == robot {
-            //             '@'
-            //         } else if walls.contains(&(x, y)) || walls.contains(&(x - 1, y)) {
-            //             '#'
-            //         } else if boxes.contains(&(x, y)) {
-            //             '['
-            //         } else if boxes.contains(&(x - 1, y)) {
-            //             ']'
-            //         } else {
-            //             '.'
-            //         };
-            //         print!("{c}");
-            //     }
-            //     println!();
-            // }
         }
 
         boxes.iter().map(|&(x, y)| x + y * 100).sum::<isize>()
