@@ -2,7 +2,10 @@
 
 // extern crate test;
 
-use std::collections::{HashMap, HashSet};
+use std::{
+    cmp::Reverse,
+    collections::{BinaryHeap, HashMap},
+};
 
 const EXAMPLE: &str = include_str!("example13.txt");
 const INPUT: &str = include_str!("input13.txt");
@@ -23,30 +26,43 @@ fn solve(input: &str) -> (usize, usize) {
 const A_COST: usize = 3;
 const B_COST: usize = 1;
 
+type Node = (usize, (usize, usize), Point);
+
+struct MinHeap {
+    inner: BinaryHeap<Reverse<Node>>,
+}
+
+impl MinHeap {
+    fn new() -> MinHeap {
+        MinHeap {
+            inner: Default::default(),
+        }
+    }
+    fn push(&mut self, node: Node) {
+        self.inner.push(Reverse(node));
+    }
+
+    fn pop(&mut self) -> Option<Node> {
+        let Reverse(node) = self.inner.pop()?;
+        Some(node)
+    }
+}
+
 fn min_cost(arcade: &Arcade) -> Option<usize> {
-    // let frontier = BinaryHeap::<(usize, Point)>::new();
-    type Node = ((usize, usize), Point);
-    let mut frontier = HashSet::<Node>::new();
+    let mut frontier = MinHeap::new();
     let start = Point { x: 0, y: 0 };
-    frontier.insert(((0, 0), start));
+    frontier.push((0, (0, 0), start));
 
     let mut came_from = HashMap::<Point, Point>::new();
 
     let mut cost = HashMap::<Point, usize>::new();
     cost.insert(start, 0);
 
-    let mut est_cost = HashMap::<Point, usize>::new();
-    est_cost.insert(start, 0); // a little weird but I guess we have to hit the start first
-
-    while !frontier.is_empty() {
-        let &((a_presses, b_presses), current) =
-            frontier.iter().min_by_key(|&(_, p)| est_cost[p]).unwrap();
+    while let Some((_est_cost, (a_presses, b_presses), current)) = frontier.pop() {
         let current_cost = cost[&current];
         if current == arcade.prize {
             return Some(current_cost);
         }
-
-        frontier.remove(&((a_presses, b_presses), current));
 
         if a_presses >= 100 || b_presses >= 100 {
             continue;
@@ -60,8 +76,8 @@ fn min_cost(arcade: &Arcade) -> Option<usize> {
             if tentative_cost < *cost.get(&neighbor).unwrap_or(&usize::MAX) {
                 came_from.insert(neighbor, current);
                 cost.insert(neighbor, tentative_cost);
-                est_cost.insert(neighbor, tentative_cost + heuristic(neighbor, arcade.prize));
-                frontier.insert((presses, neighbor));
+                let est_cost = tentative_cost + heuristic(neighbor, arcade.prize);
+                frontier.push((est_cost, presses, neighbor));
             }
         }
     }
@@ -73,7 +89,7 @@ fn heuristic(neighbor: Point, prize: Point) -> usize {
     ((neighbor.x + prize.x).pow(2) as usize + (neighbor.y + prize.y).pow(2) as usize).isqrt()
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct Point {
     x: isize,
     y: isize,
