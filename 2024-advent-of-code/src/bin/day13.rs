@@ -25,10 +25,10 @@ const B_COST: usize = 1;
 
 fn min_cost(arcade: &Arcade) -> Option<usize> {
     // let frontier = BinaryHeap::<(usize, Point)>::new();
-    type Node = (usize, Point);
+    type Node = ((usize, usize), Point);
     let mut frontier = HashSet::<Node>::new();
     let start = Point { x: 0, y: 0 };
-    frontier.insert((0, start));
+    frontier.insert(((0, 0), start));
 
     let mut came_from = HashMap::<Point, Point>::new();
 
@@ -39,27 +39,29 @@ fn min_cost(arcade: &Arcade) -> Option<usize> {
     est_cost.insert(start, 0); // a little weird but I guess we have to hit the start first
 
     while !frontier.is_empty() {
-        let &(depth, current) = frontier.iter().min_by_key(|&(_, p)| est_cost[p]).unwrap();
+        let &((a_presses, b_presses), current) =
+            frontier.iter().min_by_key(|&(_, p)| est_cost[p]).unwrap();
         let current_cost = cost[&current];
         if current == arcade.prize {
             return Some(current_cost);
         }
 
-        frontier.remove(&(depth, current));
+        frontier.remove(&((a_presses, b_presses), current));
 
-        if depth + 1 > 100 {
+        if a_presses >= 100 || b_presses >= 100 {
             continue;
         }
 
-        for (neighbor, incremental_cost) in
-            [(current + arcade.a, A_COST), (current + arcade.b, B_COST)]
-        {
+        for (neighbor, incremental_cost, presses) in [
+            (current + arcade.a, A_COST, (a_presses + 1, b_presses)),
+            (current + arcade.b, B_COST, (a_presses, b_presses + 1)),
+        ] {
             let tentative_cost = current_cost + incremental_cost;
             if tentative_cost < *cost.get(&neighbor).unwrap_or(&usize::MAX) {
                 came_from.insert(neighbor, current);
                 cost.insert(neighbor, tentative_cost);
                 est_cost.insert(neighbor, tentative_cost + heuristic(neighbor, arcade.prize));
-                frontier.insert((depth + 1, neighbor));
+                frontier.insert((presses, neighbor));
             }
         }
     }
@@ -173,7 +175,7 @@ fn test_example() {
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (0, 0));
+    assert_eq!(solve(INPUT), (37680, 0));
 }
 
 // #[bench]
