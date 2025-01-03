@@ -42,11 +42,9 @@ fn solve(input: &str) -> (usize, usize) {
         }
     }
 
-    let warehouse = Warehouse {
-        walls,
-        boxes,
-        robot: robot.expect("no robot on map"),
-    };
+    let robot = robot.expect("no robot on map");
+    let walls = walls;
+    let boxes = boxes;
 
     let instructions: Vec<Move> = instructions
         .bytes()
@@ -60,83 +58,76 @@ fn solve(input: &str) -> (usize, usize) {
         })
         .collect();
 
-    let Warehouse {
-        walls,
-        mut boxes,
-        mut robot,
-    } = warehouse;
+    let part1 = {
+        let mut robot = robot;
+        let mut boxes = boxes.clone();
 
-    for instr in instructions {
-        let delta = instr.get_deltas();
+        for instr in instructions {
+            let delta = instr.get_deltas();
 
-        // println!("moving robot {instr:?} ({delta:?})");
+            println!("moving robot {instr:?} ({delta:?})");
 
-        let new = (robot.0 + delta.0, robot.1 + delta.1);
-        if walls.contains(&new) {
-            // println!("\tcannot move, hit wall");
-            continue;
-        }
-        if boxes.contains(&new) {
-            fn push(
-                boxes: &mut HashSet<Point>,
-                walls: &HashSet<Point>,
-                loc: Point,
-                dir: Point,
-            ) -> bool {
-                let new = (loc.0 + dir.0, loc.1 + dir.1);
-                if walls.contains(&new) {
-                    return false;
-                }
-                if boxes.contains(&new) {
-                    if !push(boxes, walls, new, dir) {
-                        return false;
-                    }
-                }
-
-                boxes.remove(&loc);
-                boxes.insert(new);
-
-                true
-            }
-
-            // println!("\tpushing boxes...");
-
-            if !push(&mut boxes, &walls, new, delta) {
+            let new = (robot.0 + delta.0, robot.1 + delta.1);
+            if walls.contains(&new) {
+                // println!("\tcannot move, hit wall");
                 continue;
             }
+            if boxes.contains(&new) {
+                fn push(
+                    boxes: &mut HashSet<Point>,
+                    walls: &HashSet<Point>,
+                    loc: Point,
+                    dir: Point,
+                ) -> bool {
+                    let new = (loc.0 + dir.0, loc.1 + dir.1);
+                    if walls.contains(&new) {
+                        return false;
+                    }
+                    if boxes.contains(&new) {
+                        if !push(boxes, walls, new, dir) {
+                            return false;
+                        }
+                    }
+
+                    boxes.remove(&loc);
+                    boxes.insert(new);
+
+                    true
+                }
+
+                // println!("\tpushing boxes...");
+
+                if !push(&mut boxes, &walls, new, delta) {
+                    continue;
+                }
+            }
+
+            robot = new;
+
+            // for y in 0..=height {
+            //     for x in 0..=width {
+            //         let c = if (x, y) == robot {
+            //             '@'
+            //         } else if walls.contains(&(x, y)) {
+            //             '#'
+            //         } else if boxes.contains(&(x, y)) {
+            //             'O'
+            //         } else {
+            //             '.'
+            //         };
+            //         print!("{c}");
+            //     }
+            //     println!();
+            // }
         }
 
-        robot = new;
-
-        // for y in 0..=height {
-        //     for x in 0..=width {
-        //         let c = if (x, y) == robot {
-        //             '@'
-        //         } else if walls.contains(&(x, y)) {
-        //             '#'
-        //         } else if boxes.contains(&(x, y)) {
-        //             'O'
-        //         } else {
-        //             '.'
-        //         };
-        //         print!("{c}");
-        //     }
-        //     println!();
-        // }
-    }
-
-    let part1 = boxes.iter().map(|&(x, y)| x + y * 100).sum::<isize>();
+        boxes.iter().map(|&(x, y)| x + y * 100).sum::<isize>()
+    };
 
     (part1 as usize, 0)
 }
 
 type Point = (isize, isize);
-
-struct Warehouse {
-    walls: HashSet<Point>,
-    boxes: HashSet<Point>,
-    robot: Point,
-}
 
 #[derive(Debug)]
 enum Move {
