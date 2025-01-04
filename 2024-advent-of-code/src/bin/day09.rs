@@ -29,8 +29,10 @@ fn solve(input: &str) -> (usize, usize) {
         }
     }
 
-    // println!("DD: {:?}", disk);
+    (part1(disk.clone()), 0)
+}
 
+fn part1(mut disk: Vec<Option<usize>>) -> usize {
     let mut i = 0;
     let mut len = disk.len();
     loop {
@@ -55,13 +57,14 @@ fn solve(input: &str) -> (usize, usize) {
         i += 1;
     }
 
-    (
-        disk.iter()
-            .enumerate()
-            .filter_map(|(i, c)| c.map(|c| i * c))
-            .sum(),
-        0,
-    )
+    checksum(&disk)
+}
+
+fn checksum(disk: &[Option<usize>]) -> usize {
+    disk.iter()
+        .enumerate()
+        .filter_map(|(i, c)| c.map(|c| i * c))
+        .sum()
 }
 
 fn parse(input: &str) -> Vec<u8> {
