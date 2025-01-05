@@ -1,3 +1,4 @@
+#![feature(exact_size_is_empty)]
 // #![feature(test)]
 
 // extern crate test;
@@ -11,11 +12,11 @@ fn main() {
 }
 
 fn solve(input: &str) -> (usize, usize) {
-    let blocks = parse(input);
+    let input = parse(input);
 
     let mut disk = Vec::<Option<usize>>::new();
     let mut id = 0;
-    for (i, len) in blocks.iter().enumerate() {
+    for (i, len) in input.iter().enumerate() {
         let block = i % 2 == 0;
         if block {
             for _ in 0..*len {
@@ -29,7 +30,7 @@ fn solve(input: &str) -> (usize, usize) {
         }
     }
 
-    (part1(disk.clone()), 0)
+    (part1(disk.clone()), part2(input))
 }
 
 fn part1(mut disk: Vec<Option<usize>>) -> usize {
@@ -49,15 +50,111 @@ fn part1(mut disk: Vec<Option<usize>>) -> usize {
 
             disk.swap(i, len - 1);
         }
-        // for v in disk.iter() {
-        //     let c = if v.is_some() { 'X' } else { '.' };
-        //     print!("{c}");
-        // }
-        // println!("");
+        // print(&disk);
         i += 1;
     }
 
     checksum(&disk)
+}
+
+fn part2(sector_lengths: Vec<u8>) -> usize {
+    let mut free_list: Vec<(usize, usize)> = vec![];
+    let mut sector_list: Vec<(usize, usize, usize)> = vec![];
+    let mut cursor = 0;
+    let mut id = 0;
+    let mut sector_lengths = sector_lengths.iter();
+    while !sector_lengths.is_empty() {
+        // FILE
+        let &len = sector_lengths.next().unwrap();
+
+        let len = len as usize;
+
+        sector_list.push((cursor, len, id as usize));
+
+        cursor += len;
+        id += 1;
+
+        // FREE
+        let Some(&len) = sector_lengths.next() else {
+            continue;
+        };
+
+        let len = len as usize;
+
+        free_list.push((cursor, len));
+
+        cursor += len;
+    }
+
+    fn print(sector_list: &Vec<(usize, usize, usize)>) {
+        let mut cursor = 0;
+        for &sector in sector_list {
+            let (pos, len, id) = sector;
+
+            while cursor < pos {
+                print!(".");
+                cursor += 1;
+            }
+
+            let id = id.to_string().chars().last().unwrap();
+            for _i in 0..len {
+                cursor += 1;
+                print!("{id}");
+            }
+        }
+        println!();
+    }
+
+    println!("BEFORE:");
+    print(&sector_list);
+
+    for sector in sector_list.iter_mut().rev() {
+        let (pos, len, _id) = sector;
+        let free_space = free_list
+            .iter_mut()
+            .find(|(_pos, free_len)| *free_len >= *len);
+        let Some((free_pos, free_len)) = free_space else {
+            // no space found
+            continue;
+        };
+        *pos = *free_pos;
+        // move up
+        *free_pos += *len;
+        // shrink
+        *free_len -= *len;
+        if *free_len == 0 {
+            // TODO: I guess delete free list entry? but probably only matters for "efficiency"
+        }
+    }
+    sector_list.sort(); // TODO: unecessary?? probably not
+    print(&sector_list);
+    println!("00992111777.44.333....5555.6666.....8888..");
+
+    fn checksum(sector_list: &Vec<(usize, usize, usize)>) -> usize {
+        let mut checksum = 0;
+        for &sector in sector_list {
+            let (pos, len, id) = sector;
+
+            for i in 0..len {
+                checksum += (pos + i) * id;
+            }
+        }
+        checksum
+    }
+
+    checksum(&sector_list)
+}
+
+fn print(disk: &[Option<usize>]) {
+    for v in disk.iter() {
+        let c = if let Some(v) = v {
+            v.to_string().chars().last().unwrap()
+        } else {
+            '.'
+        };
+        print!("{c}");
+    }
+    println!();
 }
 
 fn checksum(disk: &[Option<usize>]) -> usize {
@@ -77,12 +174,12 @@ fn btoi(b: u8) -> u8 {
 
 #[test]
 fn test_example() {
-    assert_eq!(solve(EXAMPLE), (1928, 0));
+    assert_eq!(solve(EXAMPLE), (1928, 2858));
 }
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (6607511583593, 0));
+    assert_eq!(solve(INPUT), (6607511583593, 8868021291269));
 }
 
 // #[bench]
