@@ -110,10 +110,11 @@ fn part2(sector_lengths: Vec<u8>) -> usize {
 
     for sector in sector_list.iter_mut().rev() {
         let (pos, len, _id) = sector;
-        let free_space = free_list
+        let Some((index, (free_pos, free_len))) = free_list
             .iter_mut()
-            .find(|(_pos, free_len)| *free_len >= *len);
-        let Some((free_pos, free_len)) = free_space else {
+            .enumerate()
+            .find(|(_i, (_pos, free_len))| *free_len >= *len)
+        else {
             // no space found
             continue;
         };
@@ -123,7 +124,8 @@ fn part2(sector_lengths: Vec<u8>) -> usize {
         // shrink
         *free_len -= *len;
         if *free_len == 0 {
-            // TODO: I guess delete free list entry? but probably only matters for "efficiency"
+            // NOTE: technically we don't need to do this but it is good hygine I suppose
+            free_list.remove(index);
         }
     }
     sector_list.sort(); // TODO: unecessary?? probably not
