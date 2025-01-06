@@ -113,7 +113,8 @@ fn part2(sector_lengths: Vec<u8>) -> usize {
         let Some((index, (free_pos, free_len))) = free_list
             .iter_mut()
             .enumerate()
-            .find(|(_i, (_pos, free_len))| *free_len >= *len)
+            .take_while(|(_i, (free_pos, _free_len))| free_pos < pos)
+            .find(|(_i, (_free_pos, free_len))| free_len >= len)
         else {
             // no space found
             continue;
@@ -181,7 +182,7 @@ fn test_example() {
 
 #[test]
 fn test_input() {
-    assert_eq!(solve(INPUT), (6607511583593, 8868021291269));
+    assert_eq!(solve(INPUT), (6607511583593, 6636608781232));
 }
 
 // #[bench]
